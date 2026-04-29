@@ -4,26 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spec de Estrategia — Trading Bot Ops</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0a0f; --surface: #12121a; --border: #1e1e2e;
-  --nico: #3B82F6; --trader: #10B981; --shared: #F59E0B;
-  --bot: #8B5CF6; --gate: #EF4444;
-  --text: #e2e2f0; --muted: #6b6b8a;
-  --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
+  --bg: #eef1f8; --surface: #ffffff; --border: #dde3f0;
+  --nico: #2563EB; --trader: #059669; --shared: #D97706;
+  --bot: #7C3AED; --gate: #DC2626;
+  --text: #1a2757; --muted: #6b7a9e;
+  --font-display: 'Space Grotesk', sans-serif; --font-mono: 'Space Mono', monospace;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font-display); min-height:100vh; }
 body::before {
   content:''; position:fixed; inset:0;
-  background-image: linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);
+  background-image: linear-gradient(rgba(30,45,110,0.04) 1px,transparent 1px), linear-gradient(90deg,rgba(30,45,110,0.04) 1px,transparent 1px);
   background-size:40px 40px; pointer-events:none; z-index:0;
 }
 .wrapper { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:48px 32px 80px; }
 .nav-back { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-decoration:none; margin-bottom:40px; letter-spacing:1px; text-transform:uppercase; transition:color 0.2s; }
 .nav-back:hover { color:var(--nico); }
-.page-title { font-size:clamp(28px,4vw,44px); font-weight:800; letter-spacing:-1px; background:linear-gradient(135deg,#fff 30%,#8b8bba); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; }
+.page-title { font-size:clamp(28px,4vw,44px); font-weight:800; letter-spacing:-1px; background:linear-gradient(135deg,#1a2757 0%,#2563eb 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; }
 .page-sub { font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:40px; }
 
 /* Spec selector */
@@ -43,7 +43,7 @@ body::before {
 .spec-name { font-size:22px; font-weight:800; margin-bottom:4px; }
 .spec-version { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
 .spec-meta-chips { display:flex; gap:10px; flex-wrap:wrap; }
-.chip { font-family:var(--font-mono); font-size:11px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--muted); }
+.chip { font-family:var(--font-mono); font-size:11px; padding:5px 12px; border-radius:6px; background:rgba(30,45,110,0.05); border:1px solid var(--border); color:var(--muted); }
 
 /* Sections */
 .spec-section { padding:28px 32px; border-bottom:1px solid var(--border); }
@@ -52,37 +52,37 @@ body::before {
 
 /* Params table */
 .params-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:12px; }
-.param-item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+.param-item { background:rgba(30,45,110,0.03); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
 .param-name { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:4px; }
 .param-val { font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--text); }
 .param-range { font-family:var(--font-mono); font-size:10px; color:var(--muted); margin-top:3px; }
 
 /* Conditions */
 .conditions { display:flex; flex-direction:column; gap:10px; }
-.condition-block { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
+.condition-block { background:rgba(30,45,110,0.03); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
 .cond-label { font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:4px; flex-shrink:0; margin-top:2px; }
 .cond-entry { background:rgba(16,185,129,0.1); color:var(--trader); border:1px solid rgba(16,185,129,0.25); }
 .cond-exit  { background:rgba(239,68,68,0.1); color:var(--gate); border:1px solid rgba(239,68,68,0.25); }
 .cond-filter { background:rgba(245,158,11,0.1); color:var(--shared); border:1px solid rgba(245,158,11,0.25); }
-.cond-text { font-size:13px; color:#c0c0d8; line-height:1.6; font-family:var(--font-mono); }
+.cond-text { font-size:13px; color:#4a5875; line-height:1.6; font-family:var(--font-mono); }
 
 /* Risk metrics */
 .risk-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px; }
-.risk-item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+.risk-item { background:rgba(30,45,110,0.03); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
 .risk-val { font-family:var(--font-mono); font-size:20px; font-weight:700; margin-bottom:4px; }
 .risk-lbl { font-size:11px; color:var(--muted); }
 
 /* Target metrics */
 .metrics-table { width:100%; border-collapse:collapse; font-size:13px; }
 .metrics-table th { text-align:left; padding:8px 12px; font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); }
-.metrics-table td { padding:10px 12px; border-bottom:1px solid rgba(30,30,46,0.6); }
+.metrics-table td { padding:10px 12px; border-bottom:1px solid rgba(221,227,240,0.8); }
 .metrics-table tr:last-child td { border-bottom:none; }
 .target-ok { color:var(--trader); font-family:var(--font-mono); font-weight:700; }
 .target-warn { color:var(--shared); font-family:var(--font-mono); font-weight:700; }
 .target-fail { color:var(--gate); font-family:var(--font-mono); font-weight:700; }
 
 /* Notes */
-.notes-area { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:16px; min-height:80px; font-size:13px; color:#c0c0d8; line-height:1.7; outline:none; width:100%; resize:vertical; font-family:var(--font-display); }
+.notes-area { background:rgba(30,45,110,0.03); border:1px solid var(--border); border-radius:8px; padding:16px; min-height:80px; font-size:13px; color:#4a5875; line-height:1.7; outline:none; width:100%; resize:vertical; font-family:var(--font-display); }
 .notes-area:focus { border-color:rgba(59,130,246,0.4); }
 
 footer { margin-top:60px; padding-top:24px; border-top:1px solid var(--border); font-family:var(--font-mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
