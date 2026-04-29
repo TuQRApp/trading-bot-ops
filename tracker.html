@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker de Proyectos — Trading Bot Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f; --surface:#12121a; --border:#1e1e2e;
+  --nico:#3B82F6; --trader:#10B981; --shared:#F59E0B;
+  --bot:#8B5CF6; --gate:#EF4444;
+  --text:#e2e2f0; --muted:#6b6b8a;
+  --font-display:'Syne',sans-serif; --font-mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 32px 80px;}
+.nav-back{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;margin-bottom:40px;letter-spacing:1px;text-transform:uppercase;transition:color 0.2s;}
+.nav-back:hover{color:var(--nico);}
+.page-title{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#fff 30%,#8b8bba);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.page-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-bottom:40px;}
+
+/* Summary bar */
+.summary-bar{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:40px;}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:120px;}
+.sum-val{font-family:var(--font-mono);font-size:22px;font-weight:700;}
+.sum-lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* Filters */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;}
+.filter-btn{font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(59,130,246,0.08);}
+
+/* Tracker grid */
+.tracker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+
+/* Project card */
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color 0.2s;display:flex;flex-direction:column;gap:16px;}
+.proj-card:hover{border-color:rgba(99,102,241,0.3);}
+
+.proj-header{display:flex;align-items:flex-start;gap:12px;}
+.proj-id-badge{font-family:var(--font-mono);font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;min-width:52px;text-align:center;flex-shrink:0;}
+.proj-title-area{flex:1;}
+.proj-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.proj-owner-line{display:flex;align-items:center;gap:8px;}
+.owner-badge{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:4px;}
+
+.proj-desc{font-size:13px;color:#c0c0d8;line-height:1.7;}
+
+/* Status */
+.proj-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.status-badge{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid;display:flex;align-items:center;gap:5px;}
+.s-todo    {color:#6b6b8a;border-color:#2a2a3e;background:rgba(107,107,138,0.08);}
+.s-doing   {color:var(--shared);border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08);}
+.s-done    {color:var(--trader);border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08);}
+.s-blocked {color:var(--gate);border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);}
+
+/* Progress bar */
+.progress-wrap{display:flex;flex-direction:column;gap:6px;}
+.progress-label{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.progress-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.3s ease;}
+
+/* Notes inline */
+.proj-notes{font-family:var(--font-mono);font-size:11px;color:#9898b8;line-height:1.8;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:6px;padding:10px 12px;}
+.proj-notes[contenteditable="true"]:focus{outline:none;border-color:rgba(59,130,246,0.35);}
+
+/* Priority label */
+.priority{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.prio-alta{color:var(--gate);}
+.prio-media{color:var(--shared);}
+.prio-baja{color:var(--muted);}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <a href="index.html" class="nav-back">← Volver al hub</a>
+  <div class="page-title">Tracker de Proyectos</div>
+  <div class="page-sub">Mini-proyectos M-01 a M-08 · Estado, responsable y progreso</div>
+
+  <div class="summary-bar">
+    <div class="sum-card"><div class="sum-val" style="color:var(--trader)">2</div><div class="sum-lbl">Completados</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--shared)">3</div><div class="sum-lbl">En progreso</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--muted)">3</div><div class="sum-lbl">Pendiente</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--gate)">0</div><div class="sum-lbl">Bloqueados</div></div>
+    <div class="sum-card"><div class="sum-val">8</div><div class="sum-lbl">Total</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterAll(this)">Todos</button>
+    <button class="filter-btn" onclick="filterBy('nico',this)">🔵 Tú</button>
+    <button class="filter-btn" onclick="filterBy('trader',this)">🟢 Trader</button>
+    <button class="filter-btn" onclick="filterBy('shared',this)">🟡 Ambos</button>
+    <button class="filter-btn" onclick="filterBy('s-doing',this)">En progreso</button>
+    <button class="filter-btn" onclick="filterBy('s-todo',this)">Pendientes</button>
+    <button class="filter-btn" onclick="filterBy('s-done',this)">Completados</button>
+  </div>
+
+  <div class="tracker-grid" id="grid">
+
+    <!-- M-01 -->
+    <div class="proj-card" data-owner="nico" data-status="s-done">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-01</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Specification Engine</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.2)">🔵 Tú</span>
+            <span class="priority prio-alta">Prioridad: Alta</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Templates de spec + checklist de verificación + versionado de documentos. Base de todo el flujo de trabajo.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-done">● Completado</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>100%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--trader)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Template spec.html creado con OBV+MACD y T&T. Campos editables inline con contenteditable. Próximo: agregar exportar a PDF.</div>
+    </div>
+
+    <!-- M-02 -->
+    <div class="proj-card" data-owner="trader" data-status="s-doing">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(16,185,129,0.12);color:var(--trader);border:1px solid rgba(16,185,129,0.3)">M-02</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Strategy Journal</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(16,185,129,0.1);color:var(--trader);border:1px solid rgba(16,185,129,0.2)">🟢 Trader</span>
+            <span class="priority prio-alta">Prioridad: Alta</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Registro cronológico de hipótesis, resultados observados y decisiones tomadas en cada iteración estratégica.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-doing">● En progreso</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>30%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Trader comenzó a registrar hipótesis en Notion. Pendiente: migrar a formato estructurado compatible con este sistema.</div>
+    </div>
+
+    <!-- M-03 -->
+    <div class="proj-card" data-owner="nico" data-status="s-done">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-03</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Backtest Quality Score</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.2)">🔵 Tú</span>
+            <span class="priority prio-alta">Prioridad: Alta</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Scorecard automático con semáforo verde/amarillo/rojo. Detecta overfitting y valida metodología de backtest.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-done">● Completado</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>100%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--trader)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Implementado en feedback.html módulo 1. Incluye 6 métricas con semáforo automático. El análisis de OBV+MACD ya tiene score asignado.</div>
+    </div>
+
+    <!-- M-04 -->
+    <div class="proj-card" data-owner="shared" data-status="s-doing">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-04</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Market Regime Detector</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.2)">🟡 Ambos</span>
+            <span class="priority prio-media">Prioridad: Media</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Clasificador de régimen: Trending / Ranging / Alta volatilidad. Filtra señales según contexto de mercado.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-doing">● En progreso</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>20%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Arquitecto: diseñando lógica basada en ADX + BB width. Trader: definiendo umbrales para cada régimen desde experiencia operativa.</div>
+    </div>
+
+    <!-- M-05 -->
+    <div class="proj-card" data-owner="nico" data-status="s-doing">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-05</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Post-Trade Dashboard</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.2)">🔵 Tú</span>
+            <span class="priority prio-media">Prioridad: Media</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">P&L segmentado por hora, activo, régimen y señal. Reporte semanal automático. Heatmap de condiciones ganadoras.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-doing">● En progreso</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>50%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:50%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Módulo post-trade implementado en feedback.html. Pendiente: conectar con datos reales del bot en vivo (state JSON). Pendiente: Telegram webhook.</div>
+    </div>
+
+    <!-- M-06 -->
+    <div class="proj-card" data-owner="shared" data-status="s-todo">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-06</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Parameter Sensitivity</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.2)">🟡 Ambos</span>
+            <span class="priority prio-baja">Prioridad: Baja (madurez)</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Grid search trimestral de parámetros. Detecta si la estrategia está degradando antes de que cause daño real.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-todo">○ Pendiente</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Prerequisito: tener al menos 1 estrategia operando de forma estable por 3+ meses. Bloquea: M-05 parcialmente completado.</div>
+    </div>
+
+    <!-- M-07 -->
+    <div class="proj-card" data-owner="shared" data-status="s-todo">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-07</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Multi-Estrategia Portfolio</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.2)">🟡 Ambos</span>
+            <span class="priority prio-baja">Prioridad: Baja (madurez)</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Capital dinámico entre bots activos + análisis de correlación. Diversificación inteligente entre estrategias.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-todo">○ Pendiente</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Prerequisito: tener 2+ estrategias estables en vivo. Estudiar correlación entre OBV+MACD y T&T en los mismos símbolos.</div>
+    </div>
+
+    <!-- M-08 -->
+    <div class="proj-card" data-owner="nico" data-status="s-todo">
+      <div class="proj-header">
+        <span class="proj-id-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-08</span>
+        <div class="proj-title-area">
+          <div class="proj-title">Strategy Decay Monitor</div>
+          <div class="proj-owner-line">
+            <span class="owner-badge" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.2)">🔵 Tú</span>
+            <span class="priority prio-media">Prioridad: Media-Alta</span>
+          </div>
+        </div>
+      </div>
+      <div class="proj-desc">Sharpe rolling 30/60/90 días + alerta automática + pausa del bot. El diferenciador del equipo: detectar degradación antes de perder.</div>
+      <div class="proj-status-row">
+        <span class="status-badge s-todo">○ Pendiente</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><span>0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--shared)"></div></div>
+      </div>
+      <div class="proj-notes" contenteditable="true">Diseño: calcular Sharpe rolling desde state JSON del bot. Trigger: Sharpe &lt; 0.5 en 30d → alerta Telegram. Sharpe &lt; 0 en 14d → pausa automática.</div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <footer>
+    <a href="index.html" style="color:var(--muted);text-decoration:none;">← Hub</a>
+    <span>tracker.html · Trading Bot Ops</span>
+  </footer>
+
+</div>
+<script>
+function filterAll(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.proj-card').forEach(c=>c.style.display='flex');
+}
+function filterBy(key, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.proj-card').forEach(c=>{
+    const match = c.dataset.owner===key || c.dataset.status===key;
+    c.style.display = match ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

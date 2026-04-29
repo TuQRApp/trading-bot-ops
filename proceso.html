@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Proceso — Trading Bot Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --border: #1e1e2e;
+  --nico: #3B82F6;
+  --trader: #10B981;
+  --shared: #F59E0B;
+  --bot: #8B5CF6;
+  --gate: #EF4444;
+  --text: #e2e2f0;
+  --muted: #6b6b8a;
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-back:hover { color: var(--nico); }
+.page-title {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #fff 30%, #8b8bba);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.page-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 40px;
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.phase {
+  position: relative;
+  padding-left: 60px;
+  padding-bottom: 0;
+}
+.phase:not(:last-child) {
+  padding-bottom: 16px;
+}
+
+/* connector line */
+.phase:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 48px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--phase-color) 0%, rgba(30,30,46,0) 100%);
+}
+
+/* phase number */
+.phase-num {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  border: 2px solid var(--phase-color);
+  color: var(--phase-color);
+  background: var(--bg);
+  z-index: 1;
+}
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-bottom: 16px;
+}
+.phase-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.phase-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.phase-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+/* role card */
+.role-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 3px solid var(--role-color);
+}
+.role-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--role-color);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.role-tasks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.role-tasks li {
+  font-size: 13px;
+  color: #c0c0d8;
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.5;
+}
+.role-tasks li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--role-color);
+  font-size: 11px;
+}
+
+/* Gate */
+.gate-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.gate-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.gate-title {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--gate);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.gate-criteria {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.gate-crit {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: rgba(239,68,68,0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+
+/* Mini-projects */
+.miniprojects-section {
+  margin-top: 60px;
+}
+.section-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.miniprojects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.mp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+.mp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.mp-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 48px;
+  text-align: center;
+}
+.mp-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+.mp-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.mp-detail {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #9898b8;
+  line-height: 1.8;
+}
+.mp-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  margin-top: 12px;
+}
+
+/* Phase colors */
+.p1 { --phase-color: var(--nico); }
+.p2 { --phase-color: var(--nico); }
+.p3 { --phase-color: var(--trader); }
+.p4 { --phase-color: var(--bot); }
+.p5 { --phase-color: var(--shared); }
+.p6 { --phase-color: var(--nico); }
+
+footer {
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <a href="index.html" class="nav-back">← Volver al hub</a>
+
+  <div class="page-title">El Proceso</div>
+  <div class="page-sub">Roadmap completo · 6 fases · Roles · Gates de calidad · M-01 a M-08</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--nico)"></div><span>🔵 Tú (Arquitecto)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--trader)"></div><span>🟢 Trader</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--shared)"></div><span>🟡 Ambos</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--bot)"></div><span>🟣 Bot</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--gate)"></div><span>🔴 Gate</span></div>
+  </div>
+
+  <div class="timeline">
+
+    <!-- FASE 1 -->
+    <div class="phase p1">
+      <div class="phase-num">1</div>
+      <div class="phase-header">
+        <div class="phase-title">📋 Diseño estratégico</div>
+        <span class="phase-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">Crítico</span>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--trader)">
+          <div class="role-title">🟢 Trader — Definición de estrategia</div>
+          <ul class="role-tasks">
+            <li>Condiciones de entrada y salida en lenguaje natural</li>
+            <li>Activos, timeframes y horarios operativos</li>
+            <li>Reglas de riesgo propias (max DD, position size)</li>
+            <li>Historial de operaciones manuales</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Formalización del spec</div>
+          <ul class="role-tasks">
+            <li>Condiciones booleanas explícitas y verificables</li>
+            <li>Parámetros configurables con rangos</li>
+            <li>State machine de la Order</li>
+            <li>Documento contrato firmado por ambos</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--shared)">
+          <div class="role-title">🟡 Ambos — Validación del spec</div>
+          <ul class="role-tasks">
+            <li>Trader confirma que refleja su intención</li>
+            <li>Arquitecto verifica implementabilidad</li>
+            <li>Acuerdan métricas de éxito del backtest</li>
+            <li>Definen circuit breaker y límites</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase p2">
+      <div class="phase-num">2</div>
+      <div class="phase-header">
+        <div class="phase-title">🏗️ Arquitectura y datos</div>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Modelo de datos</div>
+          <ul class="role-tasks">
+            <li>Entidades: Candle, Signal, Order, Position, Trade, Portfolio</li>
+            <li>State machine de Order (pending → filled → cancelled)</li>
+            <li>Audit log de cada decisión del bot</li>
+            <li>Tablas de parámetros por estrategia</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Arquitectura del sistema</div>
+          <ul class="role-tasks">
+            <li>Módulos: data feed, indicadores, strategy, risk, order manager</li>
+            <li>Interfaces bien definidas entre módulos</li>
+            <li>Manejo de errores y reconexión automática</li>
+            <li>Sistema de alertas (Telegram / email)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase p3">
+      <div class="phase-num">3</div>
+      <div class="phase-header">
+        <div class="phase-title">📊 Backtesting y validación</div>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--trader)">
+          <div class="role-title">🟢 Trader — Selección de datos</div>
+          <ul class="role-tasks">
+            <li>Define período in-sample (entrenamiento)</li>
+            <li>Define out-of-sample (nunca tocar hasta final)</li>
+            <li>Identifica regímenes de mercado presentes</li>
+            <li>Valida coherencia económica del período</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Metodología de backtest</div>
+          <ul class="role-tasks">
+            <li>Split in-sample / out-of-sample 70/30</li>
+            <li>Walk-forward testing</li>
+            <li>Modelar costos reales: comisión + slippage</li>
+            <li>Monte Carlo sobre secuencia de trades</li>
+            <li>Verificar fidelidad bot ↔ backtest</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-block">
+        <div class="gate-icon">🔴</div>
+        <div>
+          <div class="gate-title">Gate de calidad — ¿Pasa métricas?</div>
+          <div class="gate-criteria">
+            <span class="gate-crit">Sharpe &gt; 1.0</span>
+            <span class="gate-crit">Profit Factor &gt; 1.5</span>
+            <span class="gate-crit">Max Drawdown &lt; 20%</span>
+            <span class="gate-crit">Muestra &gt; 30 trades</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase p4">
+      <div class="phase-num">4</div>
+      <div class="phase-header">
+        <div class="phase-title">🧪 Paper trading (dinero ficticio)</div>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--bot)">
+          <div class="role-title">🟣 Bot — Operación en papel</div>
+          <ul class="role-tasks">
+            <li>Datos reales de mercado, capital ficticio</li>
+            <li>Simula ejecución con slippage real</li>
+            <li>Registra señales y órdenes en DB</li>
+            <li>Reportes diarios automáticos</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--shared)">
+          <div class="role-title">🟡 Ambos — Monitoreo y validación</div>
+          <ul class="role-tasks">
+            <li>Trader: ¿las entradas tienen sentido económico?</li>
+            <li>Arquitecto: ¿la lógica coincide con el spec?</li>
+            <li>Comparan resultados paper vs backtest</li>
+            <li>Documentan edge cases nuevos</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-block">
+        <div class="gate-icon">🔴</div>
+        <div>
+          <div class="gate-title">Gate de calidad — ¿Paper aprobado?</div>
+          <div class="gate-criteria">
+            <span class="gate-crit">≥ 4 semanas operando</span>
+            <span class="gate-crit">≥ 30 operaciones</span>
+            <span class="gate-crit">Desempeño estable</span>
+            <span class="gate-crit">Sin divergencia vs backtest</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 5 -->
+    <div class="phase p5">
+      <div class="phase-num">5</div>
+      <div class="phase-header">
+        <div class="phase-title">💰 Operación real</div>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--bot)">
+          <div class="role-title">🟣 Bot — Ejecución en vivo</div>
+          <ul class="role-tasks">
+            <li>Inicia con 10-25% del capital objetivo</li>
+            <li>Circuit breaker automático activo</li>
+            <li>Reconexión automática ante fallos de API</li>
+            <li>Heartbeat: alerta si el bot no reporta</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Monitoreo del sistema</div>
+          <ul class="role-tasks">
+            <li>Dashboard P&L en tiempo real</li>
+            <li>Alertas de infraestructura</li>
+            <li>Revisión diaria del audit log</li>
+            <li>Gestión de versiones del bot</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--trader)">
+          <div class="role-title">🟢 Trader — Monitoreo de mercado</div>
+          <ul class="role-tasks">
+            <li>Identifica eventos macro (FOMC, etc.)</li>
+            <li>Decide pausar el bot manualmente</li>
+            <li>Detecta cambio de régimen de mercado</li>
+            <li>Revisa coherencia de las operaciones</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 6 -->
+    <div class="phase p6">
+      <div class="phase-num">6</div>
+      <div class="phase-header">
+        <div class="phase-title">🔁 Análisis post-operación</div>
+        <span class="phase-badge" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">Loop de mejora</span>
+      </div>
+      <div class="phase-body">
+        <div class="role-card" style="--role-color:var(--nico)">
+          <div class="role-title">🔵 Tú — Sistema de análisis post-trade</div>
+          <ul class="role-tasks">
+            <li>P&L segmentado por hora, activo, régimen de mercado</li>
+            <li>Clasifica trades por contexto de mercado</li>
+            <li>Heatmap: condiciones ganadoras vs perdedoras</li>
+            <li>Reporte semanal automático (Telegram)</li>
+            <li>Construye dataset etiquetado para ML futuro</li>
+          </ul>
+        </div>
+        <div class="role-card" style="--role-color:var(--trader)">
+          <div class="role-title">🟢 Trader — Revisión estratégica semanal</div>
+          <ul class="role-tasks">
+            <li>Analiza cada operación perdedora</li>
+            <li>Identifica patrones de fallo</li>
+            <li>Propone ajustes de parámetros o filtros</li>
+            <li>Evalúa si el mercado cambió de régimen</li>
+            <li>Propone nuevas estrategias o variaciones</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /timeline -->
+
+  <!-- MINI-PROJECTS -->
+  <div class="miniprojects-section">
+    <div class="section-title">Mini-proyectos de mejora continua</div>
+    <div class="miniprojects-grid">
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-01</span>
+          <div class="mp-name">Specification Engine</div>
+        </div>
+        <div class="mp-desc">Templates de spec + checklist de verificación + sistema de versionado de documentos estratégicos.</div>
+        <div class="mp-detail">· Templates HTML por tipo de estrategia<br>· Checklist de implementabilidad<br>· Historial de versiones del spec</div>
+        <div class="mp-owner" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.25)">🔵 Tú</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(16,185,129,0.12);color:var(--trader);border:1px solid rgba(16,185,129,0.3)">M-02</span>
+          <div class="mp-name">Strategy Journal</div>
+        </div>
+        <div class="mp-desc">Registro de hipótesis del trader, resultados observados y decisiones tomadas en cada iteración.</div>
+        <div class="mp-detail">· Log de hipótesis pre-implementación<br>· Resultados reales vs esperados<br>· Decisiones y justificaciones</div>
+        <div class="mp-owner" style="background:rgba(16,185,129,0.1);color:var(--trader);border:1px solid rgba(16,185,129,0.25)">🟢 Trader</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-03</span>
+          <div class="mp-name">Backtest Quality Score</div>
+        </div>
+        <div class="mp-desc">Scorecard automático con semáforo verde/amarillo/rojo para detectar overfitting y validar calidad del backtest.</div>
+        <div class="mp-detail">· Métricas en tiempo real<br>· Detección de overfitting<br>· Semáforo automático<br>· Alerta si métricas caen</div>
+        <div class="mp-owner" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.25)">🔵 Tú</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-04</span>
+          <div class="mp-name">Market Regime Detector</div>
+        </div>
+        <div class="mp-desc">Clasificador automático de régimen de mercado: trending / ranging / alta volatilidad. Filtra señales por contexto.</div>
+        <div class="mp-detail">· Trending / Ranging / Alta vol<br>· Filtro de señales por régimen<br>· Histórico de regímenes</div>
+        <div class="mp-owner" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.25)">🟡 Ambos</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-05</span>
+          <div class="mp-name">Post-Trade Dashboard</div>
+        </div>
+        <div class="mp-desc">P&L segmentado + reporte semanal automático + heatmap de condiciones ganadoras vs perdedoras.</div>
+        <div class="mp-detail">· P&L por hora/activo/régimen/señal<br>· Heatmap de condiciones<br>· Reporte semanal vía Telegram</div>
+        <div class="mp-owner" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.25)">🔵 Tú</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-06</span>
+          <div class="mp-name">Parameter Sensitivity</div>
+        </div>
+        <div class="mp-desc">Grid search trimestral de parámetros + detección de degradación de performance antes de que cause daño.</div>
+        <div class="mp-detail">· Grid search automático<br>· Reporte de sensibilidad<br>· Alerta de degradación</div>
+        <div class="mp-owner" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.25)">🟡 Ambos</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(245,158,11,0.12);color:var(--shared);border:1px solid rgba(245,158,11,0.3)">M-07</span>
+          <div class="mp-name">Multi-Estrategia Portfolio</div>
+        </div>
+        <div class="mp-desc">Asignación dinámica de capital entre estrategias + análisis de correlación entre bots activos simultáneamente.</div>
+        <div class="mp-detail">· Capital dinámico por bot<br>· Análisis de correlación<br>· Diversificación inteligente</div>
+        <div class="mp-owner" style="background:rgba(245,158,11,0.1);color:var(--shared);border:1px solid rgba(245,158,11,0.25)">🟡 Ambos</div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-header">
+          <span class="mp-id" style="background:rgba(59,130,246,0.12);color:var(--nico);border:1px solid rgba(59,130,246,0.3)">M-08</span>
+          <div class="mp-name">Strategy Decay Monitor</div>
+        </div>
+        <div class="mp-desc">Sharpe rolling + alerta automática + pausa del bot cuando la estrategia deja de funcionar. El diferenciador del equipo.</div>
+        <div class="mp-detail">· Sharpe ratio rolling 30/60/90d<br>· Alerta automática por Telegram<br>· Pausa automática configurable<br>· Dashboard de salud del bot</div>
+        <div class="mp-owner" style="background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.25)">🔵 Tú</div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <a href="index.html" style="color:var(--muted);text-decoration:none;">← Hub</a>
+    <span>proceso.html · Trading Bot Ops</span>
+  </footer>
+
+</div>
+</body>
+</html>

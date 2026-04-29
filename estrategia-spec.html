@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spec de Estrategia — Trading Bot Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f; --surface: #12121a; --border: #1e1e2e;
+  --nico: #3B82F6; --trader: #10B981; --shared: #F59E0B;
+  --bot: #8B5CF6; --gate: #EF4444;
+  --text: #e2e2f0; --muted: #6b6b8a;
+  --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-display); min-height:100vh; }
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image: linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);
+  background-size:40px 40px; pointer-events:none; z-index:0;
+}
+.wrapper { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:48px 32px 80px; }
+.nav-back { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-decoration:none; margin-bottom:40px; letter-spacing:1px; text-transform:uppercase; transition:color 0.2s; }
+.nav-back:hover { color:var(--nico); }
+.page-title { font-size:clamp(28px,4vw,44px); font-weight:800; letter-spacing:-1px; background:linear-gradient(135deg,#fff 30%,#8b8bba); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; }
+.page-sub { font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:40px; }
+
+/* Spec selector */
+.spec-selector { display:flex; gap:12px; margin-bottom:40px; flex-wrap:wrap; }
+.spec-btn { font-family:var(--font-mono); font-size:11px; padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; transition:all 0.2s; }
+.spec-btn.active, .spec-btn:hover { border-color:var(--nico); color:var(--nico); background:rgba(59,130,246,0.08); }
+.spec-btn.new { border-color:rgba(16,185,129,0.4); color:var(--trader); background:rgba(16,185,129,0.06); }
+
+/* Spec document */
+.spec-doc { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+.spec-doc-header { padding:28px 32px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.spec-doc-title-area {}
+.spec-status { display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10px; padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+.status-live { background:rgba(16,185,129,0.12); color:var(--trader); border:1px solid rgba(16,185,129,0.3); }
+.status-backtest { background:rgba(245,158,11,0.12); color:var(--shared); border:1px solid rgba(245,158,11,0.3); }
+.status-paper { background:rgba(139,92,246,0.12); color:var(--bot); border:1px solid rgba(139,92,246,0.3); }
+.spec-name { font-size:22px; font-weight:800; margin-bottom:4px; }
+.spec-version { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+.spec-meta-chips { display:flex; gap:10px; flex-wrap:wrap; }
+.chip { font-family:var(--font-mono); font-size:11px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--muted); }
+
+/* Sections */
+.spec-section { padding:28px 32px; border-bottom:1px solid var(--border); }
+.spec-section:last-child { border-bottom:none; }
+.section-label { font-size:10px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:16px; }
+
+/* Params table */
+.params-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:12px; }
+.param-item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+.param-name { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:4px; }
+.param-val { font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--text); }
+.param-range { font-family:var(--font-mono); font-size:10px; color:var(--muted); margin-top:3px; }
+
+/* Conditions */
+.conditions { display:flex; flex-direction:column; gap:10px; }
+.condition-block { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
+.cond-label { font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:4px; flex-shrink:0; margin-top:2px; }
+.cond-entry { background:rgba(16,185,129,0.1); color:var(--trader); border:1px solid rgba(16,185,129,0.25); }
+.cond-exit  { background:rgba(239,68,68,0.1); color:var(--gate); border:1px solid rgba(239,68,68,0.25); }
+.cond-filter { background:rgba(245,158,11,0.1); color:var(--shared); border:1px solid rgba(245,158,11,0.25); }
+.cond-text { font-size:13px; color:#c0c0d8; line-height:1.6; font-family:var(--font-mono); }
+
+/* Risk metrics */
+.risk-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px; }
+.risk-item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+.risk-val { font-family:var(--font-mono); font-size:20px; font-weight:700; margin-bottom:4px; }
+.risk-lbl { font-size:11px; color:var(--muted); }
+
+/* Target metrics */
+.metrics-table { width:100%; border-collapse:collapse; font-size:13px; }
+.metrics-table th { text-align:left; padding:8px 12px; font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); }
+.metrics-table td { padding:10px 12px; border-bottom:1px solid rgba(30,30,46,0.6); }
+.metrics-table tr:last-child td { border-bottom:none; }
+.target-ok { color:var(--trader); font-family:var(--font-mono); font-weight:700; }
+.target-warn { color:var(--shared); font-family:var(--font-mono); font-weight:700; }
+.target-fail { color:var(--gate); font-family:var(--font-mono); font-weight:700; }
+
+/* Notes */
+.notes-area { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:16px; min-height:80px; font-size:13px; color:#c0c0d8; line-height:1.7; outline:none; width:100%; resize:vertical; font-family:var(--font-display); }
+.notes-area:focus { border-color:rgba(59,130,246,0.4); }
+
+footer { margin-top:60px; padding-top:24px; border-top:1px solid var(--border); font-family:var(--font-mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <a href="index.html" class="nav-back">← Volver al hub</a>
+  <div class="page-title">Spec de Estrategia</div>
+  <div class="page-sub">Template formal de especificación · El "contrato del bot" entre trader y arquitecto</div>
+
+  <div class="spec-selector">
+    <button class="spec-btn active" onclick="showSpec('obv')">OBV + MACD Div + ADX</button>
+    <button class="spec-btn" onclick="showSpec('tt')">Touch & Turn Scalper v3</button>
+    <button class="spec-btn new" onclick="showSpec('new')">+ Nueva estrategia</button>
+  </div>
+
+  <!-- SPEC: OBV + MACD -->
+  <div id="spec-obv" class="spec-doc">
+    <div class="spec-doc-header">
+      <div class="spec-doc-title-area">
+        <span class="spec-status status-live">● EN VIVO</span>
+        <div class="spec-name">OBV + MACD Divergencia + ADX</div>
+        <div class="spec-version">v1.0 · Actualizado Abril 2026 · IC Markets MT5</div>
+      </div>
+      <div class="spec-meta-chips">
+        <span class="chip">M5 / M15 / H1</span>
+        <span class="chip">21 instrumentos</span>
+        <span class="chip">MT5</span>
+        <span class="chip">Magic: 20260001</span>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Parámetros configurables</div>
+      <div class="params-grid">
+        <div class="param-item">
+          <div class="param-name">ADX Period</div>
+          <div class="param-val">14</div>
+          <div class="param-range">Rango: 10–20</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">ADX Threshold</div>
+          <div class="param-val">25</div>
+          <div class="param-range">Solo opera si ADX &gt; umbral</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">OBV Lookback</div>
+          <div class="param-val">40</div>
+          <div class="param-range">Velas M5 hacia atrás</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Swing Bars</div>
+          <div class="param-val">3</div>
+          <div class="param-range">Barras para confirmar swing</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">MACD Fast/Slow/Signal</div>
+          <div class="param-val">12/26/9</div>
+          <div class="param-range">Estándar</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">SL Multiplicador</div>
+          <div class="param-val">1.5×</div>
+          <div class="param-range">× ATR(14)</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">TP Multiplicador</div>
+          <div class="param-val">3.0×</div>
+          <div class="param-range">RR 1:2</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Max Hold</div>
+          <div class="param-val">24 velas</div>
+          <div class="param-range">M5 = 2 horas máx</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Riesgo / Trade</div>
+          <div class="param-val">2%</div>
+          <div class="param-range">Del capital disponible</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Max Posiciones</div>
+          <div class="param-val">6</div>
+          <div class="param-range">Simultáneas</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Loop Check</div>
+          <div class="param-val">30s</div>
+          <div class="param-range">Frecuencia de escaneo</div>
+        </div>
+        <div class="param-item">
+          <div class="param-name">Demo Mode</div>
+          <div class="param-val">FALSE</div>
+          <div class="param-range">Cuenta REAL activa</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Lógica de señal — Condiciones booleanas</div>
+      <div class="conditions">
+        <div class="condition-block">
+          <span class="cond-label cond-filter">H1 FILTRO</span>
+          <div class="cond-text">sesgo_bull_h1 = (+DI &gt; -DI) en H1, reindexado a M5<br>sesgo_bear_h1 = (-DI &gt; +DI) en H1, reindexado a M5</div>
+        </div>
+        <div class="condition-block">
+          <span class="cond-label cond-filter">M15 CONFIRM</span>
+          <div class="cond-text">adx_m15_ok = ADX(14) &gt; 25 en M15, reindexado a M5</div>
+        </div>
+        <div class="condition-block">
+          <span class="cond-label cond-entry">LONG</span>
+          <div class="cond-text">sesgo_bull_h1 AND adx_m15_ok AND divergencia_bullish_m5<br>divergencia_bullish = precio LL + OBV HL + MACD HL (doble divergencia)<br>divergencia_simple = precio LL + (OBV HL OR MACD HL)</div>
+        </div>
+        <div class="condition-block">
+          <span class="cond-label cond-exit" style="background:rgba(139,92,246,0.1);color:var(--bot);border-color:rgba(139,92,246,0.25)">SHORT</span>
+          <div class="cond-text">sesgo_bear_h1 AND adx_m15_ok AND divergencia_bearish_m5<br>divergencia_bearish = precio HH + OBV LH + MACD LH</div>
+        </div>
+        <div class="condition-block">
+          <span class="cond-label cond-exit">SALIDA</span>
+          <div class="cond-text">Hit TP (precio ≥ entrada + TP_mult × ATR) OR<br>Hit SL (precio ≤ entrada - SL_mult × ATR) OR<br>Timeout (≥ max_hold_bars velas M5 = 2h)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Gestión de riesgo</div>
+      <div class="risk-grid">
+        <div class="risk-item"><div class="risk-val" style="color:var(--trader)">2%</div><div class="risk-lbl">Riesgo / trade</div></div>
+        <div class="risk-item"><div class="risk-val" style="color:var(--nico)">1.5×</div><div class="risk-lbl">SL (× ATR)</div></div>
+        <div class="risk-item"><div class="risk-val" style="color:var(--nico)">3.0×</div><div class="risk-lbl">TP (× ATR)</div></div>
+        <div class="risk-item"><div class="risk-val" style="color:var(--shared)">6</div><div class="risk-lbl">Max posiciones</div></div>
+        <div class="risk-item"><div class="risk-val" style="color:var(--shared)">2h</div><div class="risk-lbl">Max hold time</div></div>
+        <div class="risk-item"><div class="risk-val" style="color:var(--gate)">IOC</div><div class="risk-lbl">Filling mode</div></div>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Métricas objetivo del backtest</div>
+      <table class="metrics-table">
+        <thead><tr><th>Métrica</th><th>Umbral mínimo</th><th>Objetivo</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Sharpe Ratio</td><td class="target-warn">&gt; 1.0</td><td class="target-ok">&gt; 2.0</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Profit Factor</td><td class="target-warn">&gt; 1.5</td><td class="target-ok">&gt; 2.0</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Max Drawdown</td><td class="target-warn">&lt; 20%</td><td class="target-ok">&lt; 10%</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Win Rate</td><td class="target-warn">&gt; 45%</td><td class="target-ok">&gt; 55%</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Trades muestra</td><td class="target-warn">&gt; 30</td><td class="target-ok">&gt; 50</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Out-of-sample validado</td><td class="target-warn">Requerido</td><td class="target-ok">Sí</td><td class="target-warn">⚠ Pendiente</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Circuit breaker & Notas del trader</div>
+      <textarea class="notes-area" rows="4">Circuit breaker: pausa automática si pérdida diaria > 5% del capital.
+Observaciones del trader: funciona mejor en índices europeos (STOXX50, DE40) en apertura de Londres.
+BTC requiere mayor spread_override. Evitar operar durante FOMC y NFP.</textarea>
+    </div>
+  </div>
+
+  <!-- SPEC: Touch & Turn -->
+  <div id="spec-tt" class="spec-doc" style="display:none">
+    <div class="spec-doc-header">
+      <div class="spec-doc-title-area">
+        <span class="spec-status status-backtest">● BACKTEST</span>
+        <div class="spec-name">Touch & Turn Scalper v3</div>
+        <div class="spec-version">v3.0 · Abril 2026 · Volume Activation 1.5×</div>
+      </div>
+      <div class="spec-meta-chips">
+        <span class="chip">100× CFD</span>
+        <span class="chip">162 símbolos</span>
+        <span class="chip">365 días</span>
+        <span class="chip">2% riesgo</span>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Parámetros configurables</div>
+      <div class="params-grid">
+        <div class="param-item"><div class="param-name">Vol. Activación</div><div class="param-val">1.5×</div><div class="param-range">× promedio rolling</div></div>
+        <div class="param-item"><div class="param-name">Leverage</div><div class="param-val">100×</div><div class="param-range">CFD</div></div>
+        <div class="param-item"><div class="param-name">Riesgo / Trade</div><div class="param-val">2%</div><div class="param-range">Del capital</div></div>
+        <div class="param-item"><div class="param-name">Universo</div><div class="param-val">3,173</div><div class="param-range">Escaneados · 201 líquidos</div></div>
+        <div class="param-item"><div class="param-name">Duración prom.</div><div class="param-val">~6m</div><div class="param-range">Por trade (scalp)</div></div>
+        <div class="param-item"><div class="param-name">Hora activación</div><div class="param-val">~17:00</div><div class="param-range">Top símbolos</div></div>
+      </div>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Métricas objetivo del backtest (365 días)</div>
+      <table class="metrics-table">
+        <thead><tr><th>Métrica</th><th>Umbral</th><th>Resultado backtest</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Win Rate promedio</td><td>&gt; 60%</td><td class="target-ok">70.9%</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Profit Factor promedio</td><td>&gt; 1.5</td><td class="target-ok">2.93</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>DD promedio</td><td>&lt; 10%</td><td class="target-ok">2.34%</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Retorno promedio</td><td>&gt; 10%</td><td class="target-ok">+24.1%</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Símbolos positivos</td><td>&gt; 80%</td><td class="target-ok">149/162 (91.9%)</td><td class="target-ok">✓ Pasa</td></tr>
+          <tr><td>Paper trading completado</td><td>Requerido</td><td class="target-warn">Pendiente</td><td class="target-warn">⚠ Gate 4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="spec-section">
+      <div class="section-label">Notas y pendientes</div>
+      <textarea class="notes-area" rows="4">Pendiente: definir lógica exacta de "Touch & Turn" con el trader (entrada en soporte/resistencia con activación de volumen).
+Pendiente: spec completo de condiciones booleanas antes de implementar bot en vivo.
+Prioridad: seleccionar top 20 símbolos del backtest para implementación inicial.</textarea>
+    </div>
+  </div>
+
+  <!-- SPEC: Nueva -->
+  <div id="spec-new" class="spec-doc" style="display:none">
+    <div class="spec-doc-header">
+      <div class="spec-doc-title-area">
+        <span class="spec-status status-paper">● BORRADOR</span>
+        <div class="spec-name" contenteditable="true" style="outline:none;border-bottom:1px dashed var(--border);padding-bottom:4px;">Nombre de la estrategia</div>
+        <div class="spec-version">v1.0 · Borrador · Fecha: <span id="hoy"></span></div>
+      </div>
+      <div class="spec-meta-chips">
+        <span class="chip" contenteditable="true">Timeframe</span>
+        <span class="chip" contenteditable="true">Broker</span>
+      </div>
+    </div>
+    <div class="spec-section">
+      <div class="section-label">Descripción de la estrategia (trader)</div>
+      <textarea class="notes-area" rows="5" placeholder="El trader describe aquí en lenguaje natural: cuándo entra, cuándo sale, qué está tratando de capturar en el mercado, intuiciones..."></textarea>
+    </div>
+    <div class="spec-section">
+      <div class="section-label">Condiciones booleanas (arquitecto formaliza)</div>
+      <textarea class="notes-area" rows="6" placeholder="Traducción a condiciones verificables:&#10;ENTRADA LONG = [condición A] AND [condición B] AND [condición C]&#10;ENTRADA SHORT = ...&#10;SALIDA = ...&#10;FILTROS = ..."></textarea>
+    </div>
+    <div class="spec-section">
+      <div class="section-label">Parámetros y valores iniciales</div>
+      <textarea class="notes-area" rows="4" placeholder="param_1 = valor (rango: min–max)&#10;param_2 = valor&#10;SL = X× ATR | TP = Y× ATR | Riesgo = Z%"></textarea>
+    </div>
+    <div class="spec-section">
+      <div class="section-label">Métricas objetivo del backtest</div>
+      <textarea class="notes-area" rows="3" placeholder="Sharpe > ? | PF > ? | Max DD < ?% | Win Rate > ?% | Muestra mínima: ? trades"></textarea>
+    </div>
+    <div class="spec-section">
+      <div class="section-label">Circuit breaker & Observaciones</div>
+      <textarea class="notes-area" rows="3" placeholder="Pausa si... | Evitar operar durante... | Observaciones del trader..."></textarea>
+    </div>
+  </div>
+
+  <footer>
+    <a href="index.html" style="color:var(--muted);text-decoration:none;">← Hub</a>
+    <span>estrategia-spec.html · Trading Bot Ops</span>
+  </footer>
+
+</div>
+<script>
+document.getElementById('hoy').textContent = new Date().toLocaleDateString('es-CL');
+function showSpec(id) {
+  document.querySelectorAll('.spec-doc').forEach(d => d.style.display = 'none');
+  document.querySelectorAll('.spec-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('spec-' + id).style.display = 'block';
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
