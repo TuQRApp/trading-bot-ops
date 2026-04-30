@@ -77,8 +77,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .rec-desc{font-size:13px;color:#4a5875;line-height:1.7;}
 .rec-response{background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:12px 14px;}
 .rec-response-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
-.rec-response-text{font-size:12px;color:var(--trader);line-height:1.6;outline:none;}
-.rec-response-text:focus{outline:none;}
+.rec-response-text{font-size:12px;color:var(--trader);line-height:1.6;outline:none;border-radius:4px;padding:2px 5px;transition:background 0.15s;min-height:1.2em;cursor:text;}
+.rec-response-text:empty::before{content:'Escribe tu respuesta…';color:var(--muted);font-style:italic;pointer-events:none;}
+.rec-response-text:hover{background:rgba(5,150,105,0.05);}
+.rec-response-text:focus{outline:none;background:rgba(5,150,105,0.08);box-shadow:0 0 0 1.5px rgba(5,150,105,0.25);}
 .badge-demo{color:#78350f;background:#fef3c7;border:2px solid #f59e0b;font-weight:800;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:5px;text-transform:uppercase;}
 .rec-card.is-demo{border:1px dashed #f59e0b;border-left:5px solid #f59e0b;background:rgba(245,158,11,0.03);}
 .obs-card.is-demo{border:1px dashed #f59e0b;border-left:5px solid #f59e0b;background:rgba(245,158,11,0.03);}
@@ -180,6 +182,31 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .notes-area:focus{border-color:rgba(59,130,246,0.35);}
 
 footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+/* ── FILE FILTER BAR (global, above tabs) ── */
+.file-filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.file-filter-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
+.file-filter-btn{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.file-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
+.file-filter-btn.ff-py.active{border-color:rgba(215,119,6,0.6);color:var(--shared);background:rgba(215,119,6,0.06);}
+
+/* ── EXPORT BAR ── */
+.export-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.btn-export{font-family:var(--font-mono);font-size:11px;padding:8px 16px;border-radius:8px;border:1px solid rgba(37,99,235,0.35);background:rgba(37,99,235,0.08);color:var(--nico);cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-export:hover{background:rgba(37,99,235,0.16);}
+.btn-export.btn-sub{font-size:10px;border-color:var(--border);background:var(--surface);color:var(--muted);}
+.btn-export.btn-sub:hover{border-color:rgba(37,99,235,0.3);color:var(--nico);}
+
+/* ── PRINT ── */
+@media print {
+  body::before,.nav-back,.tabs,.trigger-banner,.obs-filter-bar,.obs-stats,
+  .obs-filter-btn,.file-filter-bar,.export-bar,footer{display:none!important;}
+  .tab-panel{display:block!important;}
+  .wrapper{padding:16px;}
+  .file-section-header.print-hidden,.rec-card.print-hidden,
+  .obs-card.print-hidden,.arch-card.print-hidden{display:none!important;}
+  @page{margin:20mm;}
+}
 </style>
 </head>
 <body>
@@ -188,6 +215,19 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <a href="index.html" class="nav-back">← Volver al hub</a>
   <div class="page-title">Feedback & Análisis</div>
   <div class="page-sub">Herramienta del producto · 4 módulos de análisis y feedback al trader</div>
+
+  <div class="export-bar">
+    <button class="btn-export" onclick="exportReport('all')">⬇ Exportar informe completo</button>
+    <button class="btn-export btn-sub" onclick="exportReport('FILE-001')">📊 Solo HTML</button>
+    <button class="btn-export btn-sub" onclick="exportReport('FILE-002')">🐍 Solo PY</button>
+  </div>
+
+  <div class="file-filter-bar">
+    <span class="file-filter-label">VER:</span>
+    <button class="file-filter-btn active" onclick="filterByFile('all',this)">Todos los archivos</button>
+    <button class="file-filter-btn ff-html" onclick="filterByFile('fsh-html',this)">📊 obv_macd_adx_all_resultado.html</button>
+    <button class="file-filter-btn ff-py" onclick="filterByFile('fsh-py',this)">🐍 obv_macd_adx_bot_final.py</button>
+  </div>
 
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('backtest',this)">1 · Calidad Backtest</button>
@@ -313,37 +353,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <span class="fsh-count">Sin contenido — análisis de código en módulo 4</span>
     </div>
 
-    <div class="file-section-header fsh-csv" style="margin-top:16px;">
-      <div class="fsh-icon ftype-csv">📋</div>
-      <span class="fsh-name">real trades.csv</span>
-      <span class="fsh-badge">FILE-003</span>
-      <div class="fsh-line"></div>
-      <span class="fsh-count">3 trades · análisis bloqueado</span>
-    </div>
-    <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--gate);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚠️ Análisis bloqueado — símbolos no coinciden con el bot</div>
-      <div style="font-size:13px;color:#4a5875;line-height:1.7;">Los 3 trades (EURUSD, GBPUSD, USDJPY) no pertenecen al universo del bot OBV+MACD+ADX. El archivo parece incluir trades manuales o de otra estrategia. Para comparar con el backtest exportar el historial MT5 filtrado por magic number <code>20260001</code>.</div>
-    </div>
-    <div class="section" style="margin-bottom:0">
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Trades en el archivo</div>
-      <table style="width:100%;font-size:12px;border-collapse:collapse;">
-        <thead><tr style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;">
-          <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">Ticket</th>
-          <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">Símbolo</th>
-          <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">Lado</th>
-          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">Vol</th>
-          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">SL</th>
-          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">TP</th>
-          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">Profit neto</th>
-        </tr></thead>
-        <tbody>
-          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">T1002345</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--muted);">EURUSD ⚠️</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--trader);">BUY</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">0.10</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);color:var(--gate);">Sin SL</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">—</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+$24.00</td></tr>
-          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">T1002346</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--muted);">GBPUSD ⚠️</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--gate);">SELL</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">0.20</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">1.25500</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">1.24000</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+$97.50</td></tr>
-          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">T1002347</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--muted);">USDJPY ⚠️</td><td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--trader);">BUY</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">0.50</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">149.000</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">152.000</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+$143.80</td></tr>
-        </tbody>
-      </table>
-    </div>
-
   </div>
 
   <!-- ══════════════════════════════════════ -->
@@ -465,31 +474,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
-      <div class="file-section-header fsh-csv">
-        <div class="fsh-icon ftype-csv">📋</div>
-        <span class="fsh-name">real trades.csv</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">1 recomendación</span>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-06</span>
-          <div class="rec-title">Exportar historial MT5 filtrado por magic number del bot</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El CSV actual mezcla trades del bot con trades manuales u otras estrategias (EURUSD, GBPUSD, USDJPY no están en CONFIG del bot). Para análisis válido, exportar el historial MT5 filtrado por magic number <code>20260001</code>. En MT5: History → clic derecho → filtrar por Expert o por comentario "OBV_MACD_ADX".</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Respuesta del trader</div>
-          <div class="rec-response-text">—</div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -597,78 +581,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
-      <div class="file-section-header fsh-csv">
-        <div class="fsh-icon ftype-csv">📋</div>
-        <span class="fsh-name">real trades.csv</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">4 observaciones</span>
-      </div>
-
-      <!-- OBS-007 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="csv" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>10:15</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Símbolos no corresponden al bot — posibles trades manuales</div>
-          <div class="obs-text">EURUSD, GBPUSD y USDJPY no están en CONFIG["symbols"] del bot OBV+MACD+ADX. El bot opera índices y BTCUSD. Causa probable: historial MT5 exportado sin filtrar por magic number 20260001, mezclando trades manuales con los del bot.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">real trades.csv · tickets T1002345, T1002346, T1002347</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-008 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="csv" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>10:15</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">T1002345 abierto sin Stop Loss</div>
-          <div class="obs-text">La posición EURUSD (BUY 0.10 @ 1.08500) tiene SL=0. El bot siempre establece SL=1.5×ATR al abrir. Si esta operación fuera del bot, es una ejecución incorrecta. Si es un trade manual, el trader operó sin protección de stop.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">real trades.csv · ticket T1002345 · EURUSD</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-009 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="csv" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>10:15</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Dos posiciones cerraron antes de alcanzar TP</div>
-          <div class="obs-text">T1002346 GBPUSD cerró en 1.24500 vs TP declarado 1.24000. T1002347 USDJPY cerró en 150.500 vs TP 152.000. El bot cierra en TP, SL o timeout — no en precios intermedios. Probable cierre manual antes de dejar correr la operación, lo que reduce la expectativa promedio vs el backtest.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">real trades.csv · tickets T1002346, T1002347</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-010 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="csv" data-accion="no">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>10:15</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Muestra insuficiente para métricas estadísticas</div>
-          <div class="obs-text">3 trades, 0 perdedores. WR=100% y PF=∞ son estadísticamente inválidos con n=3. Se necesitan mínimo 30 trades del bot (filtrados por magic number) para calcular métricas confiables y comparar con el backtest.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span class="obs-context">real trades.csv · 3 trades totales</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -685,7 +597,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     </div>
     <div class="last-updated has-data" id="lu-arquitectura">
       <span class="lu-label">Último análisis:</span>
-      <span>2026-04-30 · 09:31 · obv_macd_adx_bot_final.py · 1013 líneas · 13 hallazgos</span>
+      <span>2026-04-30 · 11:38 · obv_macd_adx_bot_final.py · 1013 líneas · 13 hallazgos</span>
     </div>
     <div class="arch-list">
 
@@ -906,14 +818,6 @@ if sym in syms_en_pos:<br>
         </div>
       </div>
 
-      <div class="file-section-header fsh-csv">
-        <div class="fsh-icon ftype-csv">📋</div>
-        <span class="fsh-name">real trades.csv</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">No aplica — archivo de datos, sin código fuente</span>
-      </div>
-
     </div>
   </div>
 
@@ -924,6 +828,47 @@ if sym in syms_en_pos:<br>
 
 </div>
 <script>
+function filterByFile(fileClass, btn) {
+  document.querySelectorAll('.file-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const headers = document.querySelectorAll('.file-section-header');
+  if (fileClass === 'all') {
+    headers.forEach(h => {
+      h.style.display = '';
+      let n = h.nextElementSibling;
+      while (n && !n.classList.contains('file-section-header')) { n.style.display = ''; n = n.nextElementSibling; }
+    });
+    return;
+  }
+  headers.forEach(h => {
+    const match = h.classList.contains(fileClass);
+    h.style.display = match ? '' : 'none';
+    let n = h.nextElementSibling;
+    while (n && !n.classList.contains('file-section-header')) {
+      n.style.display = match ? '' : 'none';
+      n = n.nextElementSibling;
+    }
+  });
+}
+
+function exportReport(fileId) {
+  const fileClassMap = {'FILE-001':'fsh-html','FILE-002':'fsh-py'};
+  if (fileId !== 'all') {
+    const fc = fileClassMap[fileId];
+    document.querySelectorAll('.file-section-header').forEach(h => {
+      const match = fc && h.classList.contains(fc);
+      h.classList.toggle('print-hidden', !match);
+      let n = h.nextElementSibling;
+      while (n && !n.classList.contains('file-section-header')) {
+        n.classList.toggle('print-hidden', !match);
+        n = n.nextElementSibling;
+      }
+    });
+  }
+  window.print();
+  setTimeout(() => document.querySelectorAll('.print-hidden').forEach(el => el.classList.remove('print-hidden')), 1500);
+}
+
 function showTab(id, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -976,6 +921,19 @@ window.addEventListener('DOMContentLoaded', function() {
     counts[file][cat]++;
   });
   localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
+});
+
+// Trader comments — contenteditable + localStorage
+window.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.rec-card').forEach(card => {
+    const key = card.querySelector('.rec-num')?.textContent?.trim();
+    const el = card.querySelector('.rec-response-text');
+    if (!key || !el) return;
+    el.setAttribute('contenteditable', 'true');
+    const saved = localStorage.getItem('trader_comment_' + key);
+    if (saved !== null && saved !== '') el.textContent = saved;
+    el.addEventListener('input', () => localStorage.setItem('trader_comment_' + key, el.textContent));
+  });
 });
 
 // Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
