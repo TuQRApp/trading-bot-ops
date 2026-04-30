@@ -203,13 +203,10 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .neg-role-badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(5,150,105,0.1);color:var(--trader);border:1px solid rgba(5,150,105,0.25);}
 .neg-role-prod{background:rgba(37,99,235,0.1);color:var(--nico);border-color:rgba(37,99,235,0.25);}
 .neg-role-shared{background:rgba(215,119,6,0.1);color:var(--shared);border-color:rgba(215,119,6,0.25);}
-.neg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:14px;}
-.neg-field{display:flex;flex-direction:column;gap:6px;}
-.neg-field-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-.neg-field-value{font-size:13px;color:var(--text);border-radius:6px;padding:8px 10px;border:1px solid var(--border);background:var(--bg);cursor:text;transition:all 0.15s;min-height:2.2em;line-height:1.6;}
-.neg-field-value:hover{border-color:rgba(37,99,235,0.3);}
-.neg-field-value:focus{outline:none;border-color:rgba(37,99,235,0.5);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,0.07);}
-.neg-field-value.neg-notes{min-height:80px;}
+.neg-ctx-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px;}
+.neg-ctx-table td{padding:7px 10px;border-bottom:1px solid var(--border);}
+.neg-ctx-table td:first-child{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;width:220px;}
+.neg-ctx-table td:last-child{color:var(--text);font-weight:600;}
 .neg-hint{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:8px 12px;border:1px dashed var(--border);border-radius:6px;margin-top:4px;}
 .neg-eval-list{display:flex;flex-direction:column;gap:12px;}
 .neg-eval-card{border:1px solid var(--border);border-left:3px solid var(--nico);border-radius:0 10px 10px 0;padding:16px 20px;}
@@ -863,55 +860,40 @@ if sym in syms_en_pos:<br>
   <div id="tab-negocio" class="tab-panel">
 
     <div class="trigger-banner">
-      <span class="trigger-banner-label">Flujo</span>
+      <span class="trigger-banner-label">Se actualiza con</span>
       <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-chat">TRADER</span> Completa el contexto del ciclo</div>
-        <div class="trigger-chip"><span class="tc-type tc-py">PRODUCTO</span> Lee el contexto y completa la evaluación</div>
-        <div class="trigger-chip"><span class="tc-type tc-json">AMBOS</span> Registran la decisión de ciclo</div>
+        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> negocio_contexto.json — contexto del ciclo completado por el trader</div>
       </div>
     </div>
     <div class="last-updated" id="lu-negocio">
       <span class="lu-label">Estado:</span>
-      <span>Sin evaluación — trader debe completar el contexto del ciclo</span>
+      <span>Sin evaluación — subir negocio_contexto.json</span>
     </div>
 
-    <!-- SECCIÓN 1: Contexto del ciclo (trader) -->
+    <!-- SECCIÓN 1: Contexto del ciclo -->
     <div class="neg-section">
       <div class="neg-section-title">
         Contexto del ciclo
         <span class="neg-role-badge">Trader</span>
       </div>
-      <div class="neg-grid">
-        <div class="neg-field">
-          <div class="neg-field-label">Capital comprometido (USD)</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="capital"></div>
-        </div>
-        <div class="neg-field">
-          <div class="neg-field-label">Broker</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="broker"></div>
-        </div>
-        <div class="neg-field">
-          <div class="neg-field-label">Comisión promedio por trade (USD)</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="comision"></div>
-        </div>
-        <div class="neg-field">
-          <div class="neg-field-label">Spread promedio real (pips)</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="spread"></div>
-        </div>
-        <div class="neg-field">
-          <div class="neg-field-label">Período evaluado</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="periodo"></div>
-        </div>
-        <div class="neg-field">
-          <div class="neg-field-label">Benchmark de comparación</div>
-          <div class="neg-field-value" contenteditable="true" data-neg-key="benchmark"></div>
-        </div>
+
+      <div id="neg-ctx-empty">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:10px;">Completa este archivo y súbelo como <strong>negocio_contexto.json</strong>:</div>
+        <pre class="arch-code" style="white-space:pre;">{
+  "periodo":                "AAAA-MM-DD / AAAA-MM-DD",
+  "capital_usd":            0,
+  "broker":                 "",
+  "comision_por_trade_usd": 0,
+  "spread_promedio_pips":   0,
+  "benchmark":              "ej: S&amp;P 500 mensual",
+  "notas":                  ""
+}</pre>
       </div>
-      <div class="neg-field">
-        <div class="neg-field-label">Notas del trader</div>
-        <div class="neg-field-value neg-notes" contenteditable="true" data-neg-key="notas_trader"></div>
+
+      <!-- Producto inserta tabla de contexto parseado aquí -->
+      <div id="neg-ctx-content" style="display:none;">
       </div>
-      <div class="neg-hint">Una vez completado, comparte con Producto para que evalúe.</div>
+
     </div>
 
     <!-- SECCIÓN 2: Evaluación comercial (Producto) -->
@@ -924,10 +906,10 @@ if sym in syms_en_pos:<br>
       <div class="module-empty-state" id="neg-eval-empty">
         <div class="mes-icon">📊</div>
         <div class="mes-title">Sin evaluación todavía</div>
-        <div class="mes-desc">Completa el contexto del ciclo y comparte con Producto.</div>
+        <div class="mes-desc">Sube negocio_contexto.json para iniciar el análisis.</div>
       </div>
 
-      <!-- Producto inserta neg-eval-cards aquí cuando el trader comparte el contexto -->
+      <!-- Producto inserta neg-eval-cards aquí -->
       <div class="neg-eval-list" id="neg-eval-list" style="display:none;">
       </div>
 
@@ -1089,15 +1071,12 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Negocio — campos del trader con localStorage
+// Negocio — mostrar secciones si ya tienen contenido (insertado por Producto)
 window.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('[data-neg-key]').forEach(el => {
-    const key = 'neg_field_' + el.dataset.negKey;
-    const saved = localStorage.getItem(key);
-    if (saved !== null && saved !== '') el.textContent = saved;
-    el.addEventListener('input', () => localStorage.setItem(key, el.textContent));
-  });
-  // Mostrar eval y decisiones si ya tienen contenido
+  if (document.querySelector('#neg-ctx-content *')) {
+    document.getElementById('neg-ctx-empty').style.display = 'none';
+    document.getElementById('neg-ctx-content').style.display = '';
+  }
   if (document.querySelector('#neg-eval-list .neg-eval-card')) {
     document.getElementById('neg-eval-empty').style.display = 'none';
     document.getElementById('neg-eval-list').style.display = '';
