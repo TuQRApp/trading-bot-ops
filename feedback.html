@@ -121,6 +121,20 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .last-updated.has-data::before{background:var(--trader);}
 .lu-label{color:var(--text);font-weight:700;}
 
+/* ── TRIGGER BANNER ── */
+.trigger-banner{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;padding:14px 18px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);border-radius:10px;margin-bottom:24px;}
+.trigger-banner-label{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--nico);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding-top:1px;}
+.trigger-list{display:flex;flex-wrap:wrap;gap:8px;}
+.trigger-chip{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);}
+.trigger-chip .tc-type{font-weight:700;padding:1px 5px;border-radius:3px;font-size:9px;}
+.tc-py   {background:rgba(215,119,6,0.12); color:var(--shared);}
+.tc-json {background:rgba(37,99,235,0.12); color:var(--nico);}
+.tc-log  {background:rgba(124,58,237,0.12);color:var(--bot);}
+.tc-csv  {background:rgba(5,150,105,0.12); color:var(--trader);}
+.tc-html {background:rgba(37,99,235,0.08); color:var(--nico);}
+.tc-png  {background:rgba(220,38,38,0.08); color:var(--gate);}
+.tc-chat {background:rgba(30,45,110,0.06); color:var(--text);}
+
 /* ── MODULE 4: Architecture feedback ── */
 .arch-list{display:flex;flex-direction:column;gap:14px;}
 .arch-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
@@ -159,9 +173,17 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- ══════════════════════════════════════ -->
   <div id="tab-backtest" class="tab-panel active">
 
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Se actualiza con</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — trades exportados desde MT5</div>
+        <div class="trigger-chip"><span class="tc-type tc-html">HTML</span> backtest.html — reporte generado por el bot</div>
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest.py — código del backtest (análisis de metodología)</div>
+      </div>
+    </div>
     <div class="last-updated" id="lu-backtest">
       <span class="lu-label">Métricas:</span>
-      <span>Backtest histórico 60 días · Pendiente análisis de archivo real · Sube <strong>historial_trades.csv</strong> o <strong>backtest.html</strong> para actualizar</span>
+      <span>Backtest histórico 60 días · Pendiente archivo real · Sube historial_trades.csv o backtest.html para actualizar</span>
     </div>
     <div class="strategy-selector">
       <button class="strat-btn active" onclick="showQuality('obv',this)">OBV + MACD + ADX</button>
@@ -277,6 +299,15 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 2: RECOMENDACIONES                -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-recomendaciones" class="tab-panel">
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Se actualiza con</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — hallazgos de código generan recomendaciones</div>
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — métricas reales vs. esperadas</div>
+        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> bot_estado.json — comportamiento en vivo</div>
+        <div class="trigger-chip"><span class="tc-type tc-chat">CHAT</span> Cualquier comentario tuyo sobre el sistema</div>
+      </div>
+    </div>
     <div class="rec-toolbar">
       <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Recomendaciones del arquitecto → trader</span>
     </div>
@@ -357,6 +388,18 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 3: OBSERVACIONES EN VIVO          -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-live" class="tab-panel">
+
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Se actualiza con</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-log">LOG</span> bot.log — ciclos, señales, errores, gaps de actividad</div>
+        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> bot_estado.json — snapshot del estado actual del bot</div>
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — comportamiento real vs. esperado</div>
+        <div class="trigger-chip"><span class="tc-type tc-png">PNG</span> Screenshot del gráfico — análisis visual de entradas</div>
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — hallazgos de lógica o arquitectura</div>
+        <div class="trigger-chip"><span class="tc-type tc-chat">CHAT</span> Cualquier comentario tuyo sobre el bot en vivo</div>
+      </div>
+    </div>
 
     <!-- Stats -->
     <div class="obs-stats">
@@ -484,6 +527,13 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 4: ARQUITECTURA / CÓDIGO          -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-arquitectura" class="tab-panel">
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Se actualiza con</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — auditoría completa de lógica, riesgo y arquitectura</div>
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest.py — metodología, look-ahead bias, modelo de costos</div>
+      </div>
+    </div>
     <div class="last-updated has-data" id="lu-arquitectura">
       <span class="lu-label">Último análisis:</span>
       <span>2026-04-29 · obv_macd_adx_bot_final.py · 1013 líneas · 10 hallazgos</span>
