@@ -216,17 +216,15 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="page-title">Feedback & Análisis</div>
   <div class="page-sub">Herramienta del producto · 4 módulos de análisis y feedback al trader</div>
 
-  <div class="export-bar">
+  <div class="export-bar" id="export-bar">
     <button class="btn-export" onclick="exportReport('all')">⬇ Exportar informe completo</button>
-    <button class="btn-export btn-sub" onclick="exportReport('FILE-001')">📊 Solo HTML</button>
-    <button class="btn-export btn-sub" onclick="exportReport('FILE-002')">🐍 Solo PY</button>
+    <!-- botones por archivo: generados por JS desde los file-section-header del DOM -->
   </div>
 
-  <div class="file-filter-bar">
+  <div class="file-filter-bar" id="file-filter-bar">
     <span class="file-filter-label">VER:</span>
-    <button class="file-filter-btn active" onclick="filterByFile('all',this)">Todos los archivos</button>
-    <button class="file-filter-btn ff-html" onclick="filterByFile('fsh-html',this)">📊 obv_macd_adx_all_resultado.html</button>
-    <button class="file-filter-btn ff-py" onclick="filterByFile('fsh-py',this)">🐍 obv_macd_adx_bot_final.py</button>
+    <button class="file-filter-btn active" id="ff-all" onclick="filterByFile('all',this)">Todos los archivos</button>
+    <!-- botones por archivo: generados por JS desde los file-section-header del DOM -->
   </div>
 
   <div class="tabs">
@@ -851,10 +849,12 @@ function filterByFile(fileClass, btn) {
   });
 }
 
+// fileId → fshClass (ej: 'FILE-001' → 'fsh-html') — poblado al cargar
+const fileRegistry = {};
+
 function exportReport(fileId) {
-  const fileClassMap = {'FILE-001':'fsh-html','FILE-002':'fsh-py'};
   if (fileId !== 'all') {
-    const fc = fileClassMap[fileId];
+    const fc = fileRegistry[fileId];
     document.querySelectorAll('.file-section-header').forEach(h => {
       const match = fc && h.classList.contains(fc);
       h.classList.toggle('print-hidden', !match);
@@ -921,6 +921,37 @@ window.addEventListener('DOMContentLoaded', function() {
     counts[file][cat]++;
   });
   localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
+});
+
+// Construir botones de filtro y export dinámicamente desde los file-section-header presentes
+window.addEventListener('DOMContentLoaded', function() {
+  const seen = new Set();
+  document.querySelectorAll('.file-section-header').forEach(h => {
+    const fileId = h.querySelector('.fsh-badge')?.textContent?.trim();
+    if (!fileId || seen.has(fileId)) return;
+    seen.add(fileId);
+    const name = h.querySelector('.fsh-name')?.textContent?.trim() || fileId;
+    const icon = h.querySelector('.fsh-icon')?.textContent?.trim() || '📄';
+    const fshClass = [...h.classList].find(c => c.startsWith('fsh-'));
+    fileRegistry[fileId] = fshClass;
+
+    // Botón de filtro
+    const filterBar = document.getElementById('file-filter-bar');
+    const fb = document.createElement('button');
+    fb.className = 'file-filter-btn';
+    fb.textContent = icon + ' ' + name;
+    fb.onclick = function() { filterByFile(fshClass, fb); };
+    filterBar.appendChild(fb);
+
+    // Botón de export
+    const exportBar = document.getElementById('export-bar');
+    const eb = document.createElement('button');
+    eb.className = 'btn-export btn-sub';
+    const ext = name.includes('.') ? name.split('.').pop().toUpperCase() : fileId;
+    eb.textContent = icon + ' Solo ' + ext;
+    eb.onclick = function() { exportReport(fileId); };
+    exportBar.appendChild(eb);
+  });
 });
 
 // Trader comments — contenteditable + localStorage
