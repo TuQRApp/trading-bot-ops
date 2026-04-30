@@ -654,7 +654,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
       <!-- ── Hallazgos reales 2026-04-29 · obv_macd_adx_bot_final.py ── -->
 
-      <div class="arch-card">
+      <div class="arch-card" id="arch-bugs">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 1009</span>
           <span class="arch-title">Print de inicio dice "3 posiciones" — CONFIG tiene 6</span>
@@ -712,7 +712,7 @@ if resultado and not resultado.get("demo") and resultado.retcode == mt5.TRADE_RE
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" id="arch-riesgos">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Riesgo · Líneas 732-737</span>
           <span class="arch-title">Señales de barras anteriores pueden re-dispararse</span>
@@ -775,7 +775,7 @@ return pd.concat([hl, hc, lc], axis=1).max(axis=1).ewm(span=period, adjust=False
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" id="arch-ausencias">
         <div class="arch-header">
           <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec</span>
           <span class="arch-title">Circuit breakers no implementados</span>
@@ -920,6 +920,24 @@ function filterObs(origin, btn) {
   document.getElementById('obs-resuelta-count').textContent = resuelta;
   document.getElementById('obs-solo-count').textContent = solo;
 }
+
+// Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
+window.addEventListener('DOMContentLoaded', function() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return;
+  const tabMap = {
+    'arquitectura': 'arquitectura', 'arch-bugs': 'arquitectura',
+    'arch-riesgos': 'arquitectura', 'arch-ausencias': 'arquitectura',
+    'recomendaciones': 'recomendaciones', 'live': 'live', 'backtest': 'backtest'
+  };
+  const tabId = tabMap[hash];
+  if (tabId) {
+    const btn = document.querySelector(`.tab-btn[onclick*="'${tabId}'"]`);
+    if (btn) showTab(tabId, btn);
+    const target = document.getElementById(hash);
+    if (target) setTimeout(() => target.scrollIntoView({behavior:'smooth', block:'start'}), 200);
+  }
+});
 </script>
 </body>
 </html>
