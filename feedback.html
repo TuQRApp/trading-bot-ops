@@ -498,216 +498,208 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     </div>
     <div class="last-updated has-data" id="lu-arquitectura">
       <span class="lu-label">Último análisis:</span>
-      <span>2026-04-29 · obv_macd_adx_bot_final.py · 1013 líneas · 10 hallazgos</span>
+      <span>2026-04-30 · obv_macd_adx_bot_final.py · 1013 líneas · 13 hallazgos</span>
     </div>
     <div class="arch-list">
 
-      <!-- ── Hallazgos reales 2026-04-29 · obv_macd_adx_bot_final.py ── -->
+      <!-- ── Hallazgos · obv_macd_adx_bot_final.py · 2026-04-30 ── -->
 
-      <div class="arch-card" data-file="FILE-001" id="arch-bugs">
+      <div class="arch-card" data-file="FILE-002" id="arch-bugs">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 1009</span>
-          <span class="arch-title">Print de inicio dice "3 posiciones" — CONFIG tiene 6</span>
+          <span class="arch-title">Print hardcodeado: "3 posiciones" vs CONFIG["max_positions"] = 6</span>
         </div>
-        <div class="arch-desc">El mensaje de inicio imprime "máx 3 posiciones" pero CONFIG["max_positions"] es 6. Dato falso en consola desde el primer ciclo. Menor, pero genera confusión al monitorear.</div>
+        <div class="arch-desc">El mensaje de arranque imprime "máx 3 posiciones" pero <code>CONFIG["max_positions"]</code> es 6. Dato falso en consola desde el primer ciclo.</div>
         <div class="arch-code">
 # Línea 1009 — incorrecto:<br>
-print("🔴 CUENTA REAL | 2% riesgo/trade | máx 3 posiciones | ...")<br>
+print("... máx 3 posiciones ...")<br>
 <br>
-# CONFIG línea 90 — el valor real:<br>
-"max_positions": 6<br>
-<br>
-# Fix: usar la variable directamente:<br>
-print(f"🔴 CUENTA REAL | {CONFIG['risk_pct']*100:.0f}% riesgo | máx {CONFIG['max_positions']} posiciones | ...")
+# Fix:<br>
+print(f"... máx {CONFIG['max_positions']} posiciones ...")
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 276-277</span>
-          <span class="arch-title">Divergencia simple entra igual que doble divergencia</span>
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 273–277 / 285–290</span>
+          <span class="arch-title">Divergencia simple produce la misma señal que la doble</span>
         </div>
-        <div class="arch-desc">Cuando solo OBV O solo MACD divergen (no ambos), el bot abre posición con el mismo lotaje y riesgo que si fuera doble divergencia. El comentario dice "media señal" pero el código no lo refleja. Esto infla la cantidad de trades y degrada la calidad promedio de las señales.</div>
+        <div class="arch-desc">Cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo valor de señal (1/-1) que una doble divergencia confirmada. El nombre del bot dice "Doble Divergencia" pero en práctica opera con OR, no AND.</div>
         <div class="arch-code">
-# Líneas 275-278 — actual (problemático):<br>
+# Actual:<br>
 if precio_ll and obv_hl and macd_hl:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1<br>
+&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # doble ✅<br>
 elif precio_ll and (obv_hl or macd_hl):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # ← mismo valor, mismo riesgo<br>
+&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # simple = mismo resultado ❌<br>
 <br>
-# Opciones:<br>
-# A) Usar valor diferente (ej: 0.5) y filtrar en construir_señales()<br>
-# B) Eliminar el elif y solo entrar con doble divergencia confirmada<br>
-# Recomendación: opción B, más conservadora y alineada con el nombre del bot
+# Fix: eliminar el elif (solo operar con doble divergencia)
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 963-966</span>
-          <span class="arch-title">n_pos se incrementa antes de confirmar que la orden fue aceptada</span>
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 962–966</span>
+          <span class="arch-title">n_pos se incrementa antes de confirmar que MT5 aceptó la orden</span>
         </div>
-        <div class="arch-desc">Después de abrir_orden(), el bot hace n_pos += 1 y syms_en_pos.add(sym) incluso si la orden falla por ORDER_FILLING_IOC incompatible u otro error. El resultado de abrir_orden() se evalúa como truthy pero el retcode puede no ser DONE. En ese ciclo el bot cree tener una posición más de las que realmente tiene.</div>
+        <div class="arch-desc"><code>abrir_orden()</code> devuelve <code>{"demo": True}</code> en modo demo o un objeto MT5 en real. Si la evaluación es truthy pero el retcode no es DONE, el bot cuenta una posición inexistente hasta el siguiente ciclo.</div>
         <div class="arch-code">
-# Líneas 962-966 — actual:<br>
-resultado = abrir_orden(sym, sig, precio, atr_v, log)<br>
-if resultado:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;n_pos += 1        # ← se incrementa aunque orden falle<br>
-&nbsp;&nbsp;&nbsp;&nbsp;trades_hoy += 1<br>
-&nbsp;&nbsp;&nbsp;&nbsp;syms_en_pos.add(sym)<br>
+# Actual:<br>
+if resultado:   # truthy incluso si la orden falla<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_pos += 1<br>
 <br>
-# Fix: verificar retcode antes de incrementar<br>
-if resultado and not resultado.get("demo") and resultado.retcode == mt5.TRADE_RETCODE_DONE:<br>
+# Fix:<br>
+if resultado and (resultado.get("demo") or resultado.retcode == mt5.TRADE_RETCODE_DONE):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;n_pos += 1
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001" id="arch-riesgos">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Riesgo · Líneas 732-737</span>
-          <span class="arch-title">Señales de barras anteriores pueden re-dispararse</span>
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 66 y 91</span>
+          <span class="arch-title">risk_pct duplicado en CONFIG — el segundo sobreescribe al primero en silencio</span>
         </div>
-        <div class="arch-desc">get_signal_live() busca señal en las últimas 4 barras cerradas (range(-4,-1)). Si en el ciclo anterior ya abrió posición por una señal en la barra -3, en el ciclo siguiente esa misma barra sigue siendo la -3 (o -4). No hay tracking de qué barras ya generaron órdenes. El filtro syms_en_pos lo mitiga, pero solo mientras la posición esté abierta.</div>
+        <div class="arch-desc">Python acepta claves duplicadas en dict literal; el último valor gana. Hoy ambas son 0.02, pero editar una sin ver la otra hace correr el bot con riesgo incorrecto sin ningún error.</div>
         <div class="arch-code">
-# Fix recomendado: registrar el índice (timestamp) de la última señal procesada por símbolo<br>
-_ultima_señal = {}  # sym → timestamp de la señal ejecutada<br>
+# Línea 66 (sección Riesgo):<br>
+"risk_pct": 0.02,   # ← primera definición<br>
+...<br>
+# Línea 91 (sección Bot):<br>
+"risk_pct": 0.02,   # ← sobreescribe, Python no avisa<br>
 <br>
-# En get_signal_live(), retornar también el timestamp de la barra señal<br>
-# En run_bot(), verificar que el timestamp sea distinto al último procesado
+# Fix: eliminar la de línea 66
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002" id="arch-riesgos">
         <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 144, 150</span>
-          <span class="arch-title">except: pass silencia errores críticos de MT5</span>
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 143–153</span>
+          <span class="arch-title">bare except: pass silencia errores críticos de MT5</span>
         </div>
-        <div class="arch-desc">Dos bloques try/except sin tipo en get_costos_reales() tragan cualquier excepción, incluyendo pérdida de conexión con MT5 o errores de tipo inesperados. El fallback a spread genérico ($5 USD) se activa sin ningún aviso en el log.</div>
+        <div class="arch-desc">Dos bloques <code>except: pass</code> en <code>get_costos_reales()</code> tragan cualquier excepción. Si la conexión con MT5 falla, el bot usa spread genérico ($5 USD) sin ningún aviso en el log.</div>
         <div class="arch-code">
-# Actual — líneas 144 y 150:<br>
+# Actual:<br>
 except: pass<br>
 <br>
 # Fix:<br>
 except Exception as e:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.warning(f"{symbol}: error obteniendo costos reales — {e}. Usando fallback.")
+&nbsp;&nbsp;&nbsp;&nbsp;log.warning(f"{symbol}: error costos reales — {e}. Usando fallback.")
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · Línea 66 y 91</span>
-          <span class="arch-title">risk_pct definido dos veces en CONFIG</span>
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 730–737</span>
+          <span class="arch-title">Señales de hasta 4 barras M5 atrás pueden re-dispararse</span>
         </div>
-        <div class="arch-desc">CONFIG tiene "risk_pct": 0.02 en la línea 66 (sección riesgo) y otra vez en la línea 91 (sección bot). Python usa el último valor. Hoy ambos son iguales, pero si alguien edita uno sin ver el otro el bot corre con el riesgo equivocado en silencio.</div>
+        <div class="arch-desc"><code>get_signal_live()</code> busca señal en las últimas 4 barras cerradas. Una divergencia detectada hace 15 minutos sigue siendo "válida" para el bot en el ciclo siguiente. <code>syms_en_pos</code> lo mitiga, pero solo mientras la posición esté abierta.</div>
         <div class="arch-code">
-# Línea 66:<br>
-"risk_pct": 0.02,   # ← primera definición<br>
-...<br>
-# Línea 91:<br>
-"risk_pct": 0.02,   # ← sobreescribe la anterior<br>
-<br>
-# Fix: eliminar la de línea 66, dejar solo la de la sección Bot
+# Fix: registrar el timestamp de la última señal ejecutada por símbolo<br>
+_ultima_señal = {}  # sym → timestamp de la barra señal<br>
+# En run_bot(): verificar que timestamp != _ultima_señal[sym]<br>
+# antes de abrir nueva orden
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · calc_atr()</span>
-          <span class="arch-title">ATR usa SMA en backtest, EMA en live — resultados divergen</span>
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Línea 92</span>
+          <span class="arch-title">demo_mode: False por defecto — arranque directo en cuenta real</span>
         </div>
-        <div class="arch-desc">calc_atr() usa rolling(period).mean() (media simple) mientras todos los demás indicadores usan ewm() (media exponencial). El ATR que calcula el backtest es diferente al que calcula el bot en vivo. Esto provoca que el SL y TP reales sean distintos a los del backtest, contribuyendo a la diferencia entre PF simulado y real.</div>
+        <div class="arch-desc">Correr el script sin cambiar CONFIG ejecuta órdenes reales inmediatamente. No hay confirmación de arranque ni flag CLI para activar demo. Un error al editar el archivo puede costar dinero real.</div>
         <div class="arch-code">
-# Actual — línea 204:<br>
-return pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(period).mean()<br>
-<br>
-# Consistente con el resto del código (EMA):<br>
-return pd.concat([hl, hc, lc], axis=1).max(axis=1).ewm(span=period, adjust=False).mean()
+# Fix: leer de argumento CLI<br>
+import argparse<br>
+parser = argparse.ArgumentParser()<br>
+parser.add_argument("--demo", action="store_true")<br>
+args = parser.parse_args()<br>
+CONFIG["demo_mode"] = args.demo
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001" id="arch-ausencias">
+      <div class="arch-card" data-file="FILE-002" id="arch-ausencias">
         <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec</span>
-          <span class="arch-title">Circuit breakers no implementados</span>
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Instrumentos</span>
+          <span class="arch-title">21 instrumentos en live vs 40 en el backtest evaluado</span>
         </div>
-        <div class="arch-desc">La Spec de Estrategia menciona circuit breakers como condición de parada automática. En el código no existe ninguna lógica de: parada si drawdown diario supera X%, parada si N trades consecutivos son pérdida, ni restricción de horario de baja liquidez. El bot opera 24/7 sin límite de pérdida diaria.</div>
+        <div class="arch-desc">El bot en vivo corre sobre 21 instrumentos; el backtest evaluado corre sobre 40. Los instrumentos del backtest incluyen US30, JP225, AUS200, FR40 y otros que no están en CONFIG del bot. Las métricas del backtest no son representativas del bot real.</div>
         <div class="arch-code">
-# Estructura mínima a agregar en run_bot():<br>
-MAX_DD_DIARIO = 0.05   # 5% del balance<br>
-balance_inicio_dia = account.balance<br>
-if (balance_inicio_dia - account.equity) / balance_inicio_dia > MAX_DD_DIARIO:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.warning("⛔ Circuit breaker: DD diario superado. Pausando.")<br>
+# CONFIG["symbols"] live — 21 instrumentos<br>
+# Backtest HTML — 40 instrumentos (US30, JP225, AUS200, FR40...)<br>
+# Acción: alinear ambos universos o documentar la diferencia explícitamente
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Circuit Breakers</span>
+          <span class="arch-title">Sin parada automática por drawdown diario ni trades consecutivos</span>
+        </div>
+        <div class="arch-desc">No existe lógica de parada si el DD diario supera X%, si hay N trades consecutivos perdedores, ni restricciones de horario de baja liquidez. El bot opera 24/7 sin límite de pérdida diaria.</div>
+        <div class="arch-code">
+# Estructura mínima en run_bot():<br>
+MAX_DD_DIARIO = 0.05<br>
+if (balance_ini - account.equity) / balance_ini > MAX_DD_DIARIO:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.warning("⛔ Circuit breaker: DD diario superado")<br>
 &nbsp;&nbsp;&nbsp;&nbsp;time.sleep(3600); continue
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Timeout live</span>
+          <span class="arch-title">_pos_entry_time se resetea al reiniciar el bot</span>
+        </div>
+        <div class="arch-desc">El diccionario <code>_pos_entry_time</code> vive en memoria. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activarán el timeout de 2h — pueden quedar abiertas indefinidamente.</div>
+        <div class="arch-code">
+# Fix: al iniciar, cargar posiciones existentes de MT5<br>
+for p in posiciones_del_bot():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if p.ticket not in _pos_entry_time:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · calc_atr()</span>
+          <span class="arch-title">ATR usa SMA — el resto del código usa EMA — SL/TP divergen entre backtest y live</span>
+        </div>
+        <div class="arch-desc"><code>calc_atr()</code> usa <code>rolling(period).mean()</code> (media simple). <code>calc_adx()</code> y todos los demás indicadores usan <code>ewm()</code> (Wilder). El ATR del backtest difiere del ATR en vivo, haciendo que los SL y TP reales sean distintos a los simulados.</div>
+        <div class="arch-code">
+# Actual — línea 204:<br>
+return ...max(axis=1).rolling(period).mean()<br>
+<br>
+# Consistente con el resto (EMA Wilder):<br>
+return ...max(axis=1).ewm(span=period, adjust=False).mean()
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
           <span class="arch-category arch-cat-mejora">🔵 Mejora · guardar_estado()</span>
-          <span class="arch-title">Estado JSON no incluye detalle de posiciones abiertas</span>
+          <span class="arch-title">Escritura JSON bloquea el loop principal y no incluye detalle de posiciones</span>
         </div>
-        <div class="arch-desc">El JSON guardado en cada ciclo solo registra cuántas posiciones hay y qué símbolos están abiertos, pero no precio de entrada, SL, TP, tiempo abierto ni PnL flotante de cada posición. Esto hace imposible el análisis forense del estado del bot sin conectarse a MT5 directamente.</div>
+        <div class="arch-desc"><code>guardar_estado()</code> se llama sincrónicamente cada 30 s. Si el disco tiene latencia el bot pierde tiempo de monitoreo. Además no registra precio de entrada, SL, TP ni PnL flotante de cada posición.</div>
         <div class="arch-code">
-# Agregar en guardar_estado() — línea 969:<br>
-"posiciones_detalle": [<br>
-&nbsp;&nbsp;&nbsp;&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"ticket": p.ticket, "symbol": p.symbol,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tipo": "LONG" if p.type==0 else "SHORT",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"precio_entrada": p.price_open, "sl": p.sl, "tp": p.tp,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"pnl_flotante": p.profit, "volumen": p.volume,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tiempo_abierto": str(datetime.utcfromtimestamp(p.time))<br>
-&nbsp;&nbsp;&nbsp;&nbsp;} for p in pos_bot<br>
-],
-        </div>
-      </div>
-
-      <!-- ── Hallazgos previos (referencia inicial) ── -->
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Riesgo arquitectónico · Confirmado en código</span>
-          <span class="arch-title">guardar_estado() bloquea el loop principal</span>
-        </div>
-        <div class="arch-desc">La función guardar_estado() escribe el JSON de estado directamente en el loop principal. Si el disco está lento o el sistema operativo tiene latencia, puede hacer que el bot "duerma" y pierda una vela M5. Esto también explica la desconexión del heartbeat del 24 abr.</div>
-        <div class="arch-code">
-# Actual (riesgoso):<br>
-guardar_estado({...})   # bloquea aquí<br>
-time.sleep(CONFIG["loop_seconds"])<br>
+# Fix 1: escribir en thread separado<br>
+threading.Thread(target=guardar_estado, args=(data,), daemon=True).start()<br>
 <br>
-# Recomendado:<br>
-# Mover guardar_estado() a threading.Thread o asyncio<br>
-# O reducir frecuencia: guardar cada 5 ciclos, no en cada uno
+# Fix 2: agregar detalle de posiciones<br>
+"posiciones_detalle": [{"ticket":p.ticket,"pnl":p.profit,...} for p in pos_bot]
         </div>
       </div>
 
-      <div class="arch-card" data-file="FILE-001">
+      <div class="arch-card" data-file="FILE-002">
         <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Sugerencia de mejora</span>
-          <span class="arch-title">Agregar audit log de señales rechazadas</span>
+          <span class="arch-category arch-cat-mejora">🔵 Mejora · run_bot()</span>
+          <span class="arch-title">Sin audit log de señales rechazadas</span>
         </div>
-        <div class="arch-desc">Actualmente el bot solo loguea cuando GENERA una señal y cuando EJECUTA una orden. No queda registro de las señales que fueron rechazadas por max_positions o porque el símbolo ya tenía posición. Este log es esencial para el análisis post-trade (M-05) y para detectar oportunidades perdidas.</div>
+        <div class="arch-desc">El bot solo loguea señales ejecutadas. Las rechazadas por <code>max_positions</code> o símbolo ya abierto no quedan en el log, haciendo imposible el análisis post-trade de oportunidades perdidas.</div>
         <div class="arch-code">
-# Agregar en run_bot(), sección escanear señales:<br>
-for sym, sig, estado in señales_activas:<br>
-    if n_pos >= CONFIG["max_positions"]:<br>
-        log.info(f"SIGNAL_REJECTED {sym} reason=max_pos")  # ← agregar<br>
-    if sym in syms_en_pos:<br>
-        log.info(f"SIGNAL_REJECTED {sym} reason=already_open")  # ← agregar
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Sugerencia de mejora</span>
-          <span class="arch-title">Separar configuración de símbolos por categoría en archivo externo</span>
-        </div>
-        <div class="arch-desc">Tener los 21 símbolos hardcodeados en CONFIG hace difícil experimentar con subsets (ej: solo índices europeos). Recomiendo mover la configuración a un archivo symbols.json externo que el bot lee al iniciar. Esto permite cambiar el universo sin editar el código Python.</div>
-        <div class="arch-code">
-# symbols.json<br>
-{ "indices_eu": ["STOXX50","ES35","DE40","UK100","IT40"],<br>
-  "indices_us": ["USTEC","US500"],<br>
-  "crypto":     ["BTCUSD"],<br>
-  "active":     ["indices_eu", "indices_us"]  ← solo estos operan<br>
-}
+# Agregar en run_bot(), sección abrir posiciones:<br>
+if n_pos >= CONFIG["max_positions"]:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=max_pos")<br>
+if sym in syms_en_pos:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=already_open")
         </div>
       </div>
 
