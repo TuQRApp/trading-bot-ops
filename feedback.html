@@ -654,7 +654,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
       <!-- ── Hallazgos reales 2026-04-29 · obv_macd_adx_bot_final.py ── -->
 
-      <div class="arch-card" id="arch-bugs">
+      <div class="arch-card" data-file="FILE-001" id="arch-bugs">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 1009</span>
           <span class="arch-title">Print de inicio dice "3 posiciones" — CONFIG tiene 6</span>
@@ -672,7 +672,7 @@ print(f"🔴 CUENTA REAL | {CONFIG['risk_pct']*100:.0f}% riesgo | máx {CONFIG['
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 276-277</span>
           <span class="arch-title">Divergencia simple entra igual que doble divergencia</span>
@@ -692,7 +692,7 @@ elif precio_ll and (obv_hl or macd_hl):<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 963-966</span>
           <span class="arch-title">n_pos se incrementa antes de confirmar que la orden fue aceptada</span>
@@ -712,7 +712,7 @@ if resultado and not resultado.get("demo") and resultado.retcode == mt5.TRADE_RE
         </div>
       </div>
 
-      <div class="arch-card" id="arch-riesgos">
+      <div class="arch-card" data-file="FILE-001" id="arch-riesgos">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Riesgo · Líneas 732-737</span>
           <span class="arch-title">Señales de barras anteriores pueden re-dispararse</span>
@@ -727,7 +727,7 @@ _ultima_señal = {}  # sym → timestamp de la señal ejecutada<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 144, 150</span>
           <span class="arch-title">except: pass silencia errores críticos de MT5</span>
@@ -743,7 +743,7 @@ except Exception as e:<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · Línea 66 y 91</span>
           <span class="arch-title">risk_pct definido dos veces en CONFIG</span>
@@ -760,7 +760,7 @@ except Exception as e:<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · calc_atr()</span>
           <span class="arch-title">ATR usa SMA en backtest, EMA en live — resultados divergen</span>
@@ -775,7 +775,7 @@ return pd.concat([hl, hc, lc], axis=1).max(axis=1).ewm(span=period, adjust=False
         </div>
       </div>
 
-      <div class="arch-card" id="arch-ausencias">
+      <div class="arch-card" data-file="FILE-001" id="arch-ausencias">
         <div class="arch-header">
           <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec</span>
           <span class="arch-title">Circuit breakers no implementados</span>
@@ -791,7 +791,7 @@ if (balance_inicio_dia - account.equity) / balance_inicio_dia > MAX_DD_DIARIO:<b
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-mejora">🔵 Mejora · guardar_estado()</span>
           <span class="arch-title">Estado JSON no incluye detalle de posiciones abiertas</span>
@@ -812,7 +812,7 @@ if (balance_inicio_dia - account.equity) / balance_inicio_dia > MAX_DD_DIARIO:<b
       </div>
 
       <!-- ── Hallazgos previos (referencia inicial) ── -->
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-riesgo">🔴 Riesgo arquitectónico · Confirmado en código</span>
           <span class="arch-title">guardar_estado() bloquea el loop principal</span>
@@ -829,7 +829,7 @@ time.sleep(CONFIG["loop_seconds"])<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-deuda">🟡 Deuda técnica</span>
           <span class="arch-title">Doble definición de risk_pct en CONFIG</span>
@@ -845,7 +845,7 @@ time.sleep(CONFIG["loop_seconds"])<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-mejora">🔵 Sugerencia de mejora</span>
           <span class="arch-title">Agregar audit log de señales rechazadas</span>
@@ -861,7 +861,7 @@ for sym, sig, estado in señales_activas:<br>
         </div>
       </div>
 
-      <div class="arch-card">
+      <div class="arch-card" data-file="FILE-001">
         <div class="arch-header">
           <span class="arch-category arch-cat-mejora">🔵 Sugerencia de mejora</span>
           <span class="arch-title">Separar configuración de símbolos por categoría en archivo externo</span>
@@ -920,6 +920,23 @@ function filterObs(origin, btn) {
   document.getElementById('obs-resuelta-count').textContent = resuelta;
   document.getElementById('obs-solo-count').textContent = solo;
 }
+
+// Contar arch-cards por archivo y categoría → guardar en localStorage para index.html
+window.addEventListener('DOMContentLoaded', function() {
+  const counts = {};
+  document.querySelectorAll('.arch-card[data-file]').forEach(card => {
+    const file = card.dataset.file;
+    const catText = card.querySelector('.arch-category')?.textContent || '';
+    const cat = catText.includes('Bug real') ? 'bugs'
+              : catText.includes('Riesgo') ? 'riesgos'
+              : catText.includes('Ausencia vs Spec') ? 'ausencias'
+              : null;
+    if (!cat) return;
+    if (!counts[file]) counts[file] = {bugs: 0, riesgos: 0, ausencias: 0};
+    counts[file][cat]++;
+  });
+  localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
+});
 
 // Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
 window.addEventListener('DOMContentLoaded', function() {
