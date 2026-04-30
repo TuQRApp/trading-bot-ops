@@ -196,14 +196,91 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       </div>
     </div>
     <div class="last-updated" id="lu-backtest">
-      <span class="lu-label">Métricas:</span>
-      <span>Backtest histórico 60 días · Pendiente archivo real · Sube historial_trades.csv o backtest.html para actualizar</span>
+      <span class="lu-label">Fuente:</span>
+      <span>obv_macd_adx_all_resultado.html · generado 2026-04-27 23:22 · 60 días · 40 instrumentos · Raw Trading Ltd</span>
     </div>
-    <div class="module-empty-state">
-      <div class="mes-icon">📊</div>
-      <div class="mes-title">Sin archivo de backtest cargado</div>
-      <div class="mes-desc">El archivo actualmente analizado (<code>obv_macd_adx_bot_final.py</code>) es el código fuente del bot, no contiene trades ejecutados. Las métricas de calidad aparecerán aquí cuando subas un archivo de resultados.</div>
-      <div class="mes-trigger">→ <code>historial_trades.csv</code> exportado desde MT5 &nbsp;·&nbsp; <code>backtest.html</code> generado por el bot</div>
+
+    <!-- Score global -->
+    <div class="overall-score">
+      <div class="score-circle" style="border-color:var(--shared);color:var(--shared);background:rgba(245,158,11,0.08)">B</div>
+      <div>
+        <div class="score-text-title">Calidad del backtest: BUENA CON RESERVAS</div>
+        <div class="score-text-sub">PF, WR y Max DD superan el mínimo. El Sharpe de 8.83 es anormalmente alto para una estrategia intraday de 60 días y es el principal punto de atención. No se documentó validación out-of-sample. El backtest usa 40 instrumentos pero el bot vivo opera solo 21, lo que introduce riesgo de selección.</div>
+      </div>
+    </div>
+
+    <!-- Métricas globales (US30 / portfolio combinado) -->
+    <div class="quality-grid">
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Profit Factor</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val" style="color:var(--trader)">2.162</div>
+        <div class="qm-target">Mínimo: 1.5</div>
+        <div class="qm-comment">Sólido. Ratio beneficio/pérdida saludable.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Win Rate</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val" style="color:var(--trader)">55.4%</div>
+        <div class="qm-target">Mínimo: 45%</div>
+        <div class="qm-comment">Consistente con RR 1:2. 31 TP · 28 SL · 15 TO.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Max Drawdown</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val" style="color:var(--trader)">-7.87%</div>
+        <div class="qm-target">Máximo: 20%</div>
+        <div class="qm-comment">Bien controlado. Margen amplio antes del límite.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Sharpe Ratio</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val" style="color:var(--shared)">8.832</div>
+        <div class="qm-target">Objetivo: 1.5–3.0 para intraday</div>
+        <div class="qm-comment">⚠️ Anormalmente alto. Probable artefacto de período corto o modelo de costos.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Trades (US30)</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val" style="color:var(--trader)">74</div>
+        <div class="qm-target">Mínimo recomendado: 30</div>
+        <div class="qm-comment">Válido para un instrumento. Expectativa $139/trade · Costo $8.20/trade.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Out-of-sample</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val" style="color:var(--shared)">No doc.</div>
+        <div class="qm-target">Requerido antes de escalar</div>
+        <div class="qm-comment">No hay split train/test declarado. Riesgo de overfitting.</div>
+      </div>
+    </div>
+
+    <!-- Métricas por instrumento (muestra) -->
+    <div class="section" style="margin-top:20px">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Rendimiento por instrumento (backtests aislados · $10k c/u)</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <thead><tr style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;">
+          <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">Instrumento</th>
+          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">Retorno</th>
+          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">Sharpe</th>
+          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">WR</th>
+          <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);">Max DD</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">UK100</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+217.9%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">14.54 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">74.2%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-4.20%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">DE40</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+196.8%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">12.70 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">65.0%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-4.73%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">US500</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+188.5%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">12.46 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">65.3%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-6.75%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">USTEC</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+175.5%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">12.09 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">67.1%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-5.64%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">CHINA50</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+150.1%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">11.58 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">65.5%</td><td style="padding:5px 8px;text-align:right;color:var(--gate);border-bottom:1px solid var(--border);">-10.81%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">US30</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+102.9%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">8.83 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">55.4%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-7.87%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">JP225</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+98.9%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">8.09 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">57.1%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-7.50%</td></tr>
+          <tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);">AUS200</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">+84.8%</td><td style="padding:5px 8px;text-align:right;color:var(--shared);border-bottom:1px solid var(--border);">9.02 ⚠️</td><td style="padding:5px 8px;text-align:right;color:var(--trader);border-bottom:1px solid var(--border);">61.2%</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);">-7.67%</td></tr>
+          <tr style="color:var(--muted);font-style:italic;"><td style="padding:5px 8px;border-bottom:1px solid var(--border);">+ 32 instrumentos más</td><td colspan="4" style="padding:5px 8px;font-size:11px;border-bottom:1px solid var(--border);">CA60, CHINA50, ES35, F40, HK50, IT40, MidDE50, NETH25, NOR25, SA40, SE30, STOXX50, SWI20, TecDE30, US2000, XAUUSD, XAGUSD, metales, energía, agrícolas, BTCUSD</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Alertas del arquitecto -->
+    <div style="font-size:12px;color:var(--muted);font-family:var(--font-mono);line-height:2;margin-top:16px;padding:12px 16px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:8px;">
+      ⚠️ <strong style="color:var(--text);">Alertas del análisis:</strong><br>
+      &nbsp;&nbsp;1) Sharpe 8.83 (todos los instrumentos entre 8–15) — anómalo para intraday. Causa probable: 60 días es un período corto que infla el Sharpe estadísticamente.<br>
+      &nbsp;&nbsp;2) Backtest usa 40 instrumentos, el bot vivo usa 21 — si los 21 se eligieron por su performance en este backtest, hay sesgo de selección.<br>
+      &nbsp;&nbsp;3) No hay split out-of-sample documentado. Los resultados son in-sample puros.<br>
+      &nbsp;&nbsp;4) El backtest corre con "Doble Divergencia" pero el código actual del bot permite divergencia simple (bug ya registrado en Módulo 4).
     </div>
   </div>
 
