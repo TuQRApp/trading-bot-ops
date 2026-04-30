@@ -878,7 +878,10 @@ if sym in syms_en_pos:<br>
       </div>
 
       <div id="neg-ctx-empty">
-        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:10px;">Completa este archivo y súbelo como <strong>negocio_contexto.json</strong>:</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Completa este archivo y súbelo como <strong>negocio_contexto.json</strong>:</div>
+          <button class="btn-export btn-sub" onclick="descargarPlantilla()" style="font-size:10px;">⬇ Descargar plantilla</button>
+        </div>
         <pre class="arch-code" style="white-space:pre;">{
   "periodo":                "AAAA-MM-DD / AAAA-MM-DD",
   "capital_usd":            0,
@@ -943,6 +946,24 @@ if sym in syms_en_pos:<br>
 
 </div>
 <script>
+function descargarPlantilla() {
+  const plantilla = {
+    periodo: "AAAA-MM-DD / AAAA-MM-DD",
+    capital_usd: 0,
+    broker: "",
+    comision_por_trade_usd: 0,
+    spread_promedio_pips: 0,
+    benchmark: "ej: S&P 500 mensual",
+    notas: ""
+  };
+  const blob = new Blob([JSON.stringify(plantilla, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'negocio_contexto.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 function filterByFile(fileClass, btn) {
   document.querySelectorAll('.file-filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
