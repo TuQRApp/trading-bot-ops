@@ -79,6 +79,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .rec-response-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
 .rec-response-text{font-size:12px;color:var(--trader);line-height:1.6;outline:none;}
 .rec-response-text:focus{outline:none;}
+.badge-demo{color:#9ca3af;border-color:rgba(156,163,175,0.3);background:rgba(156,163,175,0.08);}
+.rec-card.is-demo{border-style:dashed;opacity:0.85;}
+.rec-needs{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 14px;}
+.rec-needs-label{font-family:var(--font-mono);font-size:10px;color:var(--shared);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+.rec-needs-text{font-size:12px;color:#92400e;line-height:1.6;}
+.rec-section-sep{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;border-top:1px dashed var(--border);margin-top:4px;}
 
 /* ── MODULE 3: Live observations ── */
 .obs-list{display:flex;flex-direction:column;gap:12px;}
@@ -394,6 +400,93 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
           </div>
         </div>
         <div class="rec-desc">El bot_estado.json actual solo guarda cuántas posiciones hay y qué símbolos. No incluye precio de entrada, SL, TP, tiempo abierto ni PnL flotante por posición. Sin ese detalle es imposible hacer análisis forense del estado del bot entre sesiones sin conectarse a MT5.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <!-- ── RECOMENDACIONES PENDIENTES DE DATOS REALES ── -->
+      <div class="rec-section-sep">Pendientes de archivo real · subir archivo para validar</div>
+
+      <div class="rec-card is-demo">
+        <div class="rec-header">
+          <span class="rec-num">R-06</span>
+          <div class="rec-title">Agregar whitelist dinámica de instrumentos</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-filtro">Filtro adicional</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-demo">DEMO</span>
+          </div>
+        </div>
+        <div class="rec-desc">El bot opera los 21 instrumentos en todo momento. Recomiendo filtrar dinámicamente: solo operar instrumentos que pasen un criterio de liquidez mínima en el turno actual (spread &lt; X pips + volumen relativo &gt; 1.2×). Esto reduciría trades de baja calidad en horarios de bajo volumen.</div>
+        <div class="rec-needs">
+          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
+          <div class="rec-needs-text">Un <strong>CSV de trades</strong> exportado desde MT5 con columnas: símbolo, hora de entrada, spread pagado y resultado. Con eso puedo confirmar qué instrumentos tienen peor win rate por horario y calibrar los umbrales reales.</div>
+        </div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card is-demo">
+        <div class="rec-header">
+          <span class="rec-num">R-07</span>
+          <div class="rec-title">Validar out-of-sample antes de aumentar capital</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Metodología</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-demo">DEMO</span>
+          </div>
+        </div>
+        <div class="rec-desc">El backtest actual usa datos del 100% del período disponible. Antes de aumentar el capital en vivo, necesitamos correr un backtest formal reservando el 30% final como out-of-sample puro (nunca visto durante el desarrollo). Si el performance se degrada &gt;30%, hay overfitting.</div>
+        <div class="rec-needs">
+          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
+          <div class="rec-needs-text">Un <strong>CSV de trades del backtest</strong> con fechas de entrada y salida. Con eso puedo ver qué período cubre el backtest, si hay un corte train/test declarado, y calcular la degradación OOS real vs. in-sample.</div>
+        </div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card is-demo">
+        <div class="rec-header">
+          <span class="rec-num">R-08</span>
+          <div class="rec-title">Revisar Sharpe de 8.8 — posible artefacto</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-demo">DEMO</span>
+          </div>
+        </div>
+        <div class="rec-desc">Un Sharpe de 8.8 en estrategia intraday es estadísticamente inusual. Necesito revisar el código del backtest en tres puntos: (1) el spread y comisión se descuentan en CADA trade, no solo en el cálculo final; (2) el OBV acumulado no usa datos futuros; (3) el timeout de 2h funciona correctamente y no se omiten trades perdedores.</div>
+        <div class="rec-needs">
+          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
+          <div class="rec-needs-text">El <strong>archivo de resultados del backtest</strong> (HTML o CSV de trades). El archivo original <code>obv_macd_adx_all_resultado.html</code> fue eliminado del sistema. Subir el CSV de trades que lo generó permite recalcular el Sharpe con los costos correctos.</div>
+        </div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">Revisando el código. El spread sí se descuenta por trade. El OBV usa cumsum() sobre datos pasados. El timeout de 24 velas M5 está correcto. El Sharpe alto puede ser porque 60 días es un período muy corto y los mercados de índices europeos tuvieron tendencia clara.</div>
+        </div>
+      </div>
+
+      <div class="rec-card is-demo">
+        <div class="rec-header">
+          <span class="rec-num">R-09</span>
+          <div class="rec-title">T&amp;T: formalizar spec antes de implementar</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Metodología</span>
+            <span class="badge badge-prio-media">Media prioridad</span>
+            <span class="badge badge-demo">DEMO</span>
+          </div>
+        </div>
+        <div class="rec-desc">Touch &amp; Turn tiene resultados de backtest muy buenos pero la lógica de "toca nivel y revierte con volumen" no está formalizada en condiciones booleanas. Antes de codificar el bot en vivo necesitamos definir exactamente: ¿qué es un "nivel"? ¿Cómo se confirma la reversión? ¿Cuántas velas de consolidación mínimas?</div>
+        <div class="rec-needs">
+          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
+          <div class="rec-needs-text">El <strong>código fuente del bot T&amp;T</strong> o una <strong>spec escrita de la estrategia</strong>. El bot Touch &amp; Turn es una estrategia distinta al OBV+MACD+ADX — este ítem aplica solo cuando ese proyecto esté activo.</div>
+        </div>
         <div class="rec-response">
           <div class="rec-response-label">🟢 Respuesta del trader</div>
           <div class="rec-response-text">—</div>
