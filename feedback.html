@@ -79,11 +79,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .rec-response-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
 .rec-response-text{font-size:12px;color:var(--trader);line-height:1.6;outline:none;}
 .rec-response-text:focus{outline:none;}
-.badge-demo{color:#9ca3af;border-color:rgba(156,163,175,0.3);background:rgba(156,163,175,0.08);}
-.rec-card.is-demo{border-style:dashed;opacity:0.85;}
-.obs-card.is-demo{border-style:dashed;opacity:0.85;}
+.badge-demo{color:#78350f;background:#fef3c7;border:2px solid #f59e0b;font-weight:800;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:5px;text-transform:uppercase;}
+.rec-card.is-demo{border:1px dashed #f59e0b;border-left:5px solid #f59e0b;background:rgba(245,158,11,0.03);}
+.obs-card.is-demo{border:1px dashed #f59e0b;border-left:5px solid #f59e0b;background:rgba(245,158,11,0.03);}
 .demo-data-banner{background:rgba(245,158,11,0.07);border:1px dashed rgba(245,158,11,0.4);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;}
 .demo-data-banner strong{font-family:var(--font-mono);font-size:10px;color:var(--shared);letter-spacing:0.5px;text-transform:uppercase;margin-right:8px;}
+.module-empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:64px 24px;gap:14px;}
+.mes-icon{font-size:48px;opacity:0.2;}
+.mes-title{font-size:15px;font-weight:700;color:var(--muted);}
+.mes-desc{font-size:13px;color:var(--muted);max-width:460px;line-height:1.75;}
+.mes-trigger{font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:8px 16px;border:1px dashed var(--border);border-radius:8px;margin-top:6px;}
 .rec-needs{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 14px;}
 .rec-needs-label{font-family:var(--font-mono);font-size:10px;color:var(--shared);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
 .rec-needs-text{font-size:12px;color:#92400e;line-height:1.6;}
@@ -194,115 +199,11 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <span class="lu-label">Métricas:</span>
       <span>Backtest histórico 60 días · Pendiente archivo real · Sube historial_trades.csv o backtest.html para actualizar</span>
     </div>
-    <div class="strategy-selector">
-      <button class="strat-btn active" onclick="showQuality('obv',this)">OBV + MACD + ADX</button>
-      <button class="strat-btn" onclick="showQuality('tt',this)">Touch & Turn v3</button>
-    </div>
-
-    <!-- Quality: OBV -->
-    <div id="quality-obv">
-      <div class="demo-data-banner"><strong>DEMO</strong> Datos del backtest de 60 días — fuente: <code>obv_macd_adx_all_resultado.html</code> eliminado el 2026-04-29. Los números son reales pero el archivo origen ya no existe. Para regenerar con datos actuales, sube <strong>historial_trades.csv</strong> exportado desde MT5.</div>
-      <div class="overall-score">
-        <div class="score-circle">A</div>
-        <div>
-          <div class="score-text-title">Calidad del backtest: BUENA</div>
-          <div class="score-text-sub">5 de 6 métricas superan el umbral mínimo. Un punto pendiente: validación out-of-sample formal. El backtest es metodológicamente sólido pero se detecta riesgo leve de look-ahead en la normalización de OBV.</div>
-        </div>
-      </div>
-      <div class="quality-grid">
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Sharpe Ratio</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">8.8</div>
-          <div class="qm-target">Mínimo: 1.0 · Objetivo: 2.0</div>
-          <div class="qm-comment">Excepcionalmente alto. Revisar si es real o artefacto del modelo de costos.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Profit Factor</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">2.16</div>
-          <div class="qm-target">Mínimo: 1.5</div>
-          <div class="qm-comment">Sólido. Consistente entre instrumentos.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Max Drawdown</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">-7.9%</div>
-          <div class="qm-target">Máximo: 20%</div>
-          <div class="qm-comment">Excelente. Bien controlado en todos los instrumentos.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Win Rate</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">55.4%</div>
-          <div class="qm-target">Mínimo: 45%</div>
-          <div class="qm-comment">Apropiado para el RR 1:2 del sistema.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Muestra trades</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">74+</div>
-          <div class="qm-target">Mínimo: 30 por símbolo</div>
-          <div class="qm-comment">Estadísticamente válido para la mayoría de instrumentos.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Out-of-sample</span><div class="qm-light light-yellow"></div></div>
-          <div class="qm-val" style="color:var(--shared)">Pend.</div>
-          <div class="qm-target">Requerido antes de vivo</div>
-          <div class="qm-comment">Split 70/30 no documentado formalmente. Riesgo de overfitting.</div>
-        </div>
-      </div>
-      <div style="font-size:13px;color:var(--muted);font-family:var(--font-mono);line-height:1.8;">
-        ⚠️ Alerta arquitecto: el Sharpe de 8.8 es anormalmente alto para estrategia intraday. Verificar:<br>
-        &nbsp;&nbsp;1) Modelo de costos (spread + comisión) aplicado correctamente en cada trade<br>
-        &nbsp;&nbsp;2) No hay look-ahead bias en el cálculo del OBV acumulado<br>
-        &nbsp;&nbsp;3) Timeout de 24 velas está funcionando correctamente
-      </div>
-    </div>
-
-    <!-- Quality: T&T -->
-    <div id="quality-tt" style="display:none">
-      <div class="demo-data-banner"><strong>DEMO</strong> Datos del backtest Touch &amp; Turn — fuente: <code>touch_turn_v3_backtest.html</code> eliminado el 2026-04-29. Proyecto T&amp;T no activo actualmente. Este tab aplica cuando se retome ese bot.</div>
-      <div class="overall-score">
-        <div class="score-circle" style="border-color:var(--shared);color:var(--shared);background:rgba(245,158,11,0.08)">B+</div>
-        <div>
-          <div class="score-text-title">Calidad del backtest: BUENA CON RESERVAS</div>
-          <div class="score-text-sub">Métricas de rendimiento excelentes (WR 70.9%, PF 2.93). Puntos de atención: universo de 3,173 símbolos es muy amplio, riesgo de data snooping. Falta especificación formal de la lógica "Touch & Turn".</div>
-        </div>
-      </div>
-      <div class="quality-grid">
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Win Rate prom.</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">70.9%</div>
-          <div class="qm-target">Mínimo: 60%</div>
-          <div class="qm-comment">Muy sólido. Top símbolos hasta 73.8%.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Profit Factor</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">2.93</div>
-          <div class="qm-target">Mínimo: 1.5</div>
-          <div class="qm-comment">Excelente relación riesgo/beneficio.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Max DD promedio</span><div class="qm-light light-green"></div></div>
-          <div class="qm-val" style="color:var(--trader)">2.34%</div>
-          <div class="qm-target">Máximo: 10%</div>
-          <div class="qm-comment">Excelente control de riesgo.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Universo scan</span><div class="qm-light light-yellow"></div></div>
-          <div class="qm-val" style="color:var(--shared)">3,173</div>
-          <div class="qm-target">Riesgo: data snooping</div>
-          <div class="qm-comment">Con 3k símbolos escaneados, los "mejores" pueden ser ruido estadístico.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Spec formalizado</span><div class="qm-light light-yellow"></div></div>
-          <div class="qm-val" style="color:var(--shared)">Pend.</div>
-          <div class="qm-target">Requerido</div>
-          <div class="qm-comment">La lógica exacta no está formalizada en condiciones booleanas.</div>
-        </div>
-        <div class="qm-card">
-          <div class="qm-header"><span class="qm-name">Paper trading</span><div class="qm-light light-yellow"></div></div>
-          <div class="qm-val" style="color:var(--shared)">Pend.</div>
-          <div class="qm-target">Gate 4 requerido</div>
-          <div class="qm-comment">No comenzado. Bloquea paso a vivo.</div>
-        </div>
-      </div>
+    <div class="module-empty-state">
+      <div class="mes-icon">📊</div>
+      <div class="mes-title">Sin archivo de backtest cargado</div>
+      <div class="mes-desc">El archivo actualmente analizado (<code>obv_macd_adx_bot_final.py</code>) es el código fuente del bot, no contiene trades ejecutados. Las métricas de calidad aparecerán aquí cuando subas un archivo de resultados.</div>
+      <div class="mes-trigger">→ <code>historial_trades.csv</code> exportado desde MT5 &nbsp;·&nbsp; <code>backtest.html</code> generado por el bot</div>
     </div>
   </div>
 
@@ -411,92 +312,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
-      <!-- ── RECOMENDACIONES PENDIENTES DE DATOS REALES ── -->
-      <div class="rec-section-sep">Pendientes de archivo real · subir archivo para validar</div>
-
-      <div class="rec-card is-demo">
-        <div class="rec-header">
-          <span class="rec-num">R-06</span>
-          <div class="rec-title">Agregar whitelist dinámica de instrumentos</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-filtro">Filtro adicional</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-demo">DEMO</span>
-          </div>
-        </div>
-        <div class="rec-desc">El bot opera los 21 instrumentos en todo momento. Recomiendo filtrar dinámicamente: solo operar instrumentos que pasen un criterio de liquidez mínima en el turno actual (spread &lt; X pips + volumen relativo &gt; 1.2×). Esto reduciría trades de baja calidad en horarios de bajo volumen.</div>
-        <div class="rec-needs">
-          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
-          <div class="rec-needs-text">Un <strong>CSV de trades</strong> exportado desde MT5 con columnas: símbolo, hora de entrada, spread pagado y resultado. Con eso puedo confirmar qué instrumentos tienen peor win rate por horario y calibrar los umbrales reales.</div>
-        </div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Respuesta del trader</div>
-          <div class="rec-response-text">—</div>
-        </div>
-      </div>
-
-      <div class="rec-card is-demo">
-        <div class="rec-header">
-          <span class="rec-num">R-07</span>
-          <div class="rec-title">Validar out-of-sample antes de aumentar capital</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Metodología</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-demo">DEMO</span>
-          </div>
-        </div>
-        <div class="rec-desc">El backtest actual usa datos del 100% del período disponible. Antes de aumentar el capital en vivo, necesitamos correr un backtest formal reservando el 30% final como out-of-sample puro (nunca visto durante el desarrollo). Si el performance se degrada &gt;30%, hay overfitting.</div>
-        <div class="rec-needs">
-          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
-          <div class="rec-needs-text">Un <strong>CSV de trades del backtest</strong> con fechas de entrada y salida. Con eso puedo ver qué período cubre el backtest, si hay un corte train/test declarado, y calcular la degradación OOS real vs. in-sample.</div>
-        </div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Respuesta del trader</div>
-          <div class="rec-response-text">—</div>
-        </div>
-      </div>
-
-      <div class="rec-card is-demo">
-        <div class="rec-header">
-          <span class="rec-num">R-08</span>
-          <div class="rec-title">Revisar Sharpe de 8.8 — posible artefacto</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-demo">DEMO</span>
-          </div>
-        </div>
-        <div class="rec-desc">Un Sharpe de 8.8 en estrategia intraday es estadísticamente inusual. Necesito revisar el código del backtest en tres puntos: (1) el spread y comisión se descuentan en CADA trade, no solo en el cálculo final; (2) el OBV acumulado no usa datos futuros; (3) el timeout de 2h funciona correctamente y no se omiten trades perdedores.</div>
-        <div class="rec-needs">
-          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
-          <div class="rec-needs-text">El <strong>archivo de resultados del backtest</strong> (HTML o CSV de trades). El archivo original <code>obv_macd_adx_all_resultado.html</code> fue eliminado del sistema. Subir el CSV de trades que lo generó permite recalcular el Sharpe con los costos correctos.</div>
-        </div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Respuesta del trader</div>
-          <div class="rec-response-text">Revisando el código. El spread sí se descuenta por trade. El OBV usa cumsum() sobre datos pasados. El timeout de 24 velas M5 está correcto. El Sharpe alto puede ser porque 60 días es un período muy corto y los mercados de índices europeos tuvieron tendencia clara.</div>
-        </div>
-      </div>
-
-      <div class="rec-card is-demo">
-        <div class="rec-header">
-          <span class="rec-num">R-09</span>
-          <div class="rec-title">T&amp;T: formalizar spec antes de implementar</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Metodología</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-demo">DEMO</span>
-          </div>
-        </div>
-        <div class="rec-desc">Touch &amp; Turn tiene resultados de backtest muy buenos pero la lógica de "toca nivel y revierte con volumen" no está formalizada en condiciones booleanas. Antes de codificar el bot en vivo necesitamos definir exactamente: ¿qué es un "nivel"? ¿Cómo se confirma la reversión? ¿Cuántas velas de consolidación mínimas?</div>
-        <div class="rec-needs">
-          <div class="rec-needs-label">¿Qué necesito para validar esto?</div>
-          <div class="rec-needs-text">El <strong>código fuente del bot T&amp;T</strong> o una <strong>spec escrita de la estrategia</strong>. El bot Touch &amp; Turn es una estrategia distinta al OBV+MACD+ADX — este ítem aplica solo cuando ese proyecto esté activo.</div>
-        </div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Respuesta del trader</div>
-          <div class="rec-response-text">—</div>
-        </div>
-      </div>
 
     </div>
   </div>
@@ -589,56 +404,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
-      <!-- OBS-003 · 2026-04-28 · CHAT · DEMO -->
-      <div class="obs-card is-demo" style="--obs-color:var(--shared)" data-origin="chat" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-28<br>—</div>
-          <div class="obs-source-badge src-chat">CHAT</div>
-          <span class="badge badge-demo" style="margin-top:5px;display:block;text-align:center;">DEMO</span>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">BTCUSD: 3 señales en 1 hora con ADX borderline</div>
-          <div class="obs-text">El bot generó 3 señales en BTCUSD entre las 14:00-15:00 UTC con ADX entre 25-26 (justo en el umbral). Las 3 resultaron en timeout. El mercado estaba en ranging con ADX apenas pasando el filtro. Recomendación: subir umbral ADX para BTCUSD a 28-30.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">BTCUSD · 14:00-15:00 UTC</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-002 · 2026-04-26 · CHAT · DEMO -->
-      <div class="obs-card is-demo" style="--obs-color:var(--trader)" data-origin="chat" data-accion="no">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-26<br>—</div>
-          <div class="obs-source-badge src-chat">CHAT</div>
-          <span class="badge badge-demo" style="margin-top:5px;display:block;text-align:center;">DEMO</span>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">DE40 y STOXX50: rendimiento superior consistente</div>
-          <div class="obs-text">En 5 días de operación en vivo, DE40 y STOXX50 tienen la mayor tasa de éxito (8/10 trades ganadores). Las señales en apertura de Londres (07:00-10:00 UTC) son las de mayor calidad. Considerar priorizar estos instrumentos y esa ventana horaria.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span class="obs-context">DE40 · STOXX50 · Londres</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-001 · 2026-04-24 · CHAT · DEMO -->
-      <div class="obs-card is-demo" style="--obs-color:var(--gate)" data-origin="chat" data-accion="resuelta">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-24<br>22:15 UTC</div>
-          <div class="obs-source-badge src-chat">CHAT</div>
-          <span class="badge badge-demo" style="margin-top:5px;display:block;text-align:center;">DEMO</span>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Bot no reportó heartbeat durante 4 minutos</div>
-          <div class="obs-text">A las 22:15 UTC el bot dejó de reportar estado por ~4 minutos. Se reconectó automáticamente. Causa probable: recolección de basura en Python bloqueando el loop. Hay que mover el guardar_estado() a un thread separado o reducir frecuencia de escritura JSON.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-resuelta">Resuelta</span>
-            <span class="obs-context">Infraestructura · 22:15 UTC</span>
-          </div>
-        </div>
-      </div>
 
     </div>
   </div>
@@ -834,22 +599,6 @@ time.sleep(CONFIG["loop_seconds"])<br>
 # Recomendado:<br>
 # Mover guardar_estado() a threading.Thread o asyncio<br>
 # O reducir frecuencia: guardar cada 5 ciclos, no en cada uno
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica</span>
-          <span class="arch-title">Doble definición de risk_pct en CONFIG</span>
-        </div>
-        <div class="arch-desc">En el CONFIG del bot hay dos entradas "risk_pct": una con valor 0.02 en la sección de backtest y otra en la sección de bot en vivo. Aunque Python usa la segunda (la última en el dict), es confuso y puede generar bugs al editar. Consolidar en una sola entrada.</div>
-        <div class="arch-code">
-# Línea ~67 y ~91 del bot tienen:<br>
-"risk_pct": 0.02,  # sección ADX<br>
-...<br>
-"risk_pct": 0.02,  # sección Bot (sobreescribe la anterior)<br>
-<br>
-# Consolidar: mantener solo UNA entrada risk_pct
         </div>
       </div>
 
