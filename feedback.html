@@ -83,15 +83,43 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* ── MODULE 3: Live observations ── */
 .obs-list{display:flex;flex-direction:column;gap:12px;}
 .obs-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--obs-color);border-radius:0 12px 12px 0;padding:18px 20px;display:flex;gap:16px;}
-.obs-date{font-family:var(--font-mono);font-size:11px;color:var(--muted);flex-shrink:0;min-width:80px;}
-.obs-body{}
+.obs-card.hidden{display:none;}
+.obs-date-col{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;min-width:72px;}
+.obs-timestamp{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-align:center;line-height:1.6;}
+.obs-source-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;}
+.src-log {background:rgba(124,58,237,0.1);color:var(--bot);border:1px solid rgba(124,58,237,0.25);}
+.src-json{background:rgba(37,99,235,0.1);color:var(--nico);border:1px solid rgba(37,99,235,0.25);}
+.src-csv {background:rgba(5,150,105,0.1);color:var(--trader);border:1px solid rgba(5,150,105,0.25);}
+.src-py  {background:rgba(215,119,6,0.1);color:var(--shared);border:1px solid rgba(215,119,6,0.25);}
+.src-png {background:rgba(220,38,38,0.1);color:var(--gate);border:1px solid rgba(220,38,38,0.25);}
+.src-chat{background:rgba(30,45,110,0.08);color:var(--text);border:1px solid var(--border);}
+.src-html{background:rgba(37,99,235,0.08);color:var(--nico);border:1px solid rgba(37,99,235,0.2);}
+.obs-body{flex:1;}
 .obs-title{font-size:14px;font-weight:700;margin-bottom:6px;}
 .obs-text{font-size:13px;color:#4a5875;line-height:1.7;}
-.obs-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.obs-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
 .obs-tag{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:4px;}
-.obs-accion-si{background:rgba(239,68,68,0.1);color:var(--gate);border:1px solid rgba(239,68,68,0.25);}
-.obs-accion-no{background:rgba(16,185,129,0.08);color:var(--trader);border:1px solid rgba(16,185,129,0.2);}
+.obs-accion-si{background:rgba(220,38,38,0.1);color:var(--gate);border:1px solid rgba(220,38,38,0.25);}
+.obs-accion-no{background:rgba(5,150,105,0.08);color:var(--trader);border:1px solid rgba(5,150,105,0.2);}
 .obs-accion-resuelta{background:rgba(107,107,138,0.1);color:var(--muted);border:1px solid #c5d0e0;}
+.obs-context{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+
+/* ── OBS FILTER BAR ── */
+.obs-filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.obs-filter-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;}
+.obs-filter-btn{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.obs-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
+
+/* ── OBS STATS ── */
+.obs-stats{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.obs-stat{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.obs-stat strong{font-weight:700;}
+
+/* ── LAST UPDATED MARKER ── */
+.last-updated{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.last-updated::before{content:'';width:6px;height:6px;border-radius:50%;background:rgba(30,45,110,0.2);display:inline-block;flex-shrink:0;}
+.last-updated.has-data::before{background:var(--trader);}
+.lu-label{color:var(--text);font-weight:700;}
 
 /* ── MODULE 4: Architecture feedback ── */
 .arch-list{display:flex;flex-direction:column;gap:14px;}
@@ -131,6 +159,9 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- ══════════════════════════════════════ -->
   <div id="tab-backtest" class="tab-panel active">
 
+    <div class="last-updated" id="lu-backtest">
+      <span>Sin archivo analizado · Los datos actuales son de referencia inicial</span>
+    </div>
     <div class="strategy-selector">
       <button class="strat-btn active" onclick="showQuality('obv',this)">OBV + MACD + ADX</button>
       <button class="strat-btn" onclick="showQuality('tt',this)">Touch & Turn v3</button>
@@ -325,49 +356,75 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 3: OBSERVACIONES EN VIVO          -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-live" class="tab-panel">
-    <div class="obs-list">
 
-      <div class="obs-card" style="--obs-color:var(--shared)">
-        <div class="obs-date">Abr 28<br>2026</div>
+    <!-- Stats -->
+    <div class="obs-stats">
+      <div class="obs-stat">Total: <strong id="obs-total">3</strong></div>
+      <div class="obs-stat">Requieren acción: <strong id="obs-accion-count" style="color:var(--gate)">1</strong></div>
+      <div class="obs-stat">Resueltas: <strong id="obs-resuelta-count" style="color:var(--trader)">1</strong></div>
+      <div class="obs-stat">Solo observación: <strong id="obs-solo-count">1</strong></div>
+    </div>
+
+    <!-- Filtros por fuente de archivo -->
+    <div class="obs-filter-bar">
+      <span class="obs-filter-label">FUENTE:</span>
+      <button class="obs-filter-btn active" onclick="filterObs('all',this)">Todos</button>
+      <button class="obs-filter-btn" onclick="filterObs('log',this)">LOG</button>
+      <button class="obs-filter-btn" onclick="filterObs('json',this)">JSON</button>
+      <button class="obs-filter-btn" onclick="filterObs('csv',this)">CSV</button>
+      <button class="obs-filter-btn" onclick="filterObs('py',this)">PY</button>
+      <button class="obs-filter-btn" onclick="filterObs('png',this)">PNG</button>
+      <button class="obs-filter-btn" onclick="filterObs('chat',this)">CHAT</button>
+    </div>
+
+    <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
+    <div class="obs-list" id="obs-list">
+
+      <!-- OBS-003 · 2026-04-28 · CHAT -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="chat" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-28<br>—</div>
+          <div class="obs-source-badge src-chat">CHAT</div>
+        </div>
         <div class="obs-body">
           <div class="obs-title">BTCUSD: 3 señales en 1 hora con ADX borderline</div>
           <div class="obs-text">El bot generó 3 señales en BTCUSD entre las 14:00-15:00 UTC con ADX entre 25-26 (justo en el umbral). Las 3 resultaron en timeout. El mercado estaba en ranging con ADX apenas pasando el filtro. Recomendación: subir umbral ADX para BTCUSD a 28-30.</div>
           <div class="obs-meta">
             <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">BTCUSD · 14:00-15:00 UTC</span>
+            <span class="obs-context">BTCUSD · 14:00-15:00 UTC</span>
           </div>
         </div>
       </div>
 
-      <div class="obs-card" style="--obs-color:var(--trader)">
-        <div class="obs-date">Abr 26<br>2026</div>
+      <!-- OBS-002 · 2026-04-26 · CHAT -->
+      <div class="obs-card" style="--obs-color:var(--trader)" data-origin="chat" data-accion="no">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-26<br>—</div>
+          <div class="obs-source-badge src-chat">CHAT</div>
+        </div>
         <div class="obs-body">
           <div class="obs-title">DE40 y STOXX50: rendimiento superior consistente</div>
           <div class="obs-text">En 5 días de operación en vivo, DE40 y STOXX50 tienen la mayor tasa de éxito (8/10 trades ganadores). Las señales en apertura de Londres (07:00-10:00 UTC) son las de mayor calidad. Considerar priorizar estos instrumentos y esa ventana horaria.</div>
           <div class="obs-meta">
             <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">DE40 · STOXX50 · Londres</span>
+            <span class="obs-context">DE40 · STOXX50 · Londres</span>
           </div>
         </div>
       </div>
 
-      <div class="obs-card" style="--obs-color:var(--gate)">
-        <div class="obs-date">Abr 24<br>2026</div>
+      <!-- OBS-001 · 2026-04-24 · CHAT -->
+      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="chat" data-accion="resuelta">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-24<br>22:15 UTC</div>
+          <div class="obs-source-badge src-chat">CHAT</div>
+        </div>
         <div class="obs-body">
           <div class="obs-title">Bot no reportó heartbeat durante 4 minutos</div>
           <div class="obs-text">A las 22:15 UTC el bot dejó de reportar estado por ~4 minutos. Se reconectó automáticamente. Causa probable: recolección de basura en Python bloqueando el loop. Hay que mover el guardar_estado() a un thread separado o reducir frecuencia de escritura JSON.</div>
           <div class="obs-meta">
             <span class="obs-tag obs-accion-resuelta">Resuelta</span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">Infraestructura · 22:15 UTC</span>
+            <span class="obs-context">Infraestructura · 22:15 UTC</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Nueva observación -->
-      <div class="obs-card" style="--obs-color:var(--border)">
-        <div class="obs-date" style="color:var(--muted)">Nueva</div>
-        <div class="obs-body" style="flex:1">
-          <textarea class="notes-area" rows="3" placeholder="Describir observación: fecha, símbolo, horario, qué hizo el bot, qué debería haber hecho..."></textarea>
         </div>
       </div>
 
@@ -378,6 +435,9 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 4: ARQUITECTURA / CÓDIGO          -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-arquitectura" class="tab-panel">
+    <div class="last-updated" id="lu-arquitectura">
+      <span>Sin archivo analizado · Los ítems actuales son de referencia inicial</span>
+    </div>
     <div class="arch-list">
 
       <div class="arch-card">
@@ -466,6 +526,27 @@ function showQuality(id, btn) {
   document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('quality-' + id).style.display = 'block';
   btn.classList.add('active');
+}
+function filterObs(origin, btn) {
+  document.querySelectorAll('.obs-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cards = document.querySelectorAll('#obs-list .obs-card');
+  let total = 0, accion = 0, resuelta = 0, solo = 0;
+  cards.forEach(card => {
+    const show = origin === 'all' || card.dataset.origin === origin;
+    card.classList.toggle('hidden', !show);
+    if (show) {
+      total++;
+      const a = card.dataset.accion;
+      if (a === 'si') accion++;
+      else if (a === 'resuelta') resuelta++;
+      else solo++;
+    }
+  });
+  document.getElementById('obs-total').textContent = total;
+  document.getElementById('obs-accion-count').textContent = accion;
+  document.getElementById('obs-resuelta-count').textContent = resuelta;
+  document.getElementById('obs-solo-count').textContent = solo;
 }
 </script>
 </body>
