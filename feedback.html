@@ -359,8 +359,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
     <!-- Stats -->
     <div class="obs-stats">
-      <div class="obs-stat">Total: <strong id="obs-total">3</strong></div>
-      <div class="obs-stat">Requieren acción: <strong id="obs-accion-count" style="color:var(--gate)">1</strong></div>
+      <div class="obs-stat">Total: <strong id="obs-total">6</strong></div>
+      <div class="obs-stat">Requieren acción: <strong id="obs-accion-count" style="color:var(--gate)">4</strong></div>
       <div class="obs-stat">Resueltas: <strong id="obs-resuelta-count" style="color:var(--trader)">1</strong></div>
       <div class="obs-stat">Solo observación: <strong id="obs-solo-count">1</strong></div>
     </div>
@@ -379,6 +379,54 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
     <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
     <div class="obs-list" id="obs-list">
+
+      <!-- OBS-006 · 2026-04-29 · PY -->
+      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-29<br>—</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">Divergencia simple entra con mismo lotaje que doble divergencia</div>
+          <div class="obs-text">Líneas 276-277: cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo riesgo que si fuera doble divergencia. Esto infla el número de trades y degrada la calidad promedio de señales, lo que puede explicar parcialmente la diferencia entre el WR del backtest y el real.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">obv_macd_adx_bot_final.py · líneas 275-278</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OBS-005 · 2026-04-29 · PY -->
+      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-29<br>—</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">n_pos se incrementa antes de confirmar ejecución de orden</div>
+          <div class="obs-text">Líneas 963-966: el bot cuenta una posición nueva antes de verificar que MT5 confirmó la orden (retcode DONE). Si la orden falla por ORDER_FILLING_IOC incompatible, el bot cree tener una posición más de las reales y puede bloquear nuevas entradas innecesariamente ese ciclo.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">obv_macd_adx_bot_final.py · líneas 962-966</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OBS-004 · 2026-04-29 · PY -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-29<br>—</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">ATR calculado diferente en backtest vs. bot en vivo</div>
+          <div class="obs-text">calc_atr() usa rolling SMA mientras todos los demás indicadores usan EWM. El SL y TP reales son sistemáticamente distintos a los del backtest. Esto contribuye directamente a la diferencia entre el PF simulado (2.16) y el real. Fix: cambiar rolling().mean() por ewm() en calc_atr().</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">obv_macd_adx_bot_final.py · línea 204</span>
+          </div>
+        </div>
+      </div>
 
       <!-- OBS-003 · 2026-04-28 · CHAT -->
       <div class="obs-card" style="--obs-color:var(--shared)" data-origin="chat" data-accion="si">
@@ -435,14 +483,175 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <!-- TAB 4: ARQUITECTURA / CÓDIGO          -->
   <!-- ══════════════════════════════════════ -->
   <div id="tab-arquitectura" class="tab-panel">
-    <div class="last-updated" id="lu-arquitectura">
-      <span>Sin archivo analizado · Los ítems actuales son de referencia inicial</span>
+    <div class="last-updated has-data" id="lu-arquitectura">
+      <span class="lu-label">Último análisis:</span>
+      <span>2026-04-29 · obv_macd_adx_bot_final.py · 1013 líneas · 10 hallazgos</span>
     </div>
     <div class="arch-list">
 
+      <!-- ── Hallazgos reales 2026-04-29 · obv_macd_adx_bot_final.py ── -->
+
       <div class="arch-card">
         <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Riesgo arquitectónico</span>
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 1009</span>
+          <span class="arch-title">Print de inicio dice "3 posiciones" — CONFIG tiene 6</span>
+        </div>
+        <div class="arch-desc">El mensaje de inicio imprime "máx 3 posiciones" pero CONFIG["max_positions"] es 6. Dato falso en consola desde el primer ciclo. Menor, pero genera confusión al monitorear.</div>
+        <div class="arch-code">
+# Línea 1009 — incorrecto:<br>
+print("🔴 CUENTA REAL | 2% riesgo/trade | máx 3 posiciones | ...")<br>
+<br>
+# CONFIG línea 90 — el valor real:<br>
+"max_positions": 6<br>
+<br>
+# Fix: usar la variable directamente:<br>
+print(f"🔴 CUENTA REAL | {CONFIG['risk_pct']*100:.0f}% riesgo | máx {CONFIG['max_positions']} posiciones | ...")
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 276-277</span>
+          <span class="arch-title">Divergencia simple entra igual que doble divergencia</span>
+        </div>
+        <div class="arch-desc">Cuando solo OBV O solo MACD divergen (no ambos), el bot abre posición con el mismo lotaje y riesgo que si fuera doble divergencia. El comentario dice "media señal" pero el código no lo refleja. Esto infla la cantidad de trades y degrada la calidad promedio de las señales.</div>
+        <div class="arch-code">
+# Líneas 275-278 — actual (problemático):<br>
+if precio_ll and obv_hl and macd_hl:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1<br>
+elif precio_ll and (obv_hl or macd_hl):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # ← mismo valor, mismo riesgo<br>
+<br>
+# Opciones:<br>
+# A) Usar valor diferente (ej: 0.5) y filtrar en construir_señales()<br>
+# B) Eliminar el elif y solo entrar con doble divergencia confirmada<br>
+# Recomendación: opción B, más conservadora y alineada con el nombre del bot
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 963-966</span>
+          <span class="arch-title">n_pos se incrementa antes de confirmar que la orden fue aceptada</span>
+        </div>
+        <div class="arch-desc">Después de abrir_orden(), el bot hace n_pos += 1 y syms_en_pos.add(sym) incluso si la orden falla por ORDER_FILLING_IOC incompatible u otro error. El resultado de abrir_orden() se evalúa como truthy pero el retcode puede no ser DONE. En ese ciclo el bot cree tener una posición más de las que realmente tiene.</div>
+        <div class="arch-code">
+# Líneas 962-966 — actual:<br>
+resultado = abrir_orden(sym, sig, precio, atr_v, log)<br>
+if resultado:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_pos += 1        # ← se incrementa aunque orden falle<br>
+&nbsp;&nbsp;&nbsp;&nbsp;trades_hoy += 1<br>
+&nbsp;&nbsp;&nbsp;&nbsp;syms_en_pos.add(sym)<br>
+<br>
+# Fix: verificar retcode antes de incrementar<br>
+if resultado and not resultado.get("demo") and resultado.retcode == mt5.TRADE_RETCODE_DONE:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_pos += 1
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Riesgo · Líneas 732-737</span>
+          <span class="arch-title">Señales de barras anteriores pueden re-dispararse</span>
+        </div>
+        <div class="arch-desc">get_signal_live() busca señal en las últimas 4 barras cerradas (range(-4,-1)). Si en el ciclo anterior ya abrió posición por una señal en la barra -3, en el ciclo siguiente esa misma barra sigue siendo la -3 (o -4). No hay tracking de qué barras ya generaron órdenes. El filtro syms_en_pos lo mitiga, pero solo mientras la posición esté abierta.</div>
+        <div class="arch-code">
+# Fix recomendado: registrar el índice (timestamp) de la última señal procesada por símbolo<br>
+_ultima_señal = {}  # sym → timestamp de la señal ejecutada<br>
+<br>
+# En get_signal_live(), retornar también el timestamp de la barra señal<br>
+# En run_bot(), verificar que el timestamp sea distinto al último procesado
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 144, 150</span>
+          <span class="arch-title">except: pass silencia errores críticos de MT5</span>
+        </div>
+        <div class="arch-desc">Dos bloques try/except sin tipo en get_costos_reales() tragan cualquier excepción, incluyendo pérdida de conexión con MT5 o errores de tipo inesperados. El fallback a spread genérico ($5 USD) se activa sin ningún aviso en el log.</div>
+        <div class="arch-code">
+# Actual — líneas 144 y 150:<br>
+except: pass<br>
+<br>
+# Fix:<br>
+except Exception as e:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.warning(f"{symbol}: error obteniendo costos reales — {e}. Usando fallback.")
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · Línea 66 y 91</span>
+          <span class="arch-title">risk_pct definido dos veces en CONFIG</span>
+        </div>
+        <div class="arch-desc">CONFIG tiene "risk_pct": 0.02 en la línea 66 (sección riesgo) y otra vez en la línea 91 (sección bot). Python usa el último valor. Hoy ambos son iguales, pero si alguien edita uno sin ver el otro el bot corre con el riesgo equivocado en silencio.</div>
+        <div class="arch-code">
+# Línea 66:<br>
+"risk_pct": 0.02,   # ← primera definición<br>
+...<br>
+# Línea 91:<br>
+"risk_pct": 0.02,   # ← sobreescribe la anterior<br>
+<br>
+# Fix: eliminar la de línea 66, dejar solo la de la sección Bot
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Deuda técnica · calc_atr()</span>
+          <span class="arch-title">ATR usa SMA en backtest, EMA en live — resultados divergen</span>
+        </div>
+        <div class="arch-desc">calc_atr() usa rolling(period).mean() (media simple) mientras todos los demás indicadores usan ewm() (media exponencial). El ATR que calcula el backtest es diferente al que calcula el bot en vivo. Esto provoca que el SL y TP reales sean distintos a los del backtest, contribuyendo a la diferencia entre PF simulado y real.</div>
+        <div class="arch-code">
+# Actual — línea 204:<br>
+return pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(period).mean()<br>
+<br>
+# Consistente con el resto del código (EMA):<br>
+return pd.concat([hl, hc, lc], axis=1).max(axis=1).ewm(span=period, adjust=False).mean()
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec</span>
+          <span class="arch-title">Circuit breakers no implementados</span>
+        </div>
+        <div class="arch-desc">La Spec de Estrategia menciona circuit breakers como condición de parada automática. En el código no existe ninguna lógica de: parada si drawdown diario supera X%, parada si N trades consecutivos son pérdida, ni restricción de horario de baja liquidez. El bot opera 24/7 sin límite de pérdida diaria.</div>
+        <div class="arch-code">
+# Estructura mínima a agregar en run_bot():<br>
+MAX_DD_DIARIO = 0.05   # 5% del balance<br>
+balance_inicio_dia = account.balance<br>
+if (balance_inicio_dia - account.equity) / balance_inicio_dia > MAX_DD_DIARIO:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.warning("⛔ Circuit breaker: DD diario superado. Pausando.")<br>
+&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(3600); continue
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-mejora">🔵 Mejora · guardar_estado()</span>
+          <span class="arch-title">Estado JSON no incluye detalle de posiciones abiertas</span>
+        </div>
+        <div class="arch-desc">El JSON guardado en cada ciclo solo registra cuántas posiciones hay y qué símbolos están abiertos, pero no precio de entrada, SL, TP, tiempo abierto ni PnL flotante de cada posición. Esto hace imposible el análisis forense del estado del bot sin conectarse a MT5 directamente.</div>
+        <div class="arch-code">
+# Agregar en guardar_estado() — línea 969:<br>
+"posiciones_detalle": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"ticket": p.ticket, "symbol": p.symbol,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tipo": "LONG" if p.type==0 else "SHORT",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"precio_entrada": p.price_open, "sl": p.sl, "tp": p.tp,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"pnl_flotante": p.profit, "volumen": p.volume,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tiempo_abierto": str(datetime.utcfromtimestamp(p.time))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;} for p in pos_bot<br>
+],
+        </div>
+      </div>
+
+      <!-- ── Hallazgos previos (referencia inicial) ── -->
+      <div class="arch-card">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Riesgo arquitectónico · Confirmado en código</span>
           <span class="arch-title">guardar_estado() bloquea el loop principal</span>
         </div>
         <div class="arch-desc">La función guardar_estado() escribe el JSON de estado directamente en el loop principal. Si el disco está lento o el sistema operativo tiene latencia, puede hacer que el bot "duerma" y pierda una vela M5. Esto también explica la desconexión del heartbeat del 24 abr.</div>
