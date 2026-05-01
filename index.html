@@ -804,12 +804,16 @@ async function startUpload() {
       form.append('file', files[j]);
       form.append('folder', folder);
       var r = await fetch(WORKER + '/upload', { method: 'POST', body: form });
-      var res = await r.json();
-      if (!res.ok) throw new Error(res.error || 'upload failed');
+      var res;
+      try { res = await r.json(); } catch(_) { throw new Error('Worker HTTP ' + r.status + ' — respuesta no válida'); }
+      if (!res.ok) throw new Error(res.error || 'HTTP ' + r.status);
       _setStep(j, 'done', '✓ ' + files[j].name + ' subido');
       uploadedFiles.push({ name: files[j].name, type: files[j].name.split('.').pop() });
     } catch(e) {
-      _setStep(j, 'error', '✗ ' + files[j].name + ' — ' + e.message);
+      var msg = e.message.includes('Failed to fetch')
+        ? 'No se pudo conectar al Worker — verificá que está desplegado en Cloudflare'
+        : e.message;
+      _setStep(j, 'error', '✗ ' + files[j].name + ' — ' + msg);
       btn.disabled = false;
       btn.textContent = 'Subir →';
       return;
@@ -825,12 +829,16 @@ async function startUpload() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: groupName, folder: folder, files: uploadedFiles })
     });
-    var rgRes = await rg.json();
-    if (!rgRes.ok) throw new Error(rgRes.error || 'register failed');
+    var rgRes;
+    try { rgRes = await rg.json(); } catch(_) { throw new Error('Worker HTTP ' + rg.status + ' — respuesta no válida'); }
+    if (!rgRes.ok) throw new Error(rgRes.error || 'HTTP ' + rg.status);
     _setStep(regStep, 'done', '✓ Grupo ' + rgRes.badge + ' registrado');
     _setStep(regStep + 1, 'done', '✓ Listo — el análisis comenzará en la próxima sesión');
   } catch(e) {
-    _setStep(regStep, 'error', '✗ Error: ' + e.message);
+    var msg2 = e.message.includes('Failed to fetch')
+      ? 'No se pudo conectar al Worker — verificá que está desplegado en Cloudflare'
+      : e.message;
+    _setStep(regStep, 'error', '✗ Registro fallido — ' + msg2);
     btn.disabled = false;
     btn.textContent = 'Subir →';
     return;
