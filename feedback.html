@@ -188,14 +188,13 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .file-filter-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
 .file-filter-btn{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all 0.2s;}
 .file-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
-.file-filter-btn.ff-py.active{border-color:rgba(215,119,6,0.6);color:var(--shared);background:rgba(215,119,6,0.06);}
+.file-filter-hint{font-family:var(--font-mono);font-size:9px;color:var(--muted);opacity:0.6;margin-left:4px;white-space:nowrap;}
 
 /* ── EXPORT BAR ── */
 .export-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 .btn-export{font-family:var(--font-mono);font-size:11px;padding:8px 16px;border-radius:8px;border:1px solid rgba(37,99,235,0.35);background:rgba(37,99,235,0.08);color:var(--nico);cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
 .btn-export:hover{background:rgba(37,99,235,0.16);}
-.btn-export.btn-sub{font-size:10px;border-color:var(--border);background:var(--surface);color:var(--muted);}
-.btn-export.btn-sub:hover{border-color:rgba(37,99,235,0.3);color:var(--nico);}
+.export-scope{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
 .btn-save-comment{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(5,150,105,0.35);background:rgba(5,150,105,0.08);color:var(--trader);cursor:pointer;transition:all 0.2s;display:inline-block;margin-top:8px;}
 .btn-save-comment:hover{background:rgba(5,150,105,0.16);}
 .btn-save-comment.saved{background:rgba(5,150,105,0.18);border-color:rgba(5,150,105,0.5);}
@@ -254,14 +253,15 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="page-sub">Herramienta del producto · 5 módulos de análisis y feedback al trader</div>
 
   <div class="export-bar" id="export-bar">
-    <button class="btn-export" onclick="exportReport('all')">⬇ Exportar informe completo</button>
-    <!-- botones por archivo: generados por JS desde los file-section-header del DOM -->
+    <button class="btn-export" onclick="exportReport()">⬇ Exportar informe — todos los módulos</button>
+    <span class="export-scope" id="export-scope" style="display:none;"></span>
   </div>
 
   <div class="file-filter-bar" id="file-filter-bar">
     <span class="file-filter-label">VER:</span>
-    <button class="file-filter-btn active" id="ff-all" onclick="filterByFile('all',this)">Todos los archivos</button>
+    <button class="file-filter-btn active" id="ff-all" onclick="toggleFileFilter('all','all',this)">Todos</button>
     <!-- botones por archivo: generados por JS desde los file-section-header del DOM -->
+    <span class="file-filter-hint">selección múltiple</span>
   </div>
 
   <div class="tabs">
@@ -865,37 +865,62 @@ function descargarPlantilla() {
   URL.revokeObjectURL(a.href);
 }
 
-function filterByFile(fileClass, btn) {
-  document.querySelectorAll('.file-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+// fileId → fshClass — poblado al cargar
+const fileRegistry = {};
+
+// Set de fshClasses activos; vacío = todos visibles
+const activeFiles = new Set();
+
+function _applyFileFilter() {
   const headers = document.querySelectorAll('.file-section-header');
-  if (fileClass === 'all') {
+  const scope = document.getElementById('export-scope');
+  if (activeFiles.size === 0) {
     headers.forEach(h => {
       h.style.display = '';
       let n = h.nextElementSibling;
       while (n && !n.classList.contains('file-section-header')) { n.style.display = ''; n = n.nextElementSibling; }
     });
+    if (scope) { scope.style.display = 'none'; scope.textContent = ''; }
     return;
   }
   headers.forEach(h => {
-    const match = h.classList.contains(fileClass);
+    const match = [...activeFiles].some(cls => h.classList.contains(cls));
     h.style.display = match ? '' : 'none';
     let n = h.nextElementSibling;
-    while (n && !n.classList.contains('file-section-header')) {
-      n.style.display = match ? '' : 'none';
-      n = n.nextElementSibling;
-    }
+    while (n && !n.classList.contains('file-section-header')) { n.style.display = match ? '' : 'none'; n = n.nextElementSibling; }
   });
+  if (scope) {
+    const names = [...document.querySelectorAll('.file-filter-btn.active:not(#ff-all)')].map(b => b.textContent.trim()).join(' + ');
+    scope.textContent = 'Exportará: ' + names + ' · todos los módulos';
+    scope.style.display = '';
+  }
 }
 
-// fileId → fshClass (ej: 'FILE-001' → 'fsh-html') — poblado al cargar
-const fileRegistry = {};
+function toggleFileFilter(fshClass, fileId, btn) {
+  const allBtn = document.getElementById('ff-all');
+  if (fileId === 'all') {
+    activeFiles.clear();
+    document.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(b => b.classList.remove('active'));
+    allBtn.classList.add('active');
+    _applyFileFilter();
+    return;
+  }
+  allBtn.classList.remove('active');
+  if (activeFiles.has(fshClass)) {
+    activeFiles.delete(fshClass);
+    btn.classList.remove('active');
+  } else {
+    activeFiles.add(fshClass);
+    btn.classList.add('active');
+  }
+  if (activeFiles.size === 0) allBtn.classList.add('active');
+  _applyFileFilter();
+}
 
-function exportReport(fileId) {
-  if (fileId !== 'all') {
-    const fc = fileRegistry[fileId];
+function exportReport() {
+  if (activeFiles.size > 0) {
     document.querySelectorAll('.file-section-header').forEach(h => {
-      const match = fc && h.classList.contains(fc);
+      const match = [...activeFiles].some(cls => h.classList.contains(cls));
       h.classList.toggle('print-hidden', !match);
       let n = h.nextElementSibling;
       while (n && !n.classList.contains('file-section-header')) {
@@ -962,9 +987,10 @@ window.addEventListener('DOMContentLoaded', function() {
   localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
 });
 
-// Construir botones de filtro y export dinámicamente desde los file-section-header presentes
+// Construir botones de filtro dinámicamente desde los file-section-header presentes
 window.addEventListener('DOMContentLoaded', function() {
   const seen = new Set();
+  const hint = document.querySelector('.file-filter-hint');
   document.querySelectorAll('.file-section-header').forEach(h => {
     const fileId = h.querySelector('.fsh-badge')?.textContent?.trim();
     if (!fileId || seen.has(fileId)) return;
@@ -974,22 +1000,13 @@ window.addEventListener('DOMContentLoaded', function() {
     const fshClass = [...h.classList].find(c => c.startsWith('fsh-'));
     fileRegistry[fileId] = fshClass;
 
-    // Botón de filtro
     const filterBar = document.getElementById('file-filter-bar');
     const fb = document.createElement('button');
     fb.className = 'file-filter-btn';
     fb.textContent = icon + ' ' + name;
-    fb.onclick = function() { filterByFile(fshClass, fb); };
-    filterBar.appendChild(fb);
-
-    // Botón de export
-    const exportBar = document.getElementById('export-bar');
-    const eb = document.createElement('button');
-    eb.className = 'btn-export btn-sub';
-    const ext = name.includes('.') ? name.split('.').pop().toUpperCase() : fileId;
-    eb.textContent = icon + ' Solo ' + ext;
-    eb.onclick = function() { exportReport(fileId); };
-    exportBar.appendChild(eb);
+    fb.onclick = function() { toggleFileFilter(fshClass, fileId, fb); };
+    // Insertar antes del hint
+    filterBar.insertBefore(fb, hint || null);
   });
 });
 
