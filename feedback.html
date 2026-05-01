@@ -33,8 +33,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 /* ── MODULE 1: Backtest Quality ── */
 .strategy-selector{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;}
-.strat-btn{font-family:var(--font-mono);font-size:11px;padding:7px 16px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.2s;}
-.strat-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(59,130,246,0.08);}
+
 
 .quality-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:28px;}
 .qm-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;}
@@ -336,13 +335,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <span>2026-04-30 · 21:00 · backtest_canal_fib.py · Canal Fib 20 barras · M3 · 180 días · 3 símbolos · 559 trades totales</span>
     </div>
 
-    <div class="strategy-selector" style="margin-top:16px;">
-      <button class="strat-btn active" onclick="showQuality('xauusd',this)">XAUUSD (Oro)</button>
-      <button class="strat-btn" onclick="showQuality('xagusd',this)">XAGUSD (Plata)</button>
-      <button class="strat-btn" onclick="showQuality('btcusd',this)">BTCUSD (Bitcoin)</button>
-    </div>
-
     <!-- Métricas XAUUSD -->
+    <div class="fsh-label" style="margin-top:16px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">XAUUSD — Oro</div>
     <div id="quality-xauusd" class="quality-grid">
       <div class="qm-card">
         <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
@@ -383,7 +377,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     </div>
 
     <!-- Métricas XAGUSD -->
-    <div id="quality-xagusd" class="quality-grid" style="display:none;">
+    <div class="fsh-label" style="margin-top:24px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">XAGUSD — Plata</div>
+    <div id="quality-xagusd" class="quality-grid">
       <div class="qm-card">
         <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
         <div class="qm-val">162</div>
@@ -423,7 +418,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     </div>
 
     <!-- Métricas BTCUSD -->
-    <div id="quality-btcusd" class="quality-grid" style="display:none;">
+    <div class="fsh-label" style="margin-top:24px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">BTCUSD — Bitcoin</div>
+    <div id="quality-btcusd" class="quality-grid">
       <div class="qm-card">
         <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
         <div class="qm-val">224</div>
@@ -1828,12 +1824,7 @@ function showTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
 }
-function showQuality(id, btn) {
-  document.querySelectorAll('[id^="quality-"]').forEach(d => d.style.display = 'none');
-  document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('quality-' + id).style.display = 'block';
-  btn.classList.add('active');
-}
+
 function _calcObsStats(origin) {
   const cards = document.querySelectorAll('#obs-list .obs-card');
   let total = 0, accion = 0, resuelta = 0, solo = 0;
