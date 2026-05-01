@@ -247,6 +247,46 @@ h1 {
 .wf-step.warn   .wf-step-dot { background: #ea580c; animation: none; }
 .wf-step.warn   .wf-step-label { color: #ea580c; }
 
+/* Upload status bar — fijo en la parte superior */
+#upload-status-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #1e3a8a;
+  color: #fff;
+  padding: 11px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  transform: translateY(-100%);
+  transition: transform 0.25s ease;
+}
+#upload-status-bar.visible { transform: translateY(0); }
+#upload-status-bar.interrupted { background: #92400e; }
+.usb-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #93c5fd; flex-shrink: 0;
+  animation: pulse 1s infinite;
+}
+#upload-status-bar.interrupted .usb-dot { background: #fcd34d; animation: none; }
+.usb-text { flex: 1; }
+.usb-close {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 4px;
+  color: #fff;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.usb-close:hover { background: rgba(255,255,255,0.25); }
+body.uploading { padding-top: 42px; }
+
 /* ── FILES LIST ─────────────────────────────────────────────────────────── */
 .files-list {
   display: flex;
@@ -509,6 +549,13 @@ footer {
 </style>
 </head>
 <body>
+
+<div id="upload-status-bar">
+  <div class="usb-dot"></div>
+  <span class="usb-text"></span>
+  <button class="usb-close" onclick="_hideUploadBanner()">Cerrar ×</button>
+</div>
+
 <div class="wrapper">
 
   <!-- Header -->
@@ -834,11 +881,9 @@ async function startUpload() {
   btn.disabled = true;
   btn.textContent = 'Subiendo archivos…';
 
-  // Persistir estado para sobrevivir F5
-  localStorage.setItem('tb_upload', JSON.stringify({
-    groupName: groupName,
-    fileNames: Array.from(files).map(function(f) { return f.name; })
-  }));
+  var fileNames = Array.from(files).map(function(f) { return f.name; });
+  localStorage.setItem('tb_upload', JSON.stringify({ groupName: groupName, fileNames: fileNames }));
+  _showUploadBanner(groupName, fileNames, false);
 
   var stepLabels = [];
   for (var i = 0; i < files.length; i++) stepLabels.push('Subiendo ' + files[i].name + '…');
@@ -877,7 +922,7 @@ async function startUpload() {
     if (!rgRes.ok) throw new Error(rgRes.error || 'HTTP ' + rg.status);
     _setStep(regStep, 'done', '✓ Grupo ' + rgRes.badge + ' registrado');
     _setStep(regStep + 1, 'done', '✓ Listo — el análisis comenzará en la próxima sesión');
-    localStorage.removeItem('tb_upload');
+    _hideUploadBanner();
 
     // Reset form
     document.getElementById('upload-group-name').value = '';
@@ -904,38 +949,40 @@ async function startUpload() {
       activeStep.className = 'wf-step error';
       if (lbl2) lbl2.textContent = '✗ ' + msg;
     }
-    localStorage.removeItem('tb_upload');
+    _hideUploadBanner();
     btn.disabled = false;
     btn.textContent = 'Subir →';
   }
 }
 
+// ── Upload banner ─────────────────────────────────────────────────────────────
+function _showUploadBanner(groupName, fileNames, interrupted) {
+  var bar = document.getElementById('upload-status-bar');
+  var text = interrupted
+    ? '⚠  Subida interrumpida — ' + groupName + ' (' + fileNames.length + ' archivo(s)). Verificá si el grupo aparece en la lista.'
+    : 'Subiendo archivos — ' + groupName + ' (' + fileNames.length + ' archivo(s))…';
+  bar.querySelector('.usb-text').textContent = text;
+  bar.className = 'visible' + (interrupted ? ' interrupted' : '');
+  document.body.classList.add('uploading');
+}
+
+function _hideUploadBanner() {
+  var bar = document.getElementById('upload-status-bar');
+  bar.className = '';
+  document.body.classList.remove('uploading');
+  localStorage.removeItem('tb_upload');
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 loadFileList();
 
-// Restaurar estado de upload si la página fue recargada durante una subida
-(function restoreUploadState() {
+// Restaurar banner si la página fue recargada durante una subida
+(function() {
   var saved = localStorage.getItem('tb_upload');
   if (!saved) return;
   try {
     var u = JSON.parse(saved);
-    var stepLabels = u.fileNames.map(function(n) { return n; });
-    stepLabels.push('Registrando grupo en data.json…');
-    stepLabels.push('Listo — el análisis comenzará en la próxima sesión');
-    _initWorkflow(stepLabels);
-
-    // Banner de advertencia sobre la recarga
-    var wf = document.getElementById('upload-workflow');
-    var banner = document.createElement('div');
-    banner.id = 'upload-interrupted-banner';
-    banner.style.cssText = 'background:#fff7ed;border:1px solid #fdba74;border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
-    banner.innerHTML = '<span style="color:#9a3412;font-size:13px;">⚠ Subida interrumpida por recarga — <strong>' + u.groupName + '</strong> · ' + u.fileNames.length + ' archivo(s). Verificá si el grupo aparece en la lista.</span>' +
-      '<button onclick="document.getElementById(\'upload-workflow\').style.display=\'none\';localStorage.removeItem(\'tb_upload\');loadFileList();" style="background:none;border:1px solid #fdba74;border-radius:4px;padding:4px 10px;cursor:pointer;color:#9a3412;font-size:12px;white-space:nowrap;">Limpiar ×</button>';
-    wf.insertBefore(banner, wf.firstChild);
-
-    // Marcar todos los pasos como "pendiente"
-    var steps = wf.querySelectorAll('.wf-step');
-    steps.forEach(function(s) { s.className = 'wf-step warn'; });
+    _showUploadBanner(u.groupName, u.fileNames, true);
   } catch(e) {
     localStorage.removeItem('tb_upload');
   }
