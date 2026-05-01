@@ -315,6 +315,10 @@ async function handlePatchGroup(request, env) {
           if (corrections[card.id] !== undefined) card.correction = corrections[card.id];
         }
       }
+      // Save M1 correction (card id may be M1-general, M1-quality, or M1-readiness)
+      if (!group.m1) group.m1 = {};
+      const m1Correction = corrections['M1-general'] || corrections['M1-quality'] || corrections['M1-readiness'] || '';
+      if (m1Correction) group.m1.correction = m1Correction;
       group.trader_notes = body.trader_notes || '';
       group.revision_submitted = true;
       group.status = 'pendiente_final';

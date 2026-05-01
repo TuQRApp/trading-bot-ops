@@ -123,34 +123,50 @@ Files:
 
 def build_finalize_prompt(group):
     trader_notes = (group.get("trader_notes") or "").strip()
+
+    # Collect card-level corrections from m2/m3/m4
     corrections = {}
     for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", []):
         c = (card.get("correction") or "").strip()
         if c:
             corrections[card["id"]] = c
 
+    # M1 correction
+    m1 = group.get("m1", {})
+    m1_correction = (m1.get("correction") or "").strip()
+    has_m1_correction = bool(m1_correction)
+
     current = {
+        "m1": m1,
         "m2": group.get("m2", []),
         "m3": group.get("m3", []),
         "m4": group.get("m4", []),
     }
 
+    output_structure = '{"m1": {...}, "m2": [...], "m3": [...], "m4": [...]}' if has_m1_correction else '{"m2": [...], "m3": [...], "m4": [...]}'
+
     return f"""You are finalizing a trading bot analysis after the trader reviewed the draft.
+
+CRITICAL: Every correction listed below is a MANDATORY change that MUST be reflected in the final analysis.
+Do NOT ignore, soften, or partially apply corrections. Treat each one as a direct instruction from the trader.
 
 Current analysis:
 {json.dumps(current, ensure_ascii=True, indent=2)}
 
 Trader general notes: "{trader_notes}"
 
-Card-level corrections (card_id -> trader comment):
+M1 correction (applies to the m1 block): "{m1_correction if m1_correction else 'None'}"
+
+Card-level corrections (card_id -> trader correction):
 {json.dumps(corrections, ensure_ascii=True, indent=2) if corrections else "None"}
 
 Instructions:
-- For cards that received a correction, incorporate the feedback and set the card's "comment" field to a short note summarizing what the trader said and what was adjusted.
+- For EVERY card that received a correction: you MUST incorporate the feedback substantively — rewrite the title, desc, or fix as needed. Set the card's "comment" field to a short note summarizing what the trader said and what was adjusted.
+- If m1 received a correction, update the m1 block accordingly (adjust score, metrics, bullets, or type as instructed).
 - For cards with no correction, keep "comment" as "".
-- Do NOT change IDs, structure, or overall analysis — only refine based on trader feedback.
-- Remove the "correction" key from all cards if present.
-- OUTPUT ONLY VALID JSON with this exact structure: {{"m2": [...], "m3": [...], "m4": [...]}}
+- Do NOT change IDs or overall structure.
+- Remove the "correction" key from all cards and from m1 if present.
+- OUTPUT ONLY VALID JSON with this exact structure: {output_structure}
 - Use only ASCII characters. All text in Spanish.
 """
 
@@ -215,13 +231,16 @@ def process_pendiente_final(group):
     print(f"  Finalizing {group['badge']} — {group['name']}")
 
     trader_notes = (group.get("trader_notes") or "").strip()
-    has_corrections = any(
+    m1_correction = (group.get("m1", {}).get("correction") or "").strip()
+    has_corrections = m1_correction or any(
         (card.get("correction") or "").strip()
         for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", [])
     )
 
     if trader_notes or has_corrections:
         updated = call_claude(build_finalize_prompt(group))
+        if "m1" in updated:
+            group["m1"] = updated["m1"]
         group["m2"] = updated.get("m2", group["m2"])
         group["m3"] = updated.get("m3", group["m3"])
         group["m4"] = updated.get("m4", group["m4"])
@@ -236,6 +255,8 @@ def process_pendiente_final(group):
 
     for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", []):
         card.pop("correction", None)
+    if isinstance(group.get("m1"), dict):
+        group["m1"].pop("correction", None)
 
     return True
 
