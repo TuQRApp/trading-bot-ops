@@ -208,6 +208,12 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .btn-export:disabled{opacity:0.35;cursor:default;pointer-events:none;}
 .export-scope{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
 .export-locked-msg{font-family:var(--font-mono);font-size:10px;color:#92400e;padding:5px 12px;border:1px solid rgba(234,88,12,0.3);border-radius:6px;background:rgba(234,88,12,0.06);}
+
+/* ── TRADER REVISION BLOCK ── */
+.trader-revision-block{margin-top:10px;padding:10px 14px;background:rgba(5,150,105,0.04);border:1px solid rgba(5,150,105,0.2);border-left:3px solid var(--trader);border-radius:6px;}
+.trader-revision-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;}
+.trader-revision-text{font-size:12px;color:var(--text);line-height:1.55;}
+
 .btn-save-comment{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(5,150,105,0.35);background:rgba(5,150,105,0.08);color:var(--trader);cursor:pointer;transition:all 0.2s;display:inline-block;margin-top:8px;}
 .btn-save-comment:hover{background:rgba(5,150,105,0.16);}
 .btn-save-comment.saved{background:rgba(5,150,105,0.18);border-color:rgba(5,150,105,0.5);}
@@ -454,6 +460,14 @@ function _fshHtml(g, count) {
     '</div>';
 }
 
+function _traderRevisionHtml(comment) {
+  if (!comment) return '';
+  return '<div class="trader-revision-block">' +
+    '<div class="trader-revision-label">💬 Comentario del Trader — revisión incorporada</div>' +
+    '<div class="trader-revision-text">' + _esc(comment) + '</div>' +
+    '</div>';
+}
+
 function _correctionFieldHtml(cardId, badge) {
   return '<div class="correction-wrap">' +
     '<label class="correction-label">💬 Comentarios del Trader</label>' +
@@ -568,9 +582,7 @@ function _renderM2Group(g) {
     var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
     var elbl = _estadoLbl[r.estado] || r.estado;
     var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
-    var responseHtml = (g.status !== 'en_revision')
-      ? '<div class="rec-response"><div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div></div>'
-      : '';
+    var traderHtml = (g.status !== 'en_revision') ? _traderRevisionHtml(r.comment) : '';
     html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
         '<span class="rec-num">' + _esc(r.id) + '</span>' +
@@ -582,7 +594,7 @@ function _renderM2Group(g) {
         '</div>' +
       '</div>' +
       '<div class="rec-desc">' + _esc(r.desc) + '</div>' +
-      correctionHtml + responseHtml +
+      correctionHtml + traderHtml +
       '</div>';
   });
   return html;
@@ -610,6 +622,7 @@ function _renderM3Group(g) {
     var accionCss = o.accion === 'si' ? 'obs-accion-si' : o.accion === 'resuelta' ? 'obs-accion-resuelta' : 'obs-accion-no';
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
     var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
+    var traderHtml3 = (g.status !== 'en_revision') ? _traderRevisionHtml(o.comment) : '';
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
         '<div class="obs-timestamp">' + datePart + '<br>' + timePart + '</div>' +
@@ -622,7 +635,7 @@ function _renderM3Group(g) {
           '<span class="obs-tag ' + accionCss + '">' + accionLbl + '</span>' +
           '<span class="obs-context">' + _esc(o.context||'') + '</span>' +
         '</div>' +
-        corrHtml3 +
+        corrHtml3 + traderHtml3 +
       '</div>' +
       '</div>';
   });
@@ -657,13 +670,14 @@ function _renderM4Group(g) {
     }
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
     var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
+    var traderHtml4 = (g.status !== 'en_revision') ? _traderRevisionHtml(a.comment) : '';
     html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
         '<span class="arch-category ' + catCss + '">' + _esc(a.label||a.categoria) + '</span>' +
         '<span class="arch-title">' + _esc(a.title) + '</span>' +
       '</div>' +
       '<div class="arch-desc">' + _esc(a.desc) + '</div>' +
-      codeHtml + corrHtml4 +
+      codeHtml + corrHtml4 + traderHtml4 +
       '</div>';
   });
   return html;
