@@ -178,7 +178,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .arch-cat-mejora{background:rgba(59,130,246,0.1);color:var(--nico);border:1px solid rgba(59,130,246,0.25);}
 .arch-title{font-size:15px;font-weight:700;}
 .arch-desc{font-size:13px;color:#4a5875;line-height:1.7;margin-bottom:10px;}
-.arch-code{background:rgba(30,45,110,0.06);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;color:#4a5875;line-height:1.8;overflow-x:auto;}
+.arch-code{background:rgba(30,45,110,0.06);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;color:#4a5875;line-height:1.8;overflow-x:auto;white-space:pre-wrap;}
 
 /* Shared textarea */
 .notes-area{background:rgba(30,45,110,0.03);border:1px solid var(--border);border-radius:8px;padding:12px 14px;width:100%;font-family:var(--font-display);font-size:13px;color:#4a5875;line-height:1.7;resize:vertical;outline:none;}
@@ -263,7 +263,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="file-filter-bar" id="file-filter-bar">
     <span class="file-filter-label">VER:</span>
     <button class="file-filter-btn active" id="ff-all" onclick="toggleFileFilter('all','all',this)">Todos</button>
-    <!-- botones por archivo: generados por JS desde los file-section-header del DOM -->
     <span class="file-filter-hint">selección múltiple</span>
   </div>
 
@@ -275,1388 +274,50 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     <button class="tab-btn" onclick="showTab('negocio',this)">5 · Negocio</button>
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 1: BACKTEST QUALITY               -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 1: BACKTEST QUALITY — rendered from data.json -->
   <div id="tab-backtest" class="tab-panel active">
-
-    <div class="file-section-header fsh-py">
-      <div class="fsh-icon ftype-py">🐍</div>
-      <span class="fsh-name">obv_macd_adx_bot_final_v2.py</span>
-      <span class="fsh-badge">FILE-001</span>
-      <div class="fsh-line"></div>
-      <span class="fsh-count">Sin backtest disponible — pendiente de subir</span>
-    </div>
-
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Se actualiza con</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — trades exportados desde MT5</div>
-        <div class="trigger-chip"><span class="tc-type tc-html">HTML</span> backtest.html — reporte generado por el bot</div>
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest.py — código del backtest (análisis de metodología)</div>
-      </div>
-    </div>
-    <div class="last-updated" id="lu-backtest">
-      <span class="lu-label">FILE-001 · Estado:</span>
-      <span>Sin backtest — el archivo anterior fue removido. Sube un nuevo backtest.html o historial_trades.csv para activar este módulo.</span>
-    </div>
-
-    <div class="module-empty-state">
-      <div class="mes-icon">📊</div>
-      <div class="mes-title">FILE-001 sin backtest cargado</div>
-      <div class="mes-desc">El backtest del bot OBV+MACD+ADX fue removido del sistema. Sube un nuevo reporte para activar este módulo.</div>
-      <div class="mes-trigger">HTML · backtest.html — reporte generado por el motor de simulación</div>
-    </div>
-
-    <div class="rec-response" style="margin-top:24px;">
-      <div class="rec-response-label">🟢 Comentarios del Trader — notas sobre backtest</div>
-      <div class="rec-response-text"></div>
-    </div>
-
-    <!-- ── FILE-002 · Canal Fibonacci · 2026-04-30 ── -->
-    <div class="file-section-header fsh-fib">
-      <div class="fsh-icon ftype-csv">📈</div>
-      <span class="fsh-name">Canal Fibonacci</span>
-      <span class="fsh-badge">FILE-002</span>
-      <div class="fsh-line"></div>
-      <span class="fsh-count">5 archivos · XAUUSD / XAGUSD / BTCUSD · 180 días · M3</span>
-    </div>
-
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Archivos</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest_canal_fib.py — motor de backtest</div>
-        <div class="trigger-chip"><span class="tc-type tc-html">HTML</span> canal_fib_backtest.html — reporte generado</div>
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_XAUUSD.csv — 173 trades</div>
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_XAGUSD.csv — 162 trades</div>
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_BTCUSD.csv — 224 trades</div>
-      </div>
-    </div>
-    <div class="last-updated has-data">
-      <span class="lu-label">Último análisis:</span>
-      <span>2026-04-30 · 21:00 · backtest_canal_fib.py · Canal Fib 20 barras · M3 · 180 días · 3 símbolos · 559 trades totales</span>
-    </div>
-
-    <div class="strategy-selector" style="margin-top:16px;">
-      <button class="strat-btn" onclick="scrollToQuality('xauusd')">↓ XAUUSD (Oro)</button>
-      <button class="strat-btn" onclick="scrollToQuality('xagusd')">↓ XAGUSD (Plata)</button>
-      <button class="strat-btn" onclick="scrollToQuality('btcusd')">↓ BTCUSD (Bitcoin)</button>
-    </div>
-
-    <!-- Métricas XAUUSD -->
-    <div class="fsh-label" style="margin-top:16px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">XAUUSD — Oro</div>
-    <div id="quality-xauusd" class="quality-grid">
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">173</div>
-        <div class="qm-target">180 días · M3 · Gold</div>
-        <div class="qm-comment">Alta frecuencia en M3. Volumen inflado por el rally de oro Nov 2025 – Abr 2026. Condición de mercado no representativa de todos los regímenes.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">+17.863%</div>
-        <div class="qm-target">$10.000 → $1.796.328</div>
-        <div class="qm-comment">Retorno extraordinario en período de tendencia fuerte. Señal de sobreajuste — los niveles Fibonacci largos capturan casi todo el rally.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lot cap alcanzado</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">100.0 lotes</div>
-        <div class="qm-target">Desde: Abr 2026</div>
-        <div class="qm-comment">Cuando lot_max se alcanza, las pérdidas pueden superar $30k/trade. El tramo cubierto por lot_max no es representativo del riesgo real del 2%.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">0 días</div>
-        <div class="qm-target">Target: ≥60 días OOS</div>
-        <div class="qm-comment">Todo el período (180 días) es in-sample. Sin datos fuera de muestra no se puede estimar la robustez del sistema.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Slippage modelado</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">No incluido</div>
-        <div class="qm-target">M3 = alta sensibilidad</div>
-        <div class="qm-comment">En M3 el slippage puede representar 20–40% del TP1. El backtest asume ejecución exacta al precio de señal.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">Ninguno</div>
-        <div class="qm-target">Canal: barras [i-20, i-1]</div>
-        <div class="qm-comment">El canal Fibonacci usa solo las 20 barras anteriores a la señal. La metodología es correcta en este aspecto.</div>
-      </div>
-    </div>
-
-    <!-- Métricas XAGUSD -->
-    <div class="fsh-label" style="margin-top:24px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">XAGUSD — Plata</div>
-    <div id="quality-xagusd" class="quality-grid">
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">162</div>
-        <div class="qm-target">180 días · M3 · Silver</div>
-        <div class="qm-comment">La plata tuvo tendencia alcista fuerte en el período. Mayoría de trades LONG, capturando el movimiento dominante.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">+7.400%</div>
-        <div class="qm-target">$10.000 → $749.996</div>
-        <div class="qm-comment">Retorno extremo asociado al capital compuesto y a la tendencia unidireccional. No generalizable a mercados laterales o bajistas.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lot cap alcanzado</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">100.0 lotes</div>
-        <div class="qm-target">Período avanzado</div>
-        <div class="qm-comment">Mismo riesgo que XAUUSD: una vez alcanzado lot_max, las pérdidas son desproporcionadas al capital teórico del 2%.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">0 días</div>
-        <div class="qm-target">Target: ≥60 días OOS</div>
-        <div class="qm-comment">Sin datos fuera de muestra. El sistema no ha sido probado en condiciones de mercado lateral o bajista en plata.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Slippage modelado</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">No incluido</div>
-        <div class="qm-target">XAGUSD más ilíquido</div>
-        <div class="qm-comment">La plata tiene menor liquidez que el oro en lotes grandes. El impacto del slippage puede ser más significativo que en XAUUSD.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">Ninguno</div>
-        <div class="qm-target">Canal: barras [i-20, i-1]</div>
-        <div class="qm-comment">Canal calculado solo con barras previas. La metodología es correcta en este aspecto.</div>
-      </div>
-    </div>
-
-    <!-- Métricas BTCUSD -->
-    <div class="fsh-label" style="margin-top:24px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">BTCUSD — Bitcoin</div>
-    <div id="quality-btcusd" class="quality-grid">
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">224</div>
-        <div class="qm-target">Sesión: 14:00–22:00 UTC</div>
-        <div class="qm-comment">Mayor número de trades — BTC opera solo 8h/día en el backtest. Alta frecuencia en M3 dentro de esa ventana.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">+2.181%</div>
-        <div class="qm-target">$10.000 → $228.107</div>
-        <div class="qm-comment">Retorno alto pero más moderado que metales. BTC tuvo mayor volatilidad y pérdidas más frecuentes en el período.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lot cap BTC</span><div class="qm-light light-yellow"></div></div>
-        <div class="qm-val">10.0 lotes máx</div>
-        <div class="qm-target">vs. 100.0 en metales</div>
-        <div class="qm-comment">El contrato BTC es mucho mayor. El cap de 10.0 se alcanza antes, pero cada pérdida en esa zona puede representar miles de USD.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">0 días</div>
-        <div class="qm-target">Target: ≥60 días OOS</div>
-        <div class="qm-comment">Sin out-of-sample. La restricción de sesión 14:00–22:00 UTC tampoco ha sido validada fuera del período analizado.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Filtro sesión</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">14:00–22:00 UTC</div>
-        <div class="qm-target">Ventana de liquidez BTC</div>
-        <div class="qm-comment">La restricción de horario es correcta — coincide con la mayor liquidez de BTC (mercado americano activo).</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">Ninguno</div>
-        <div class="qm-target">Canal: barras [i-20, i-1]</div>
-        <div class="qm-comment">El canal se calcula correctamente con barras históricas. Sin contaminación de datos futuros.</div>
-      </div>
-    </div>
-
-    <div class="overall-score" style="margin-top:20px;">
-      <div class="score-circle" style="border-color:var(--shared);color:var(--shared);background:rgba(217,119,6,0.08);">4.2</div>
-      <div>
-        <div class="score-text-title">Calidad metodológica Canal Fibonacci: Regular</div>
-        <div class="score-text-sub">
-          ✅ Sin lookahead bias — canal calculado con barras [i-20, i-1]<br>
-          ✅ Costos reales IC Markets Raw incluidos (spread + comisión por símbolo)<br>
-          ✅ Sesión BTC correctamente restringida a 14:00–22:00 UTC<br>
-          🟡 Período 180 días: un solo régimen (tendencia alcista fuerte en metales y BTC)<br>
-          🟡 Sin slippage — crítico en M3 donde cada pip pesa más en TP1<br>
-          🔴 Capital compuesto → lot_max alcanzado = riesgo no controlado en período tardío<br>
-          🔴 Sin validación out-of-sample — resultados no son generalizables<br>
-          🔴 Retornos +2.000–17.000% son señal de sobreajuste al régimen del período
-        </div>
-      </div>
-    </div>
-
-    <div class="rec-response" style="margin-top:20px;">
-      <div class="rec-response-label">🟢 Comentarios del Trader — Canal Fibonacci</div>
-      <div class="rec-response-text"></div>
-    </div>
-
-    <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
-    <div class="file-section-header fsh-v3">
-      <div class="fsh-icon ftype-py">🤖</div>
-      <span class="fsh-name">bot_canal_fib_v3.py</span>
-      <span class="fsh-badge">FILE-003</span>
-      <div class="fsh-line"></div>
-      <span class="fsh-count">Bot en vivo · Canal Fibonacci con Circuit Breaker</span>
-    </div>
-
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Este archivo</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot_canal_fib_v3.py — bot en vivo, 747 líneas</div>
-      </div>
-    </div>
-    <div class="last-updated has-data">
-      <span class="lu-label">Último análisis:</span>
-      <span>2026-05-01 · 09:00 · bot_canal_fib_v3.py · 747 líneas · XAUUSD / XAGUSD / BTCUSD · Circuit Breaker 3 niveles</span>
-    </div>
-
-    <div class="quality-grid" style="margin-top:16px;">
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Circuit Breaker</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">3 niveles</div>
-        <div class="qm-target">CB1 · CB2 · CB3</div>
-        <div class="qm-comment">CB1: 3 pérdidas consecutivas → pausa 4h. CB2: 4% DD diario → sin operar hoy. CB3: 10% DD total → detención completa, reinicio manual requerido.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Cap de lote</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">LOT_CAP_X = 5×</div>
-        <div class="qm-target">equity_ef = min(equity, $50k)</div>
-        <div class="qm-comment">El 2% se calcula siempre sobre equity capeado. Resuelve el riesgo ilimitado del backtest cuando el capital crece mucho.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Log de trades</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">CSV estructurado</div>
-        <div class="qm-target">canal_fib_trades.csv</div>
-        <div class="qm-comment">Registra apertura, TP/SL ejecutados, PnL real (profit + comisión + swap). Permite análisis forense entre sesiones.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Reconexión MT5</span><div class="qm-light light-green"></div></div>
-        <div class="qm-val">Automática</div>
-        <div class="qm-target">check_connection() cada ciclo</div>
-        <div class="qm-comment">Si MT5 pierde conexión el bot la detecta en ≤20 segundos e intenta reconectar sin detener el proceso.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Modo demo</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">No implementado</div>
-        <div class="qm-target">Riesgo: arranque directo en real</div>
-        <div class="qm-comment">No existe flag --demo ni confirmación de arranque. Ejecutar el script sin cambiar CONFIG opera directamente en cuenta real.</div>
-      </div>
-      <div class="qm-card">
-        <div class="qm-header"><span class="qm-name">Órdenes fin sesión</span><div class="qm-light light-red"></div></div>
-        <div class="qm-val">GTC sin cancelar</div>
-        <div class="qm-target">Riesgo: ejecución fuera horario</div>
-        <div class="qm-comment">ORDER_TIME_GTC significa que las órdenes límite no ejecutadas en sesión quedan activas y pueden dispararse fuera del horario operativo.</div>
-      </div>
-    </div>
-
-    <div class="overall-score" style="margin-top:20px;">
-      <div class="score-circle" style="border-color:var(--trader);color:var(--trader);background:rgba(5,150,105,0.08);">7.0</div>
-      <div>
-        <div class="score-text-title">Preparación para live: Aceptable con fixes pendientes</div>
-        <div class="score-text-sub">
-          ✅ Circuit Breaker de 3 niveles implementado<br>
-          ✅ Cap de lote 5× — el 2% es real aunque el equity crezca<br>
-          ✅ Log CSV + registrar_cierres() — trazabilidad completa de deals<br>
-          ✅ SESSION_HOURS en CONFIG — ajustable sin editar código<br>
-          🟡 CAPITAL_INI=$10.000 hardcodeado — ajustar al capital real antes de arrancar<br>
-          🔴 Log file apunta a "bot_canal_fib_v2.log" siendo v3 (línea 163)<br>
-          🔴 ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse<br>
-          🔴 Órdenes GTC sin cancelación al fin de sesión — riesgo de ejecución fuera de horario
-        </div>
-      </div>
-    </div>
-
-    <div class="rec-response" style="margin-top:20px;">
-      <div class="rec-response-label">🟢 Comentarios del Trader — bot_canal_fib_v3.py</div>
-      <div class="rec-response-text"></div>
-    </div>
-
+    <div id="m1-content"></div>
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 2: RECOMENDACIONES                -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 2: RECOMENDACIONES — rendered from data.json -->
   <div id="tab-recomendaciones" class="tab-panel">
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Se actualiza con</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — hallazgos de código generan recomendaciones</div>
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — métricas reales vs. esperadas</div>
-        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> bot_estado.json — comportamiento en vivo</div>
-        <div class="trigger-chip"><span class="tc-type tc-chat">CHAT</span> Cualquier comentario tuyo sobre el sistema</div>
-      </div>
-    </div>
     <div class="rec-toolbar">
       <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Recomendaciones del producto → trader</span>
     </div>
-    <div class="rec-list" id="rec-list">
-
-      <div class="file-section-header fsh-py">
-        <div class="fsh-icon ftype-py">🐍</div>
-        <span class="fsh-name">obv_macd_adx_bot_final_v2.py</span>
-        <span class="fsh-badge">FILE-001</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">5 recomendaciones</span>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-01</span>
-          <div class="rec-title">Corregir ATR: usar EWM consistente con el resto de indicadores</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">calc_atr() usa rolling SMA (línea 205) mientras todos los demás indicadores usan EWM. El SL y TP reales son sistemáticamente distintos a los del backtest. Es causa directa de divergencia entre PF simulado y real. Fix de una línea: cambiar .rolling(period).mean() por .ewm(span=period, adjust=False).mean().</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-02</span>
-          <div class="rec-title">Eliminar divergencia simple como señal de entrada</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">Líneas 277-278 y 290-291: cuando solo OBV o solo MACD divergen, el bot entra con el mismo riesgo que si fuera doble divergencia. El nombre dice "Doble Divergencia" pero en la práctica acepta señales simples. Eliminar los elif reducirá el número de trades pero mejorará la calidad promedio de cada entrada.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-03</span>
-          <div class="rec-title">Eliminar risk_pct duplicado en CONFIG</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">risk_pct está declarado dos veces en CONFIG: línea 68 (sección Riesgo) y línea 92 (sección Bot). Python acepta claves duplicadas — el segundo valor sobrescribe al primero en silencio. Hoy ambas son 0.02, pero cambiar una sin ver la otra hace correr el bot con riesgo incorrecto sin ningún error ni warning.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-04</span>
-          <div class="rec-title">Implementar circuit breakers de parada automática</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El bot opera 24/7 sin límite de pérdida diaria. Mínimo recomendado: (1) parar si drawdown del día supera 5% del equity, (2) parar si 4 trades consecutivos cierran en pérdida, (3) no operar en ventanas de baja liquidez (22:00–00:00 UTC). La Spec menciona circuit breakers pero ninguno está implementado.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">R-05</span>
-          <div class="rec-title">Persistir _pos_entry_time al reiniciar el bot</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">_pos_entry_time es un dict en memoria que se pierde al reiniciar. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2h — pueden quedar abiertas indefinidamente. Fix: al iniciar, cargar las posiciones existentes directamente desde p.time de MT5.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <!-- ── FILE-002 · backtest_canal_fib.py · 2026-04-30 ── -->
-      <div class="file-section-header fsh-fib">
-        <div class="fsh-icon ftype-csv">📈</div>
-        <span class="fsh-name">Canal Fibonacci</span>
-        <span class="fsh-badge">FILE-002</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">5 recomendaciones</span>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">F-01</span>
-          <div class="rec-title">Corregir el template HTML: muestra "2.5%" pero RISK_PCT es 2%</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El template HTML generado por backtest_canal_fib.py imprime "Riesgo 2.5% compuesto" pero RISK_PCT=0.02 en el código. Dato falso en el reporte — confunde al leer el HTML generado. Fix de una línea en la sección de templates del script.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">F-02</span>
-          <div class="rec-title">Limitar el capital compuesto o implementar un tope de equity</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El capital compuesto hace que el lotaje crezca indefinidamente hasta alcanzar volume_max (100.0 para metales, 10.0 para BTC). Una vez en el cap, cada pérdida puede representar $30k+ — ya no es el 2% prometido del capital real. Para live: implementar un tope de equity a partir del cual el lotaje deja de escalar (ej. capital_base fijo al inicio de cada mes).</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">F-03</span>
-          <div class="rec-title">Agregar período de validación out-of-sample antes de operar en vivo</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Metodología</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El 100% del backtest (180 días) es in-sample — los parámetros del canal Fibonacci (20 barras, niveles 1.191, 0.809, etc.) fueron elegidos sobre el mismo período que se analiza. Mínimo recomendado: reservar los últimos 60 días como OOS antes de cualquier decisión de operar en vivo. Sin OOS, los resultados no son estadísticamente válidos.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">F-04</span>
-          <div class="rec-title">Registrar y cerrar los trades OPEN al final del backtest</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El script salta los trades OPEN (posiciones que no cerraron dentro de los 200 barras de simulación) sin registrarlos ni cerrarlos al precio final. El capital final y el número de trades están subestimados — no se sabe cuántos trades quedaron abiertos ni en qué estado. Fix: cerrar al precio de la última barra y registrar el resultado.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">F-05</span>
-          <div class="rec-title">Implementar max_positions antes de cualquier deployment en vivo</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">El backtest no tiene límite de posiciones simultáneas — si los tres símbolos dan señal al mismo tiempo, el bot abre tres trades en paralelo. En vivo esto puede triplicar la exposición real. El bot v2 sí tiene max_positions; este script necesita la misma lógica para simular condiciones reales de operación.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
-      <div class="file-section-header fsh-v3">
-        <div class="fsh-icon ftype-py">🤖</div>
-        <span class="fsh-name">bot_canal_fib_v3.py</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">6 recomendaciones</span>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-01</span>
-          <div class="rec-title">Corregir nombre del log: apunta a "v2.log" siendo bot v3</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">Línea 163: el FileHandler crea "bot_canal_fib_v2.log" en lugar de "bot_canal_fib_v3.log". Los logs se mezclan con los de una versión anterior si ambas corrieron en el mismo directorio. Fix de una cadena.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-02</span>
-          <div class="rec-title">Cambiar ORDER_FILLING_IOC por ORDER_FILLING_RETURN en órdenes límite</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">IOC (Immediate or Cancel) cancela el volumen no llenado si hay fill parcial. En una orden límite SELL_LIMIT/BUY_LIMIT en MT5, IOC puede resultar en que solo se ejecute 1 de los 3 lotes enviados y los otros 2 se cancelen. ORDER_FILLING_RETURN devuelve el remanente al libro — comportamiento correcto para órdenes límite pendientes.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-03</span>
-          <div class="rec-title">Cancelar órdenes GTC pendientes al fin de sesión</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">Las 3 órdenes límite se envían con ORDER_TIME_GTC. Si el precio no llega al nivel de entrada durante la sesión, las órdenes quedan activas y pueden ejecutarse cuando el mercado retome — potencialmente en las horas siguientes fuera de sesión. Fix: al inicio de cada ciclo, cancelar las órdenes pendientes cuyo símbolo esté fuera de horario SESSION_HOURS.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-04</span>
-          <div class="rec-title">Validar que manage_breakeven() no actúe si TP1 fue cancelado manualmente</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-logic">Lógica del bot</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">manage_breakeven() detecta que TP1 se ejecutó por la AUSENCIA de una orden TP1 pendiente. Si la orden TP1 fue cancelada manualmente (o expiró), el bot mueve el SL a breakeven aunque TP1 nunca se ejecutó — protegiendo el trade demasiado pronto y exponiendo a un SL prematuro. Fix: verificar en history_deals_get() que haya un deal real de cierre de TP1 antes de mover el SL.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-05</span>
-          <div class="rec-title">Invalidar _costos_cache periódicamente — spread cambia durante noticias</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-arch">Arquitectura</span>
-            <span class="badge badge-prio-media">Media prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">get_costos() guarda spread y comisión en _costos_cache y nunca los recalcula. El spread en XAUUSD puede multiplicarse por 5–10× durante noticias macro (NFP, FOMC). El bot usará el spread del arranque para calcular niveles, lo que hace que los TPs y SLs sean incorrectos en momentos de alta volatilidad. Fix: expirar el cache cada hora o al inicio de cada sesión.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-      <div class="rec-card">
-        <div class="rec-header">
-          <span class="rec-num">V3-06</span>
-          <div class="rec-title">Ajustar CAPITAL_INI al equity real antes de arrancar</div>
-          <div class="rec-badges">
-            <span class="badge badge-tipo-param">Parámetro</span>
-            <span class="badge badge-prio-alta">Alta prioridad</span>
-            <span class="badge badge-estado-pend">Pendiente</span>
-          </div>
-        </div>
-        <div class="rec-desc">CAPITAL_INI=10_000 está hardcodeado. Es el capital de referencia para el cap de lote (LOT_CAP_X=5×). Si la cuenta tiene $15.000, el equity efectivo máximo queda en $50.000 en lugar de $75.000 — el cap es más restrictivo de lo necesario. Si la cuenta tiene $8.000, el cap es $40.000 — más amplio que el equity real. Fix: o leer desde mt5.account_info().balance al arrancar, o documentar claramente que debe editarse antes de cada sesión.</div>
-        <div class="rec-response">
-          <div class="rec-response-label">🟢 Comentarios del Trader</div>
-          <div class="rec-response-text"></div>
-        </div>
-      </div>
-
-    </div>
+    <div class="rec-list" id="rec-list"></div>
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 3: OBSERVACIONES EN VIVO          -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 3: OBSERVACIONES — rendered from data.json -->
   <div id="tab-live" class="tab-panel">
-
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Se actualiza con</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-log">LOG</span> bot.log — ciclos, señales, errores, gaps de actividad</div>
-        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> bot_estado.json — snapshot del estado actual del bot</div>
-        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> historial_trades.csv — comportamiento real vs. esperado</div>
-        <div class="trigger-chip"><span class="tc-type tc-png">PNG</span> Screenshot del gráfico — análisis visual de entradas</div>
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — hallazgos de lógica o arquitectura</div>
-        <div class="trigger-chip"><span class="tc-type tc-chat">CHAT</span> Cualquier comentario tuyo sobre el bot en vivo</div>
-      </div>
-    </div>
-
-    <!-- Filtros por fuente de archivo — generados dinámicamente por _updateObsNavBtns() -->
     <div class="obs-filter-bar">
       <span class="obs-filter-label">IR A:</span>
     </div>
-
-    <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
-    <div class="obs-list" id="obs-list">
-
-      <div class="file-section-header fsh-py">
-        <div class="fsh-icon ftype-py">🐍</div>
-        <span class="fsh-name">obv_macd_adx_bot_final_v2.py</span>
-        <span class="fsh-badge">FILE-001</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">4 observaciones</span>
-      </div>
-
-      <!-- OBS-004 · 2026-04-30 · PY -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>20:27</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">bare except:pass silencia errores críticos en get_costos_reales()</div>
-          <div class="obs-text">Dos bloques except:pass (líneas 145 y 153) tragan cualquier excepción sin rastro en el log. Si la conexión con MT5 falla durante la consulta de costos, el bot usa spread genérico ($5 USD) sin ningún aviso. Los errores de costos afectan directamente el cálculo de lotaje y el PnL esperado.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">obv_macd_adx_bot_final_v2.py · líneas 145, 153</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-003 · 2026-04-30 · PY -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>20:27</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">_pos_entry_time se pierde al reiniciar — posiciones huérfanas sin timeout</div>
-          <div class="obs-text">El dict _pos_entry_time vive solo en memoria. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2 horas. Pueden quedar abiertas indefinidamente hasta intervención manual.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">obv_macd_adx_bot_final_v2.py · línea 900 (_pos_entry_time)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-002 · 2026-04-30 · PY -->
-      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>20:27</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Divergencia simple entra con mismo lotaje que doble divergencia</div>
-          <div class="obs-text">Líneas 277-278 y 290-291: cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo valor de señal (1/-1) que una doble divergencia confirmada. Infla el número de trades y degrada la calidad promedio de señales.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">obv_macd_adx_bot_final_v2.py · líneas 277-278, 290-291</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- OBS-001 · 2026-04-30 · PY -->
-      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>20:27</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">ATR calculado diferente en backtest vs. bot en vivo</div>
-          <div class="obs-text">calc_atr() usa rolling SMA (línea 205) mientras todos los demás indicadores usan EWM. El SL y TP reales son sistemáticamente distintos a los del backtest, contribuyendo directamente a la diferencia entre el PF simulado y el real.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">obv_macd_adx_bot_final_v2.py · línea 205</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── FILE-002 · Canal Fibonacci · 2026-04-30 ── -->
-      <div class="file-section-header fsh-fib">
-        <div class="fsh-icon ftype-csv">📈</div>
-        <span class="fsh-name">Canal Fibonacci</span>
-        <span class="fsh-badge">FILE-002</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">4 observaciones · 3 CSV + 1 PY</span>
-      </div>
-
-      <!-- FIB-OBS-001 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="csv" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>21:00</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">XAUUSD — lot_max 100.0 alcanzado en Abr 2026 — pérdidas de $30k+ por trade</div>
-          <div class="obs-text">Los CSVs de XAUUSD muestran que el lotaje llegó a 100.0 desde aproximadamente Abril 2026. En ese tramo las pérdidas individuales superan los $30.000 USD por trade — no corresponden al 2% de riesgo configurado sino a un riesgo ilimitado respecto al capital teórico. El capital compuesto sin tope de equity es el origen del problema.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">canal_fib_XAUUSD.csv · columna lot_size · tramo Abr 2026</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- FIB-OBS-002 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="csv" data-accion="no">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>21:00</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Los tres símbolos operaron en tendencia fuerte alcista — sesgo de régimen de mercado</div>
-          <div class="obs-text">El período Nov 2025 – Abr 2026 fue de rally sostenido en XAUUSD, XAGUSD y BTCUSD. La mayoría de trades en los tres CSV son LONG y ganadores. El canal Fibonacci en tendencia funciona bien por diseño — el sistema no ha sido probado en mercado lateral o bajista. Los retornos (+7.000% a +17.000%) reflejan el régimen favorable, no la robustez del sistema.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span class="obs-context">canal_fib_XAUUSD.csv + canal_fib_XAGUSD.csv + canal_fib_BTCUSD.csv</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- FIB-OBS-003 · 2026-04-30 · CSV -->
-      <div class="obs-card" style="--obs-color:var(--muted)" data-origin="csv" data-accion="no">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>21:00</div>
-          <div class="obs-source-badge src-csv">CSV</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">BTCUSD muestra mayor frecuencia de pérdidas consecutivas que los metales</div>
-          <div class="obs-text">El CSV de BTCUSD (224 trades) tiene clusters de pérdidas más frecuentes que XAUUSD y XAGUSD. Esto es consistente con la mayor volatilidad de BTC en M3 — los niveles Fibonacci del canal de 20 barras son más frecuentemente quebrados por el ruido del precio. Considerar canal más largo (30–40 barras) o timeframe superior para BTC.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span class="obs-context">canal_fib_BTCUSD.csv · comparación vs. XAUUSD / XAGUSD</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- FIB-OBS-004 · 2026-04-30 · PY -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-04-30<br>21:00</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Canal de 20 barras M3 = ventana de 60 minutos — muy corta para señales Fibonacci robustas</div>
-          <div class="obs-text">CANAL_LENGTH=20 en M3 significa que el máximo y mínimo del canal se calculan sobre los últimos 60 minutos. Los niveles Fibonacci derivados de una ventana tan corta son altamente sensibles al ruido intradiario. En señales clásicas de Fibonacci, el canal debería representar al menos una sesión completa o un swing de mayor orden (H1/H4).</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">backtest_canal_fib.py · CANAL_LENGTH=20 · TIMEFRAME=M3</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
-      <div class="file-section-header fsh-v3">
-        <div class="fsh-icon ftype-py">🤖</div>
-        <span class="fsh-name">bot_canal_fib_v3.py</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">3 observaciones</span>
-      </div>
-
-      <!-- V3-OBS-001 · 2026-05-01 · PY -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-05-01<br>análisis</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">FileHandler escribe en "bot_canal_fib_v2.log" — el bot v3 mezcla logs con la versión anterior</div>
-          <div class="obs-text">Línea 163: logging.FileHandler("bot_canal_fib_v2.log"). Si el bot v2 corrió en el mismo directorio, los logs de v3 se añaden al archivo equivocado y se hace imposible distinguir qué versión generó qué entrada. Fix inmediato: cambiar a "bot_canal_fib_v3.log".</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">bot_canal_fib_v3.py · línea 163 · logging.FileHandler</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- V3-OBS-002 · 2026-05-01 · PY -->
-      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-05-01<br>análisis</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">registrar_cierres() solo mira las últimas 2 horas — deals perdidos si el bot estuvo offline</div>
-          <div class="obs-text">El lookback es timedelta(hours=2). Si el bot se reinicia después de una caída de más de 2 horas durante la sesión, los deals de SL/TP ocurridos en ese período no se registran en el CSV ni notifican al circuit breaker — el conteo de pérdidas consecutivas queda incompleto. Fix: expandir el lookback a la duración de la sesión (12h para metales, 8h para BTC) o persistir el estado del CB entre reinicios.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-si">Requiere acción</span>
-            <span class="obs-context">bot_canal_fib_v3.py · registrar_cierres() · timedelta(hours=2)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- V3-OBS-003 · 2026-05-01 · PY -->
-      <div class="obs-card" style="--obs-color:var(--muted)" data-origin="py" data-accion="no">
-        <div class="obs-date-col">
-          <div class="obs-timestamp">2026-05-01<br>análisis</div>
-          <div class="obs-source-badge src-py">PY</div>
-        </div>
-        <div class="obs-body">
-          <div class="obs-title">Circuit Breaker no escala — tras pausa de 4h el counter vuelve a 0 sin penalización adicional</div>
-          <div class="obs-text">Después de una pausa CB nivel 1 (3 pérdidas consecutivas → 4h de pausa), consec_loss se resetea a 0. El bot puede volver a operar inmediatamente y repetir la misma racha de pérdidas sin escalado. Un CB escalado (ej. 2ª activación → 8h, 3ª → suspensión del día) daría más tiempo al mercado para normalizarse.</div>
-          <div class="obs-meta">
-            <span class="obs-tag obs-accion-no">Solo observación</span>
-            <span class="obs-context">bot_canal_fib_v3.py · CircuitBreaker · puede_operar() · línea 641–644</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <div class="obs-list" id="obs-list"></div>
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 4: ARQUITECTURA / CÓDIGO          -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 4: ARQUITECTURA — rendered from data.json -->
   <div id="tab-arquitectura" class="tab-panel">
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Se actualiza con</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — auditoría completa de lógica, riesgo y arquitectura</div>
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest.py — metodología, look-ahead bias, modelo de costos</div>
-        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot_canal_fib_v3.py — bot en vivo Canal Fibonacci</div>
-      </div>
-    </div>
-    <div class="arch-list">
-
-      <div class="file-section-header fsh-py">
-        <div class="fsh-icon ftype-py">🐍</div>
-        <span class="fsh-name">obv_macd_adx_bot_final_v2.py</span>
-        <span class="fsh-badge">FILE-001</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">12 hallazgos · 4 bugs · 3 riesgos · 3 ausencias · 2 mejoras</span>
-      </div>
-
-      <!-- ── Hallazgos · obv_macd_adx_bot_final_v2.py · 2026-04-30 ── -->
-
-      <div class="arch-card" data-file="FILE-001" id="arch-bugs">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 1035</span>
-          <span class="arch-title">Print hardcodeado "máx 3 posiciones" vs CONFIG["max_positions"] = 6</span>
-        </div>
-        <div class="arch-desc">El mensaje de arranque imprime "máx 3 posiciones" pero <code>CONFIG["max_positions"]</code> es 6. Dato falso en consola desde el primer ciclo — confunde al operar en vivo.</div>
-        <div class="arch-code">
-# Línea 1035 — incorrecto:<br>
-print("🔴 CUENTA REAL | ... | máx 3 posiciones | ...")<br>
-<br>
-# Fix:<br>
-print(f"🔴 CUENTA REAL | ... | máx {CONFIG['max_positions']} posiciones | ...")
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 277–278 / 290–291</span>
-          <span class="arch-title">Divergencia simple produce la misma señal que la doble</span>
-        </div>
-        <div class="arch-desc">Cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo valor de señal (1/-1) que una doble divergencia. El nombre dice "Doble Divergencia" pero en la práctica opera con OR, no AND.</div>
-        <div class="arch-code">
-# Actual:<br>
-if precio_ll and obv_hl and macd_hl:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # doble ✅<br>
-elif precio_ll and (obv_hl or macd_hl):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;señales.iloc[i] = 1  # simple = mismo resultado ❌<br>
-<br>
-# Fix: eliminar el elif
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 205</span>
-          <span class="arch-title">ATR usa SMA — el resto del código usa EWM — SL/TP divergen entre backtest y live</span>
-        </div>
-        <div class="arch-desc"><code>calc_atr()</code> usa <code>rolling(period).mean()</code> (media simple) mientras <code>calc_adx()</code> y los demás usan <code>ewm()</code> (Wilder). El ATR del backtest difiere del ATR en vivo, haciendo que los SL y TP reales sean distintos a los simulados.</div>
-        <div class="arch-code">
-# Actual — línea 205:<br>
-return ...max(axis=1).rolling(period).mean()<br>
-<br>
-# Fix — consistente con el resto:<br>
-return ...max(axis=1).ewm(span=period, adjust=False).mean()
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Líneas 68 y 92</span>
-          <span class="arch-title">risk_pct declarado dos veces en CONFIG — el segundo sobrescribe al primero en silencio</span>
-        </div>
-        <div class="arch-desc">Python acepta claves duplicadas en dict literal; el último valor gana. Hoy ambas son 0.02, pero cambiar una sin ver la otra hace correr el bot con riesgo incorrecto sin ningún error ni warning.</div>
-        <div class="arch-code">
-# Línea 68 (sección Riesgo):<br>
-"risk_pct": 0.02,  # ← primera definición<br>
-...<br>
-# Línea 92 (sección Bot):<br>
-"risk_pct": 0.02,  # ← sobrescribe silenciosamente ❌<br>
-<br>
-# Fix: eliminar la de línea 68
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001" id="arch-riesgos">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 145, 153</span>
-          <span class="arch-title">bare except:pass silencia errores críticos de MT5 en get_costos_reales()</span>
-        </div>
-        <div class="arch-desc">Dos bloques <code>except: pass</code> tragan cualquier excepción sin rastro en el log. Si la conexión con MT5 falla, el bot usa spread genérico ($5 USD) sin ningún aviso. Los errores de costos afectan directamente el cálculo de lotaje y el PnL esperado.</div>
-        <div class="arch-code">
-# Actual:<br>
-except: pass<br>
-<br>
-# Fix:<br>
-except Exception as e:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.warning(f"{symbol}: error costos — {e}. Usando fallback.")
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Líneas 733–738</span>
-          <span class="arch-title">Señales de hasta 4 barras M5 atrás pueden re-dispararse</span>
-        </div>
-        <div class="arch-desc"><code>get_signal_live()</code> busca señal en las últimas 4 barras cerradas. Una divergencia detectada hace 15 minutos sigue siendo "válida" en el siguiente ciclo. <code>syms_en_pos</code> lo mitiga, pero solo mientras la posición esté abierta.</div>
-        <div class="arch-code">
-# Fix: registrar timestamp de la última señal ejecutada por símbolo<br>
-_ultima_señal = {}  # sym → timestamp de la barra señal<br>
-# Verificar que timestamp != _ultima_señal[sym] antes de abrir
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · Línea 93</span>
-          <span class="arch-title">demo_mode: False por defecto — arranque directo en cuenta real</span>
-        </div>
-        <div class="arch-desc">Correr el script sin cambiar CONFIG ejecuta órdenes reales inmediatamente. No hay flag CLI ni confirmación de arranque. Un error al editar el archivo puede costar dinero real.</div>
-        <div class="arch-code">
-# Fix: leer de argumento CLI<br>
-import argparse<br>
-parser = argparse.ArgumentParser()<br>
-parser.add_argument("--demo", action="store_true")<br>
-args = parser.parse_args()<br>
-CONFIG["demo_mode"] = args.demo
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001" id="arch-ausencias">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Circuit Breakers</span>
-          <span class="arch-title">Sin parada automática por drawdown diario ni trades consecutivos perdedores</span>
-        </div>
-        <div class="arch-desc">El bot opera 24/7 sin límite de pérdida diaria. No existe lógica de parada si el DD diario supera X%, si hay N trades consecutivos perdedores, ni restricciones de horario de baja liquidez.</div>
-        <div class="arch-code">
-# Estructura mínima en run_bot():<br>
-MAX_DD_DIARIO = 0.05<br>
-if (balance_ini - account.equity) / balance_ini > MAX_DD_DIARIO:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.warning("⛔ Circuit breaker: DD diario superado")<br>
-&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(3600); continue
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Timeout live</span>
-          <span class="arch-title">_pos_entry_time se resetea al reiniciar — posiciones huérfanas sin timeout</span>
-        </div>
-        <div class="arch-desc">El dict <code>_pos_entry_time</code> vive en memoria. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2h.</div>
-        <div class="arch-code">
-# Fix: al iniciar, cargar posiciones existentes desde MT5<br>
-for p in posiciones_del_bot():<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if p.ticket not in _pos_entry_time:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia vs Spec · Estado JSON</span>
-          <span class="arch-title">Estado JSON sin detalle por posición — sin ticket, SL, TP, PnL flotante</span>
-        </div>
-        <div class="arch-desc"><code>guardar_estado()</code> solo registra cuántas posiciones hay y qué símbolos. Sin precio de entrada, SL, TP ni PnL flotante por ticket es imposible hacer análisis forense entre sesiones sin conectarse a MT5.</div>
-        <div class="arch-code">
-# Fix: agregar detalle de posiciones en guardar_estado()<br>
-"posiciones_detalle": [<br>
-&nbsp;&nbsp;&nbsp;&nbsp;{"ticket": p.ticket, "symbol": p.symbol,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"entrada": p.price_open, "sl": p.sl, "tp": p.tp,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"pnl_float": p.profit}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for p in pos_bot]
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Mejora · guardar_estado()</span>
-          <span class="arch-title">Escritura JSON sincrónica bloquea el loop principal</span>
-        </div>
-        <div class="arch-desc"><code>guardar_estado()</code> se llama sincrónicamente cada 30 s. Si el disco tiene latencia o la ruta es de red, el bot pierde tiempo de monitoreo durante la escritura.</div>
-        <div class="arch-code">
-# Fix: escribir en thread separado<br>
-import threading<br>
-threading.Thread(target=guardar_estado, args=(data,), daemon=True).start()
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-001">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Mejora · run_bot()</span>
-          <span class="arch-title">Sin audit log de señales rechazadas</span>
-        </div>
-        <div class="arch-desc">El bot loguea señales ejecutadas pero no las rechazadas por <code>max_positions</code> o símbolo ya abierto. Sin ese registro es imposible el análisis post-trade de oportunidades perdidas.</div>
-        <div class="arch-code">
-# Agregar en run_bot(), sección abrir posiciones:<br>
-if n_pos >= CONFIG["max_positions"]:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=max_pos")<br>
-if sym in syms_en_pos:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=already_open")
-        </div>
-      </div>
-
-      <!-- ── FILE-002 · backtest_canal_fib.py · 2026-04-30 ── -->
-      <div class="file-section-header fsh-fib">
-        <div class="fsh-icon ftype-csv">📈</div>
-        <span class="fsh-name">backtest_canal_fib.py</span>
-        <span class="fsh-badge">FILE-002</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">6 hallazgos · 2 bugs · 2 riesgos · 1 ausencia · 1 mejora</span>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Template HTML</span>
-          <span class="arch-title">Template muestra "Riesgo 2.5% compuesto" pero RISK_PCT=0.02 (2%)</span>
-        </div>
-        <div class="arch-desc">El string del template HTML generado por el script imprime "2.5%" pero <code>RISK_PCT = 0.02</code> en la configuración. El reporte generado muestra datos falsos desde la primera línea del resumen.</div>
-        <div class="arch-code">
-# En la sección de template HTML del script:<br>
-"Riesgo 2.5% compuesto"  # ← incorrecto ❌<br>
-<br>
-# Fix:<br>
-f"Riesgo {RISK_PCT*100:.1f}% compuesto"  # ← dinámico ✓
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · backtest()</span>
-          <span class="arch-title">Trades OPEN al final del período no se registran — capital final subestimado</span>
-        </div>
-        <div class="arch-desc">Cuando una posición no cierra dentro de las 200 barras de simulación, el script la descarta silenciosamente con <code>resultado = "OPEN"</code> sin registrar el trade ni ajustar el capital. El capital final y el número total de trades están subestimados en una cantidad desconocida.</div>
-        <div class="arch-code">
-# Actual — trades OPEN simplemente saltados:<br>
-resultado = "OPEN"<br>
-# … no se agregan al CSV ni se cierra la posición<br>
-<br>
-# Fix: cerrar al precio de la última barra<br>
-precio_cierre = bars['close'].iloc[-1]<br>
-pnl = calcular_pnl(entrada, precio_cierre, direccion, lots)<br>
-registrar_trade(resultado="OPEN_CLOSE", pnl=pnl, ...)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · calc_lot()</span>
-          <span class="arch-title">Capital compuesto sin tope — lot_max alcanzado = riesgo ilimitado respecto al 2%</span>
-        </div>
-        <div class="arch-desc">El lot sizing crece con el capital compuesto hasta <code>volume_max</code>. Una vez en el cap (100.0 para metales, 10.0 para BTC), las pérdidas por trade superan el 2% prometido — en XAUUSD Abril 2026 llegan a $30k+. El sistema pierde su garantía de riesgo controlado.</div>
-        <div class="arch-code">
-# Fix: fijar capital_base al inicio o por período<br>
-CAPITAL_BASE = capital_ini  # no crece con las ganancias<br>
-# Alternativamente: tope de equity<br>
-capital_efectivo = min(capital_actual, CAPITAL_BASE * 3)<br>
-lots = calc_lot(capital_efectivo, risk_pct, ...)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · backtest()</span>
-          <span class="arch-title">Sin max_positions — tres símbolos pueden abrir simultáneamente triplicando la exposición</span>
-        </div>
-        <div class="arch-desc">El backtest no limita el número de posiciones simultáneas. Si XAUUSD, XAGUSD y BTCUSD dan señal en la misma barra M3, los tres trades se abren en paralelo. En vivo esto multiplica la exposición real por 3, superando cualquier límite de riesgo diario.</div>
-        <div class="arch-code">
-# Fix: agregar contador de posiciones abiertas<br>
-pos_abiertas = 0<br>
-MAX_POS = 2  # máximo 2 símbolos simultáneos<br>
-<br>
-for sym in SYMBOLS:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if pos_abiertas >= MAX_POS:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break<br>
-&nbsp;&nbsp;&nbsp;&nbsp;# … abrir trade y pos_abiertas += 1
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia · Metodología</span>
-          <span class="arch-title">Sin validación out-of-sample — todo el período (180 días) es in-sample</span>
-        </div>
-        <div class="arch-desc">Los parámetros del sistema (CANAL_LENGTH=20, niveles Fibonacci, RISK_PCT, TPs) se evalúan sobre el mismo período de 180 días sin ningún dato reservado para validación. Imposible estimar la robustez real del sistema fuera del período conocido.</div>
-        <div class="arch-code">
-# Estructura mínima de validación:<br>
-PERIODO_TOTAL = 180  # días<br>
-PERIODO_IS = 120     # in-sample (entrenamiento)<br>
-PERIODO_OOS = 60     # out-of-sample (validación)<br>
-<br>
-# Correr backtest en IS, validar en OOS<br>
-# Sin ajustar parámetros al ver el OOS
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-002">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Mejora · configuración</span>
-          <span class="arch-title">Session hours hardcodeado por símbolo — inflexible para cambios de timezone del broker</span>
-        </div>
-        <div class="arch-desc">Las horas de sesión de BTCUSD (14:00–22:00 UTC) están hardcodeadas en un dict dentro del script. Si IC Markets cambia el horario de verano/invierno o el servidor, hay que editar el código. La configuración de sesión debería estar en CONFIG o en un archivo externo.</div>
-        <div class="arch-code">
-# Actual — hardcodeado:<br>
-SESSION_HOURS = {"BTCUSD": (14, 22)}<br>
-<br>
-# Mejor: en CONFIG<br>
-CONFIG = {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;"session_hours": {"BTCUSD": (14, 22)},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;# fácil de ajustar sin tocar la lógica<br>
-}
-        </div>
-      </div>
-
-      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
-      <div class="file-section-header fsh-v3">
-        <div class="fsh-icon ftype-py">🤖</div>
-        <span class="fsh-name">bot_canal_fib_v3.py</span>
-        <span class="fsh-badge">FILE-003</span>
-        <div class="fsh-line"></div>
-        <span class="fsh-count">11 hallazgos · 4 bugs · 3 riesgos · 3 ausencias · 1 mejora</span>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 163</span>
-          <span class="arch-title">FileHandler escribe en "bot_canal_fib_v2.log" — bot es v3</span>
-        </div>
-        <div class="arch-desc">El logging escribe en el archivo de la versión anterior. Si v2 corrió en el mismo directorio, los logs se mezclan y es imposible distinguir qué versión generó qué entrada.</div>
-        <div class="arch-code">
-# Actual — línea 163:<br>
-logging.FileHandler("bot_canal_fib_v2.log", ...)<br>
-<br>
-# Fix:<br>
-logging.FileHandler("bot_canal_fib_v3.log", ...)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · place_orders()</span>
-          <span class="arch-title">ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse</span>
-        </div>
-        <div class="arch-desc">IOC cancela el volumen no llenado inmediatamente. Para una SELL_LIMIT/BUY_LIMIT que activa en momentos de baja liquidez, una fill parcial haría que los lotes restantes se cancelen en lugar de quedar pendientes. ORDER_FILLING_RETURN devuelve el remanente al libro de órdenes — comportamiento correcto.</div>
-        <div class="arch-code">
-# Actual:<br>
-"type_filling": mt5.ORDER_FILLING_IOC,  # ❌<br>
-<br>
-# Fix:<br>
-"type_filling": mt5.ORDER_FILLING_RETURN,  # ✓
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · manage_breakeven()</span>
-          <span class="arch-title">Detecta TP1 ejecutado por AUSENCIA de orden — actúa si la orden fue cancelada manualmente</span>
-        </div>
-        <div class="arch-desc">La lógica <code>tp1_pending = any(... "TP1" in o.comment ...)</code> asume que si no hay orden TP1 pendiente es porque se ejecutó. Si el usuario cancela la orden TP1 manualmente (o el broker la rechaza), el bot mueve el SL a breakeven sin que TP1 se haya ejecutado — protegiendo prematuramente con resultado negativo.</div>
-        <div class="arch-code">
-# Fix: verificar deal real de TP1 en historial<br>
-desde = datetime.now(UTC) - timedelta(hours=8)<br>
-deals = mt5.history_deals_get(desde, datetime.now(UTC))<br>
-tp1_ejecutado = any(<br>
-&nbsp;&nbsp;&nbsp;&nbsp;d.symbol == symbol and d.magic == MAGIC<br>
-&nbsp;&nbsp;&nbsp;&nbsp;and "TP1" in d.comment<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for d in (deals or [])<br>
-)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🔴 Bug real · lot_tercio()</span>
-          <span class="arch-title">3 × lot_tercio puede diferir de lot_total — riesgo real ≠ 2%</span>
-        </div>
-        <div class="arch-desc">Al redondear lot_total/3 al step, la suma de los 3 tramos puede ser menor que lot_total. Con lot_total=0.04 y step=0.01: lot_1_3=0.01, se colocan 0.03 en total — se pierde el 25% del riesgo calculado. El 3er tramo debería compensar la diferencia.</div>
-        <div class="arch-code">
-# Fix: ajustar el 3er tramo<br>
-t1 = round(lot_total / 3 / step) * step<br>
-t1 = max(info.volume_min, t1)<br>
-t3 = max(info.volume_min,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;round((lot_total - 2 * t1) / step) * step)<br>
-return t1, t1, t3  # retornar los 3 tramos
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · get_costos()</span>
-          <span class="arch-title">_costos_cache indefinido — spread obsoleto durante noticias macro</span>
-        </div>
-        <div class="arch-desc">El spread se cachea al primer acceso y nunca se invalida. En XAUUSD el spread puede multiplicarse ×5–10 durante NFP, FOMC o CPI. Los niveles de entrada, SL y TP se calculan con un spread que puede ser 10× inferior al real, haciendo los TPs inalcanzables y el SL más ajustado de lo esperado.</div>
-        <div class="arch-code">
-# Fix: expirar cache cada hora<br>
-_costos_cache = {}   # {symbol: (spread, comm, timestamp)}<br>
-<br>
-def get_costos(symbol):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cached = _costos_cache.get(symbol)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if cached and (datetime.now(UTC) - cached[2]).seconds < 3600:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return cached[0], cached[1]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;# ... recalcular y guardar con timestamp
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · registrar_cierres()</span>
-          <span class="arch-title">Lookback de 2h — deals perdidos si el bot estuvo offline más de 2 horas</span>
-        </div>
-        <div class="arch-desc">Si el bot cae y se reinicia después de 2+ horas, los deals de SL/TP ocurridos en ese período no se detectan. El circuit breaker no los computa — el conteo de pérdidas consecutivas queda incompleto y el CB puede no dispararse cuando debería.</div>
-        <div class="arch-code">
-# Fix: lookback dinámico desde último deal conocido<br>
-desde = datetime.utcfromtimestamp(_last_deal_id_time)<br>
-# o usar el inicio de la sesión actual como mínimo<br>
-desde = max(inicio_sesion, datetime.now(UTC) - timedelta(hours=12))
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · place_orders()</span>
-          <span class="arch-title">Órdenes GTC no se cancelan al fin de sesión — pueden ejecutarse fuera de horario</span>
-        </div>
-        <div class="arch-desc">ORDER_TIME_GTC mantiene las órdenes activas indefinidamente. Una SELL_LIMIT colocada a las 11:50 UTC en XAUUSD (sesión hasta 12:00) puede ejecutarse a las 13:00 UTC fuera del horario operativo definido en SESSION_HOURS. El bot no tiene lógica de limpieza de órdenes expiradas.</div>
-        <div class="arch-code">
-# Fix: cancelar órdenes pendientes fuera de sesión<br>
-for sym in available:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;hora = datetime.now(UTC).hour<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if hora not in SESSION_HOURS.get(sym, range(24)):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for o in (mt5.orders_get(symbol=sym) or []):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if o.magic == MAGIC:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia · CircuitBreaker</span>
-          <span class="arch-title">CB sin escalado — tras pausa el counter vuelve a 0 sin penalización adicional</span>
-        </div>
-        <div class="arch-desc">Después de cada pausa CB nivel 1, <code>consec_loss = 0</code> y la pausa se borra. El bot puede volver a acumular 3 pérdidas consecutivas e inmediatamente recibir otra pausa idéntica. Un CB escalado (2ª activación → 8h, 3ª → suspensión del día) protege mejor en mercados que se deterioran gradualmente.</div>
-        <div class="arch-code">
-# Fix: contar activaciones del CB<br>
-self.cb1_count = 0<br>
-<br>
-# En registrar_resultado(), al disparar CB1:<br>
-self.cb1_count += 1<br>
-horas_pausa = CB_PAUSA_HORAS * self.cb1_count<br>
-self.pausa_hasta = datetime.now(UTC) + timedelta(hours=horas_pausa)
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia · run()</span>
-          <span class="arch-title">Sin modo demo — el script arranca en cuenta real sin confirmación</span>
-        </div>
-        <div class="arch-desc">No existe flag --demo ni pregunta de confirmación al arrancar. Un error al lanzar el script en la ventana de terminal equivocada ejecuta órdenes reales. Mismo patrón que FILE-001 (R-04).</div>
-        <div class="arch-code">
-# Fix: argumento CLI<br>
-import argparse<br>
-p = argparse.ArgumentParser()<br>
-p.add_argument("--live", action="store_true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;help="Operar en cuenta real")<br>
-args = p.parse_args()<br>
-if not args.live:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;log.info("Modo demo — sin órdenes reales"); ...
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-deuda">🟡 Ausencia · CircuitBreaker</span>
-          <span class="arch-title">Estado del CB no persiste entre reinicios — pérdidas previas no se recuperan</span>
-        </div>
-        <div class="arch-desc">Si el bot se reinicia, <code>consec_loss = 0</code> y <code>equity_dia = equity_actual</code>. Un reinicio tras 2 pérdidas consecutivas borra el historial del CB y permite operar como si fuera el inicio del día. Persistir el estado en un JSON pequeño al cierre resolvería esto.</div>
-        <div class="arch-code">
-# Fix: guardar/cargar estado del CB<br>
-import json<br>
-CB_STATE_FILE = "cb_state.json"<br>
-<br>
-# Al cerrar (KeyboardInterrupt):<br>
-json.dump({"consec_loss": cb.consec_loss,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"equity_dia": cb.equity_dia}, open(CB_STATE_FILE,"w"))<br>
-# Al iniciar: cargar si existe
-        </div>
-      </div>
-
-      <div class="arch-card" data-file="FILE-003">
-        <div class="arch-header">
-          <span class="arch-category arch-cat-mejora">🔵 Mejora · run()</span>
-          <span class="arch-title">CAPITAL_INI hardcodeado — leer del equity real al arrancar</span>
-        </div>
-        <div class="arch-desc">CAPITAL_INI=10_000 es el capital base para el cap de lote. Si la cuenta tiene un capital distinto al hardcodeado, el equity efectivo máximo (CAPITAL_INI × 5) es incorrecto — demasiado bajo o demasiado alto. La solución más simple: leer el balance al iniciar y usarlo como referencia.</div>
-        <div class="arch-code">
-# Fix: en run(), después de connect()<br>
-acct = mt5.account_info()<br>
-CAPITAL_INI = acct.balance  # referencia real<br>
-log.info(f"Capital base: ${CAPITAL_INI:,.0f} | Cap: ${CAPITAL_INI*LOT_CAP_X:,.0f}")
-        </div>
-      </div>
-
-    </div>
+    <div class="arch-list" id="arch-list"></div>
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 5: NEGOCIO                        -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 5: NEGOCIO — static -->
   <div id="tab-negocio" class="tab-panel">
-
-    <div class="trigger-banner">
-      <span class="trigger-banner-label">Se actualiza con</span>
-      <div class="trigger-list">
-        <div class="trigger-chip"><span class="tc-type tc-json">JSON</span> negocio_contexto.json — contexto del ciclo completado por el trader</div>
-      </div>
-    </div>
     <div class="last-updated" id="lu-negocio">
       <span class="lu-label">Estado:</span>
       <span>Sin evaluación — subir negocio_contexto.json</span>
     </div>
 
-    <!-- SECCIÓN 1: Contexto del ciclo -->
     <div class="neg-section">
       <div class="neg-section-title">
         Contexto del ciclo
         <span class="neg-role-badge">Trader</span>
       </div>
-
       <div id="neg-ctx-empty">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
           <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Completa este archivo y súbelo como <strong>negocio_contexto.json</strong>:</div>
           <button class="btn-export btn-sub" onclick="descargarPlantilla()" style="font-size:10px;">⬇ Descargar plantilla</button>
         </div>
-        <pre class="arch-code" style="white-space:pre;">{
+        <pre class="arch-code">{
   "periodo":                "AAAA-MM-DD / AAAA-MM-DD",
   "capital_usd":            0,
   "broker":                 "",
@@ -1666,51 +327,34 @@ log.info(f"Capital base: ${CAPITAL_INI:,.0f} | Cap: ${CAPITAL_INI*LOT_CAP_X:,.0f
   "notas":                  ""
 }</pre>
       </div>
-
-      <!-- Producto inserta tabla de contexto parseado aquí -->
-      <div id="neg-ctx-content" style="display:none;">
-      </div>
-
+      <div id="neg-ctx-content" style="display:none;"></div>
     </div>
 
-    <!-- SECCIÓN 2: Evaluación comercial (Producto) -->
     <div class="neg-section">
       <div class="neg-section-title">
         Evaluación comercial
         <span class="neg-role-badge neg-role-prod">Producto</span>
       </div>
-
       <div class="module-empty-state" id="neg-eval-empty">
         <div class="mes-icon">📊</div>
         <div class="mes-title">Sin evaluación todavía</div>
         <div class="mes-desc">Sube negocio_contexto.json para iniciar el análisis.</div>
       </div>
-
-      <!-- Producto inserta neg-eval-cards aquí -->
-      <div class="neg-eval-list" id="neg-eval-list" style="display:none;">
-      </div>
-
+      <div class="neg-eval-list" id="neg-eval-list" style="display:none;"></div>
     </div>
 
-    <!-- SECCIÓN 3: Decisiones de ciclo (ambos) -->
     <div class="neg-section">
       <div class="neg-section-title">
         Decisiones de ciclo
         <span class="neg-role-badge neg-role-shared">Ambos</span>
       </div>
-
       <div class="module-empty-state" id="neg-dec-empty">
         <div class="mes-icon">🔄</div>
         <div class="mes-title">Sin decisiones registradas</div>
         <div class="mes-desc">Las decisiones de escalar, mantener, pausar o pivotar quedan aquí con fecha y justificación.</div>
       </div>
-
-      <!-- Producto inserta neg-decision-cards aquí -->
-      <div class="neg-decisions" id="neg-decisions" style="display:none;">
-      </div>
-
+      <div class="neg-decisions" id="neg-decisions" style="display:none;"></div>
     </div>
-
   </div>
 
   <footer>
@@ -1720,51 +364,250 @@ log.info(f"Capital base: ${CAPITAL_INI:,.0f} | Cap: ${CAPITAL_INI*LOT_CAP_X:,.0f
 
 </div>
 <script>
-function descargarPlantilla() {
-  const plantilla = {
-    periodo: "AAAA-MM-DD / AAAA-MM-DD",
-    capital_usd: 0,
-    broker: "",
-    comision_por_trade_usd: 0,
-    spread_promedio_pips: 0,
-    benchmark: "ej: S&P 500 mensual",
-    notas: ""
-  };
-  const blob = new Blob([JSON.stringify(plantilla, null, 2)], {type: 'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'negocio_contexto.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
+// ── Utilidades ──────────────────────────────────────────────────────────────
+function _esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function _fmtTs(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const date = d.toISOString().slice(0,10);
+  const hh = String(d.getUTCHours()).padStart(2,'0');
+  const mm = String(d.getUTCMinutes()).padStart(2,'0');
+  return date + ' · ' + hh + ':' + mm;
 }
 
-// fileId → fshClass — poblado al cargar
-const fileRegistry = {};
+// ── Renderer helpers ─────────────────────────────────────────────────────────
+function _fshHtml(g, count) {
+  return '<div class="file-section-header ' + g.fsh_class + '">' +
+    '<div class="fsh-icon ftype-' + g.ftype + '">' + g.icon + '</div>' +
+    '<span class="fsh-name">' + _esc(g.name) + '</span>' +
+    '<span class="fsh-badge">' + _esc(g.badge) + '</span>' +
+    '<div class="fsh-line"></div>' +
+    '<span class="fsh-count">' + _esc(count) + '</span>' +
+    '</div>';
+}
 
-// Set de fshClasses activos; vacío = todos visibles
-const activeFiles = new Set();
+function _qmCardHtml(m) {
+  return '<div class="qm-card">' +
+    '<div class="qm-header">' +
+      '<span class="qm-name">' + _esc(m.name) + '</span>' +
+      '<div class="qm-light light-' + m.light + '"></div>' +
+    '</div>' +
+    '<div class="qm-val">' + _esc(m.value) + '</div>' +
+    '<div class="qm-target">' + _esc(m.target) + '</div>' +
+    '<div class="qm-comment">' + _esc(m.comment) + '</div>' +
+    '</div>';
+}
+
+function _scoreHtml(s) {
+  var bulletEmoji = {ok:'✅', warn:'🟡', bad:'🔴'};
+  var bulletsHtml = s.bullets.map(function(b) {
+    return (bulletEmoji[b.type] || '') + ' ' + _esc(b.text);
+  }).join('<br>');
+  return '<div class="overall-score" style="margin-top:20px;">' +
+    '<div class="score-circle" style="border-color:' + s.color_border + ';color:' + s.color_text + ';background:' + s.color_bg + ';">' + _esc(s.value) + '</div>' +
+    '<div>' +
+      '<div class="score-text-title">' + _esc(s.title) + '</div>' +
+      '<div class="score-text-sub">' + bulletsHtml + '</div>' +
+    '</div>' +
+    '</div>';
+}
+
+function _responseBlockHtml(label) {
+  return '<div class="rec-response" style="margin-top:' + (label ? '20' : '24') + 'px;">' +
+    '<div class="rec-response-label">🟢 Comentarios del Trader' + (label ? ' — ' + _esc(label) : '') + '</div>' +
+    '<div class="rec-response-text"></div>' +
+    '</div>';
+}
+
+// ── M1 renderer ──────────────────────────────────────────────────────────────
+function _renderM1Group(g) {
+  var m1 = g.m1, html = '';
+
+  if (m1.type === 'empty') {
+    html += _fshHtml(g, 'Sin backtest disponible — pendiente de subir');
+    html += '<div class="last-updated"><span class="lu-label">' + _esc(g.badge) + ' · Estado:</span>' +
+      '<span>Sin backtest — el archivo anterior fue removido. Sube un nuevo backtest.html o historial_trades.csv para activar este módulo.</span></div>';
+    html += '<div class="module-empty-state">' +
+      '<div class="mes-icon">📊</div>' +
+      '<div class="mes-title">' + _esc(m1.empty_title) + '</div>' +
+      '<div class="mes-desc">' + _esc(m1.empty_desc) + '</div>' +
+      '<div class="mes-trigger">' + _esc(m1.empty_trigger) + '</div>' +
+      '</div>';
+    html += _responseBlockHtml('notas sobre backtest');
+  }
+
+  else if (m1.type === 'quality') {
+    html += _fshHtml(g, m1.fsh_count);
+    html += '<div class="last-updated has-data"><span class="lu-label">Último análisis:</span>' +
+      '<span>' + _esc(_fmtTs(m1.last_updated) + ' · ' + m1.last_updated_meta) + '</span></div>';
+    var symBtns = m1.symbols.map(function(s) {
+      return '<button class="strat-btn" onclick="scrollToQuality(\'' + s.id + '\')">↓ ' + _esc(s.label) + '</button>';
+    }).join('');
+    html += '<div class="strategy-selector" style="margin-top:16px;">' + symBtns + '</div>';
+    m1.symbols.forEach(function(sym, idx) {
+      var mt = idx === 0 ? '16' : '24';
+      html += '<div class="fsh-label" style="margin-top:' + mt + 'px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">' + _esc(sym.label) + '</div>';
+      html += '<div id="quality-' + sym.id + '" class="quality-grid">';
+      sym.metrics.forEach(function(m) { html += _qmCardHtml(m); });
+      html += '</div>';
+    });
+    html += _scoreHtml(m1.score);
+    html += _responseBlockHtml(g.name);
+  }
+
+  else if (m1.type === 'readiness') {
+    html += _fshHtml(g, m1.fsh_count);
+    html += '<div class="last-updated has-data"><span class="lu-label">Último análisis:</span>' +
+      '<span>' + _esc(_fmtTs(m1.last_updated) + ' · ' + m1.last_updated_meta) + '</span></div>';
+    html += '<div class="quality-grid" style="margin-top:16px;">';
+    m1.metrics.forEach(function(m) { html += _qmCardHtml(m); });
+    html += '</div>';
+    html += _scoreHtml(m1.score);
+    html += _responseBlockHtml(g.name);
+  }
+
+  return html;
+}
+
+// ── M2 renderer ──────────────────────────────────────────────────────────────
+var _tipoCss   = {logic:'badge-tipo-logic', arch:'badge-tipo-arch', param:'badge-tipo-param', metodologia:'badge-tipo-logic'};
+var _tipoLabel = {logic:'Lógica del bot', arch:'Arquitectura', param:'Parámetro', metodologia:'Metodología'};
+var _estadoCss = {pendiente:'badge-estado-pend', implementado:'badge-estado-impl', descartado:'badge-estado-desc'};
+var _estadoLbl = {pendiente:'Pendiente', implementado:'Implementado', descartado:'Descartado'};
+
+function _renderM2Group(g) {
+  var html = _fshHtml(g, g.m2.length + ' recomendaciones');
+  g.m2.forEach(function(r) {
+    var tcss = _tipoCss[r.tipo] || 'badge-tipo-logic';
+    var tlbl = r.tipo_label || _tipoLabel[r.tipo] || r.tipo;
+    var pcss = r.prioridad === 'alta' ? 'badge-prio-alta' : 'badge-prio-media';
+    var plbl = r.prioridad === 'alta' ? 'Alta prioridad' : 'Media prioridad';
+    var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
+    var elbl = _estadoLbl[r.estado] || r.estado;
+    html += '<div class="rec-card">' +
+      '<div class="rec-header">' +
+        '<span class="rec-num">' + _esc(r.id) + '</span>' +
+        '<div class="rec-title">' + _esc(r.title) + '</div>' +
+        '<div class="rec-badges">' +
+          '<span class="badge ' + tcss + '">' + _esc(tlbl) + '</span>' +
+          '<span class="badge ' + pcss + '">' + plbl + '</span>' +
+          '<span class="badge ' + ecss + '">' + elbl + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rec-desc">' + _esc(r.desc) + '</div>' +
+      '<div class="rec-response"><div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div></div>' +
+      '</div>';
+  });
+  return html;
+}
+
+// ── M3 renderer ──────────────────────────────────────────────────────────────
+function _renderM3Group(g) {
+  var m3 = g.m3;
+  // Count by origin for fsh_count
+  var byOrigin = {};
+  m3.forEach(function(o) { byOrigin[o.origin] = (byOrigin[o.origin] || 0) + 1; });
+  var distinct = Object.keys(byOrigin);
+  var count;
+  if (distinct.length <= 1) {
+    count = m3.length + ' observaciones';
+  } else {
+    var detail = distinct.sort().map(function(k) { return byOrigin[k] + ' ' + k.toUpperCase(); }).join(' + ');
+    count = m3.length + ' observaciones · ' + detail;
+  }
+  var html = _fshHtml(g, count);
+  m3.forEach(function(o) {
+    var ts = new Date(o.timestamp);
+    var datePart = ts.toISOString().slice(0,10);
+    var timePart = String(ts.getUTCHours()).padStart(2,'0') + ':' + String(ts.getUTCMinutes()).padStart(2,'0');
+    var accionCss = o.accion === 'si' ? 'obs-accion-si' : o.accion === 'resuelta' ? 'obs-accion-resuelta' : 'obs-accion-no';
+    var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
+    html += '<div class="obs-card" style="--obs-color:' + o.color + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion) + '">' +
+      '<div class="obs-date-col">' +
+        '<div class="obs-timestamp">' + datePart + '<br>' + timePart + '</div>' +
+        '<div class="obs-source-badge src-' + o.origin + '">' + o.origin.toUpperCase() + '</div>' +
+      '</div>' +
+      '<div class="obs-body">' +
+        '<div class="obs-title">' + _esc(o.title) + '</div>' +
+        '<div class="obs-text">' + _esc(o.text) + '</div>' +
+        '<div class="obs-meta">' +
+          '<span class="obs-tag ' + accionCss + '">' + accionLbl + '</span>' +
+          '<span class="obs-context">' + _esc(o.context) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '</div>';
+  });
+  return html;
+}
+
+// ── M4 renderer ──────────────────────────────────────────────────────────────
+var _archCatCss = {bug:'arch-cat-riesgo', riesgo:'arch-cat-riesgo', ausencia:'arch-cat-deuda', mejora:'arch-cat-mejora'};
+var _firstCatId = {};
+
+function _m4Count(m4) {
+  var c = {bug:0, riesgo:0, ausencia:0, mejora:0};
+  m4.forEach(function(a) { if (c[a.categoria] !== undefined) c[a.categoria]++; });
+  var parts = [];
+  if (c.bug)     parts.push(c.bug + ' bug' + (c.bug > 1 ? 's' : ''));
+  if (c.riesgo)  parts.push(c.riesgo + ' riesgo' + (c.riesgo > 1 ? 's' : ''));
+  if (c.ausencia) parts.push(c.ausencia + ' ausencia' + (c.ausencia > 1 ? 's' : ''));
+  if (c.mejora)  parts.push(c.mejora + ' mejora' + (c.mejora > 1 ? 's' : ''));
+  return m4.length + ' hallazgos · ' + parts.join(' · ');
+}
+
+function _renderM4Group(g) {
+  var html = _fshHtml(g, _m4Count(g.m4));
+  var anchorMap = {bug:'arch-bugs', riesgo:'arch-riesgos', ausencia:'arch-ausencias'};
+  g.m4.forEach(function(a) {
+    var catCss = _archCatCss[a.categoria] || 'arch-cat-mejora';
+    var idAttr = '';
+    var anchorId = anchorMap[a.categoria];
+    if (anchorId && !_firstCatId[anchorId]) {
+      _firstCatId[anchorId] = true;
+      idAttr = ' id="' + anchorId + '"';
+    }
+    var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
+    html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '"' + idAttr + '>' +
+      '<div class="arch-header">' +
+        '<span class="arch-category ' + catCss + '">' + _esc(a.label) + '</span>' +
+        '<span class="arch-title">' + _esc(a.title) + '</span>' +
+      '</div>' +
+      '<div class="arch-desc">' + _esc(a.desc) + '</div>' +
+      codeHtml +
+      '</div>';
+  });
+  return html;
+}
+
+// ── State & filter ───────────────────────────────────────────────────────────
+var fileRegistry = {};
+var activeFiles = new Set();
 
 function _applyFileFilter() {
-  const headers = document.querySelectorAll('.file-section-header');
-  const scope = document.getElementById('export-scope');
+  var headers = document.querySelectorAll('.file-section-header');
+  var scope = document.getElementById('export-scope');
   if (activeFiles.size === 0) {
-    headers.forEach(h => {
+    headers.forEach(function(h) {
       h.style.display = '';
-      let n = h.nextElementSibling;
+      var n = h.nextElementSibling;
       while (n && !n.classList.contains('file-section-header')) { n.style.display = ''; n = n.nextElementSibling; }
     });
     if (scope) { scope.style.display = 'none'; scope.textContent = ''; }
     _updateObsNavBtns();
     return;
   }
-  headers.forEach(h => {
-    const match = [...activeFiles].some(cls => h.classList.contains(cls));
+  headers.forEach(function(h) {
+    var match = [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
     h.style.display = match ? '' : 'none';
-    let n = h.nextElementSibling;
+    var n = h.nextElementSibling;
     while (n && !n.classList.contains('file-section-header')) { n.style.display = match ? '' : 'none'; n = n.nextElementSibling; }
   });
   if (scope) {
-    const names = [...document.querySelectorAll('.file-filter-btn.active:not(#ff-all)')].map(b => b.textContent.trim()).join(' + ');
+    var names = [...document.querySelectorAll('.file-filter-btn.active:not(#ff-all)')].map(function(b) { return b.textContent.trim(); }).join(' + ');
     scope.textContent = 'Exportará: ' + names + ' · todos los módulos';
     scope.style.display = '';
   }
@@ -1772,10 +615,10 @@ function _applyFileFilter() {
 }
 
 function toggleFileFilter(fshClass, fileId, btn) {
-  const allBtn = document.getElementById('ff-all');
+  var allBtn = document.getElementById('ff-all');
   if (fileId === 'all') {
     activeFiles.clear();
-    document.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(function(b) { b.classList.remove('active'); });
     allBtn.classList.add('active');
     _applyFileFilter();
     return;
@@ -1794,10 +637,10 @@ function toggleFileFilter(fshClass, fileId, btn) {
 
 function exportReport() {
   if (activeFiles.size > 0) {
-    document.querySelectorAll('.file-section-header').forEach(h => {
-      const match = [...activeFiles].some(cls => h.classList.contains(cls));
+    document.querySelectorAll('.file-section-header').forEach(function(h) {
+      var match = [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
       h.classList.toggle('print-hidden', !match);
-      let n = h.nextElementSibling;
+      var n = h.nextElementSibling;
       while (n && !n.classList.contains('file-section-header')) {
         n.classList.toggle('print-hidden', !match);
         n = n.nextElementSibling;
@@ -1805,111 +648,196 @@ function exportReport() {
     });
   }
   window.print();
-  setTimeout(() => document.querySelectorAll('.print-hidden').forEach(el => el.classList.remove('print-hidden')), 1500);
+  setTimeout(function() { document.querySelectorAll('.print-hidden').forEach(function(el) { el.classList.remove('print-hidden'); }); }, 1500);
 }
 
 function showTab(id, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
 }
 
-function _calcObsStats() {
-  const cards = document.querySelectorAll('#obs-list .obs-card');
-  let total = 0, accion = 0, resuelta = 0, solo = 0;
-  cards.forEach(card => {
-    total++;
-    const a = card.dataset.accion;
-    if (a === 'si') accion++;
-    else if (a === 'resuelta') resuelta++;
-    else solo++;
-  });
-  document.getElementById('obs-total').textContent = total;
-  document.getElementById('obs-accion-count').textContent = accion;
-  document.getElementById('obs-resuelta-count').textContent = resuelta;
-  document.getElementById('obs-solo-count').textContent = solo;
-}
 function _updateObsNavBtns() {
-  const allOrigins = new Set();
-  const present = new Set();
-  document.querySelectorAll('#obs-list .obs-card').forEach(card => {
+  var allOrigins = new Set();
+  var present = new Set();
+  document.querySelectorAll('#obs-list .obs-card').forEach(function(card) {
     allOrigins.add(card.dataset.origin);
     if (card.style.display !== 'none') present.add(card.dataset.origin);
   });
-  const bar = document.querySelector('.obs-filter-bar');
+  var bar = document.querySelector('.obs-filter-bar');
   if (!bar) return;
-  bar.querySelectorAll('.obs-filter-btn').forEach(b => b.remove());
-  const mk = (origin, label) => {
-    const b = document.createElement('button');
+  bar.querySelectorAll('.obs-filter-btn').forEach(function(b) { b.remove(); });
+  function mk(origin, label) {
+    var b = document.createElement('button');
     b.className = 'obs-filter-btn' + (origin !== 'all' && !present.has(origin) ? ' nav-disabled' : '');
     b.dataset.obsOrigin = origin;
-    b.onclick = () => scrollToObs(origin);
+    b.onclick = function() { scrollToObs(origin); };
     b.textContent = '↓ ' + label;
     bar.appendChild(b);
-  };
+  }
   mk('all', 'Todos');
-  [...allOrigins].sort().forEach(o => mk(o, o.toUpperCase()));
+  [...allOrigins].sort().forEach(function(o) { mk(o, o.toUpperCase()); });
 }
+
 function scrollToObs(origin) {
   if (origin === 'all') {
     document.getElementById('obs-list').scrollIntoView({behavior:'smooth', block:'start'});
     return;
   }
-  const cards = document.querySelectorAll('#obs-list .obs-card');
-  for (const card of cards) {
-    if (card.dataset.origin === origin) {
-      card.scrollIntoView({behavior:'smooth', block:'start'});
+  var cards = document.querySelectorAll('#obs-list .obs-card');
+  for (var i = 0; i < cards.length; i++) {
+    if (cards[i].dataset.origin === origin) {
+      cards[i].scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
   }
 }
+
 function scrollToQuality(id) {
-  document.getElementById('quality-' + id).scrollIntoView({behavior:'smooth', block:'start'});
+  var el = document.getElementById('quality-' + id);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-// Contar arch-cards por archivo y categoría → guardar en localStorage para index.html
-window.addEventListener('DOMContentLoaded', function() {
-  const counts = {};
-  document.querySelectorAll('.arch-card[data-file]').forEach(card => {
-    const file = card.dataset.file;
-    const catText = card.querySelector('.arch-category')?.textContent || '';
-    const cat = catText.includes('Bug real') ? 'bugs'
-              : catText.includes('Riesgo') ? 'riesgos'
-              : catText.includes('Ausencia vs Spec') ? 'ausencias'
-              : null;
-    if (!cat) return;
-    if (!counts[file]) counts[file] = {bugs: 0, riesgos: 0, ausencias: 0};
-    counts[file][cat]++;
-  });
-  localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
-});
+function descargarPlantilla() {
+  var plantilla = {
+    periodo:"AAAA-MM-DD / AAAA-MM-DD", capital_usd:0, broker:"",
+    comision_por_trade_usd:0, spread_promedio_pips:0,
+    benchmark:"ej: S&P 500 mensual", notas:""
+  };
+  var blob = new Blob([JSON.stringify(plantilla, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'negocio_contexto.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
-// Construir botones de filtro dinámicamente desde los file-section-header presentes
-window.addEventListener('DOMContentLoaded', function() {
-  const seen = new Set();
-  const hint = document.querySelector('.file-filter-hint');
-  document.querySelectorAll('.file-section-header').forEach(h => {
-    const fileId = h.querySelector('.fsh-badge')?.textContent?.trim();
+// ── Trader comments ──────────────────────────────────────────────────────────
+function guardarComentario(btn) {
+  var block = btn.closest('.rec-response');
+  var el = block && block.querySelector('.rec-response-text');
+  if (!el || !el.dataset.commentKey) return;
+  localStorage.setItem('trader_comment_' + el.dataset.commentKey, el.textContent);
+  btn.textContent = '✓ Guardado';
+  btn.classList.add('saved');
+  setTimeout(function() { btn.textContent = 'Guardar comentario'; btn.classList.remove('saved'); }, 2000);
+}
+
+function _initResponseBlock(block, key) {
+  var el = block.querySelector('.rec-response-text');
+  if (!el) return;
+  if (!el.dataset.commentKey) el.dataset.commentKey = key;
+  el.setAttribute('contenteditable','true');
+  var saved = localStorage.getItem('trader_comment_' + key);
+  if (saved !== null && saved !== '') el.textContent = saved;
+  if (!block.querySelector('.btn-save-comment')) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-save-comment';
+    btn.textContent = 'Guardar comentario';
+    btn.onclick = function() { guardarComentario(btn); };
+    block.appendChild(btn);
+  }
+}
+
+function _makeResponseBlock(key) {
+  var block = document.createElement('div');
+  block.className = 'rec-response';
+  block.style.marginTop = '10px';
+  block.innerHTML = '<div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div>';
+  _initResponseBlock(block, key);
+  return block;
+}
+
+// ── Post-render init ─────────────────────────────────────────────────────────
+function _buildFileFilterBtns() {
+  var seen = new Set();
+  var hint = document.querySelector('.file-filter-hint');
+  var filterBar = document.getElementById('file-filter-bar');
+  filterBar.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(function(b) { b.remove(); });
+  document.querySelectorAll('.file-section-header').forEach(function(h) {
+    var fileId = h.querySelector('.fsh-badge') && h.querySelector('.fsh-badge').textContent.trim();
     if (!fileId || seen.has(fileId)) return;
     seen.add(fileId);
-    const name = h.querySelector('.fsh-name')?.textContent?.trim() || fileId;
-    const icon = h.querySelector('.fsh-icon')?.textContent?.trim() || '📄';
-    const fshClass = [...h.classList].find(c => c.startsWith('fsh-'));
+    var name = h.querySelector('.fsh-name') && h.querySelector('.fsh-name').textContent.trim() || fileId;
+    var icon = h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim() || '📄';
+    var fshClass = [...h.classList].find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
     fileRegistry[fileId] = fshClass;
-
-    const filterBar = document.getElementById('file-filter-bar');
-    const fb = document.createElement('button');
+    var fb = document.createElement('button');
     fb.className = 'file-filter-btn';
     fb.textContent = icon + ' ' + name;
-    fb.onclick = function() { toggleFileFilter(fshClass, fileId, fb); };
-    // Insertar antes del hint
+    fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(fshClass, fileId);
     filterBar.insertBefore(fb, hint || null);
   });
-});
+}
 
-// Negocio — mostrar secciones si ya tienen contenido (insertado por Producto)
-window.addEventListener('DOMContentLoaded', function() {
+function _countArchCards() {
+  var counts = {};
+  document.querySelectorAll('.arch-card[data-file]').forEach(function(card) {
+    var file = card.dataset.file;
+    var cat = card.dataset.categoria;
+    var key = cat === 'bug' ? 'bugs' : cat === 'riesgo' ? 'riesgos' : cat === 'ausencia' ? 'ausencias' : null;
+    if (!key) return;
+    if (!counts[file]) counts[file] = {bugs:0, riesgos:0, ausencias:0};
+    counts[file][key]++;
+  });
+  localStorage.setItem('tradingbot_counts', JSON.stringify(counts));
+}
+
+function _initTraderComments() {
+  var m1Keys = ['M1-notas','M1-notas-fib','M1-notas-v3'];
+  document.querySelectorAll('#tab-backtest .rec-response').forEach(function(block, i) {
+    _initResponseBlock(block, m1Keys[i] || ('M1-notas-' + i));
+  });
+  document.querySelectorAll('#rec-list .rec-card').forEach(function(card) {
+    var key = card.querySelector('.rec-num') && card.querySelector('.rec-num').textContent.trim();
+    var block = card.querySelector('.rec-response');
+    if (key && block) _initResponseBlock(block, key);
+  });
+  document.querySelectorAll('#obs-list .obs-card').forEach(function(card, i) {
+    card.querySelector('.obs-body').appendChild(
+      _makeResponseBlock('OBS-' + String(i + 1).padStart(3,'0'))
+    );
+  });
+  document.querySelectorAll('.arch-list .arch-card').forEach(function(card, i) {
+    card.appendChild(_makeResponseBlock('ARCH-' + String(i + 1).padStart(3,'0')));
+  });
+}
+
+function _injectFileSrcBadges() {
+  function addFileSrc(listSel, cardSel, insertFn) {
+    var list = document.querySelector(listSel);
+    if (!list) return;
+    var fname = null;
+    Array.from(list.children).forEach(function(el) {
+      if (el.classList.contains('file-section-header')) {
+        fname = el.querySelector('.fsh-name') && el.querySelector('.fsh-name').textContent.trim() || null;
+      } else if (el.matches && el.matches(cardSel) && fname && !el.querySelector('.file-src-badge')) {
+        insertFn(el, fname);
+      }
+    });
+  }
+  addFileSrc('#rec-list', '.rec-card', function(card, fname) {
+    var hdr = card.querySelector('.rec-header');
+    if (!hdr) return;
+    var d = document.createElement('div');
+    d.className = 'file-src-badge obs-context';
+    d.style.padding = '2px 0 6px';
+    d.textContent = '📄 ' + fname;
+    hdr.insertAdjacentElement('afterend', d);
+  });
+  addFileSrc('.arch-list', '.arch-card', function(card, fname) {
+    var hdr = card.querySelector('.arch-header');
+    if (!hdr || hdr.querySelector('.file-src-badge')) return;
+    var d = document.createElement('div');
+    d.className = 'file-src-badge obs-context';
+    d.style.marginTop = '3px';
+    d.textContent = '📄 ' + fname;
+    hdr.appendChild(d);
+  });
+}
+
+function _initNegocio() {
   if (document.querySelector('#neg-ctx-content *')) {
     document.getElementById('neg-ctx-empty').style.display = 'none';
     document.getElementById('neg-ctx-content').style.display = '';
@@ -1922,123 +850,62 @@ window.addEventListener('DOMContentLoaded', function() {
     document.getElementById('neg-dec-empty').style.display = 'none';
     document.getElementById('neg-decisions').style.display = '';
   }
-});
-
-function guardarComentario(btn) {
-  const block = btn.closest('.rec-response');
-  const el = block?.querySelector('.rec-response-text');
-  if (!el || !el.dataset.commentKey) return;
-  localStorage.setItem('trader_comment_' + el.dataset.commentKey, el.textContent);
-  btn.textContent = '✓ Guardado';
-  btn.classList.add('saved');
-  setTimeout(() => { btn.textContent = 'Guardar comentario'; btn.classList.remove('saved'); }, 2000);
 }
 
-function _initResponseBlock(block, key) {
-  const el = block.querySelector('.rec-response-text');
-  if (!el) return;
-  if (!el.dataset.commentKey) el.dataset.commentKey = key;
-  el.setAttribute('contenteditable', 'true');
-  const saved = localStorage.getItem('trader_comment_' + key);
-  if (saved !== null && saved !== '') el.textContent = saved;
-  if (!block.querySelector('.btn-save-comment')) {
-    const btn = document.createElement('button');
-    btn.className = 'btn-save-comment';
-    btn.textContent = 'Guardar comentario';
-    btn.onclick = function() { guardarComentario(btn); };
-    block.appendChild(btn);
-  }
-}
-
-function _makeResponseBlock(key) {
-  const block = document.createElement('div');
-  block.className = 'rec-response';
-  block.style.marginTop = '10px';
-  block.innerHTML = '<div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div>';
-  _initResponseBlock(block, key);
-  return block;
-}
-
-// Trader comments — M1 a M4
-window.addEventListener('DOMContentLoaded', function() {
-  // M1: bloque estático de notas generales
-  const _m1Keys = ['M1-notas', 'M1-notas-fib', 'M1-notas-v3'];
-  document.querySelectorAll('#tab-backtest .rec-response').forEach((block, i) => {
-    _initResponseBlock(block, _m1Keys[i] || ('M1-notas-' + i));
-  });
-  // M2: rec-cards (bloques ya en HTML)
-  document.querySelectorAll('#rec-list .rec-card').forEach(card => {
-    const key = card.querySelector('.rec-num')?.textContent?.trim();
-    const block = card.querySelector('.rec-response');
-    if (key && block) _initResponseBlock(block, key);
-  });
-  // M3: obs-cards — inyectar bloque de respuesta
-  document.querySelectorAll('#obs-list .obs-card').forEach((card, i) => {
-    card.querySelector('.obs-body').appendChild(
-      _makeResponseBlock('OBS-' + String(i + 1).padStart(3, '0'))
-    );
-  });
-  // M4: arch-cards — inyectar bloque de respuesta
-  document.querySelectorAll('.arch-list .arch-card').forEach((card, i) => {
-    card.appendChild(_makeResponseBlock('ARCH-' + String(i + 1).padStart(3, '0')));
-  });
-});
-
-// Inyectar referencia de archivo en cada card de M2 y M4
-window.addEventListener('DOMContentLoaded', function() {
-  function addFileSrc(listSel, cardSel, insertFn) {
-    const list = document.querySelector(listSel);
-    if (!list) return;
-    let fname = null;
-    Array.from(list.children).forEach(el => {
-      if (el.classList.contains('file-section-header')) {
-        fname = el.querySelector('.fsh-name')?.textContent?.trim() || null;
-      } else if (el.matches && el.matches(cardSel) && fname && !el.querySelector('.file-src-badge')) {
-        insertFn(el, fname);
-      }
-    });
-  }
-  // M2: línea de archivo entre rec-header y rec-desc
-  addFileSrc('#rec-list', '.rec-card', (card, fname) => {
-    const hdr = card.querySelector('.rec-header');
-    if (!hdr) return;
-    const d = document.createElement('div');
-    d.className = 'file-src-badge obs-context';
-    d.style.padding = '2px 0 6px';
-    d.textContent = '📄 ' + fname;
-    hdr.insertAdjacentElement('afterend', d);
-  });
-  // M4: línea de archivo al final de arch-header
-  addFileSrc('.arch-list', '.arch-card', (card, fname) => {
-    const hdr = card.querySelector('.arch-header');
-    if (!hdr) return;
-    if (hdr.querySelector('.file-src-badge')) return;
-    const d = document.createElement('div');
-    d.className = 'file-src-badge obs-context';
-    d.style.marginTop = '3px';
-    d.textContent = '📄 ' + fname;
-    hdr.appendChild(d);
-  });
-});
-
-// Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
-window.addEventListener('DOMContentLoaded', function() {
-  _calcObsStats();
-  _updateObsNavBtns();
-  const hash = window.location.hash.slice(1);
+function _handleHash() {
+  var hash = window.location.hash.slice(1);
   if (!hash) return;
-  const tabMap = {
-    'arquitectura': 'arquitectura', 'arch-bugs': 'arquitectura',
-    'arch-riesgos': 'arquitectura', 'arch-ausencias': 'arquitectura',
-    'recomendaciones': 'recomendaciones', 'live': 'live', 'backtest': 'backtest'
+  var tabMap = {
+    'arquitectura':'arquitectura','arch-bugs':'arquitectura',
+    'arch-riesgos':'arquitectura','arch-ausencias':'arquitectura',
+    'recomendaciones':'recomendaciones','live':'live','backtest':'backtest'
   };
-  const tabId = tabMap[hash];
+  var tabId = tabMap[hash];
   if (tabId) {
-    const btn = document.querySelector(`.tab-btn[onclick*="'${tabId}'"]`);
+    var btn = document.querySelector('.tab-btn[onclick*="\'' + tabId + '\'"]');
     if (btn) showTab(tabId, btn);
-    const target = document.getElementById(hash);
-    if (target) setTimeout(() => target.scrollIntoView({behavior:'smooth', block:'start'}), 200);
+    var target = document.getElementById(hash);
+    if (target) setTimeout(function() { target.scrollIntoView({behavior:'smooth',block:'start'}); }, 200);
   }
+}
+
+function _initAll() {
+  _buildFileFilterBtns();
+  _countArchCards();
+  _initTraderComments();
+  _injectFileSrcBadges();
+  _updateObsNavBtns();
+  _initNegocio();
+  _handleHash();
+}
+
+// ── Bootstrap: fetch data.json and render ────────────────────────────────────
+function _renderFromData(data) {
+  var m1Html = '', m2Html = '', m3Html = '', m4Html = '';
+  data.groups.forEach(function(g) {
+    m1Html += _renderM1Group(g);
+    m2Html += _renderM2Group(g);
+    m3Html += _renderM3Group(g);
+    m4Html += _renderM4Group(g);
+  });
+  document.getElementById('m1-content').innerHTML = m1Html;
+  document.getElementById('rec-list').innerHTML = m2Html;
+  document.getElementById('obs-list').innerHTML = m3Html;
+  document.getElementById('arch-list').innerHTML = m4Html;
+  _initAll();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  fetch('./data.json')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { _renderFromData(data); })
+    .catch(function(e) {
+      console.error('Error loading data.json:', e);
+      document.getElementById('m1-content').innerHTML =
+        '<div class="module-empty-state"><div class="mes-icon">⚠️</div>' +
+        '<div class="mes-title">Error al cargar datos</div>' +
+        '<div class="mes-desc">No se pudo cargar data.json. Verifica que el archivo existe y que estás accediendo desde un servidor (no file://).</div></div>';
+    });
 });
 </script>
 </body>
