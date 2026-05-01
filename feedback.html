@@ -470,7 +470,7 @@ function _traderRevisionHtml(comment) {
 
 function _correctionFieldHtml(cardId, badge) {
   return '<div class="correction-wrap">' +
-    '<label class="correction-label">💬 Comentarios del Trader</label>' +
+    '<label class="correction-label">💬 Comentarios y correcciones para la version final</label>' +
     '<textarea class="correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Escribe tus comentarios aquí…"></textarea>' +
     '</div>';
 }
@@ -522,7 +522,8 @@ function _renderM1Group(g) {
       '<div class="mes-desc">' + _esc(m1.empty_desc) + '</div>' +
       '<div class="mes-trigger">' + _esc(m1.empty_trigger) + '</div>' +
       '</div>';
-    if (g.status !== 'en_revision') html += _responseBlockHtml('notas sobre backtest');
+    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-general', g.badge);
+    else html += _responseBlockHtml('notas sobre backtest');
   }
 
   else if (m1.type === 'quality') {
@@ -541,7 +542,8 @@ function _renderM1Group(g) {
       html += '</div>';
     });
     html += _scoreHtml(m1.score);
-    if (g.status !== 'en_revision') html += _responseBlockHtml(g.name);
+    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-quality', g.badge);
+    else html += _responseBlockHtml(g.name);
   }
 
   else if (m1.type === 'readiness') {
@@ -552,7 +554,8 @@ function _renderM1Group(g) {
     m1.metrics.forEach(function(m) { html += _qmCardHtml(m); });
     html += '</div>';
     html += _scoreHtml(m1.score);
-    if (g.status !== 'en_revision') html += _responseBlockHtml(g.name);
+    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-readiness', g.badge);
+    else html += _responseBlockHtml(g.name);
   }
 
   if (g.status === 'en_revision') {
@@ -1003,14 +1006,6 @@ function _initTraderComments() {
     var key = card.querySelector('.rec-num') && card.querySelector('.rec-num').textContent.trim();
     var block = card.querySelector('.rec-response');
     if (key && block) _initResponseBlock(block, key);
-  });
-  document.querySelectorAll('#obs-list .obs-card').forEach(function(card, i) {
-    card.querySelector('.obs-body').appendChild(
-      _makeResponseBlock('OBS-' + String(i + 1).padStart(3,'0'))
-    );
-  });
-  document.querySelectorAll('.arch-list .arch-card').forEach(function(card, i) {
-    card.appendChild(_makeResponseBlock('ARCH-' + String(i + 1).padStart(3,'0')));
   });
 }
 
