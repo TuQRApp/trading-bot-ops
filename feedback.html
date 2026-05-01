@@ -204,8 +204,10 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 /* ── EXPORT BAR ── */
 .export-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 .btn-export{font-family:var(--font-mono);font-size:11px;padding:8px 16px;border-radius:8px;border:1px solid rgba(37,99,235,0.35);background:rgba(37,99,235,0.08);color:var(--nico);cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
-.btn-export:hover{background:rgba(37,99,235,0.16);}
+.btn-export:hover:not(:disabled){background:rgba(37,99,235,0.16);}
+.btn-export:disabled{opacity:0.35;cursor:default;pointer-events:none;}
 .export-scope{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
+.export-locked-msg{font-family:var(--font-mono);font-size:10px;color:#92400e;padding:5px 12px;border:1px solid rgba(234,88,12,0.3);border-radius:6px;background:rgba(234,88,12,0.06);}
 .btn-save-comment{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(5,150,105,0.35);background:rgba(5,150,105,0.08);color:var(--trader);cursor:pointer;transition:all 0.2s;display:inline-block;margin-top:8px;}
 .btn-save-comment:hover{background:rgba(5,150,105,0.16);}
 .btn-save-comment.saved{background:rgba(5,150,105,0.18);border-color:rgba(5,150,105,0.5);}
@@ -454,8 +456,8 @@ function _fshHtml(g, count) {
 
 function _correctionFieldHtml(cardId, badge) {
   return '<div class="correction-wrap">' +
-    '<label class="correction-label">✏️ Corrección</label>' +
-    '<textarea class="correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Dejar vacío si está bien…"></textarea>' +
+    '<label class="correction-label">💬 Comentarios del Trader</label>' +
+    '<textarea class="correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Escribe tus comentarios aquí…"></textarea>' +
     '</div>';
 }
 
@@ -719,7 +721,33 @@ function toggleFileFilter(fshClass, fileId, btn) {
   _applyFileFilter();
 }
 
+function _updateExportBar() {
+  if (!window._renderData) return;
+  var allActivo = window._renderData.groups.length > 0 &&
+    window._renderData.groups.every(function(g) { return g.status === 'activo'; });
+  var btn = document.querySelector('#export-bar .btn-export');
+  var bar = document.getElementById('export-bar');
+  if (!btn || !bar) return;
+
+  // Remove any existing locked message
+  var prev = bar.querySelector('.export-locked-msg');
+  if (prev) prev.remove();
+
+  if (allActivo) {
+    btn.disabled = false;
+  } else {
+    btn.disabled = true;
+    var msg = document.createElement('span');
+    msg.className = 'export-locked-msg';
+    msg.textContent = '🔒 Disponible cuando el ciclo esté completo (feedback final Claude)';
+    bar.appendChild(msg);
+  }
+}
+
 function exportReport() {
+  if (window._renderData && !window._renderData.groups.every(function(g) { return g.status === 'activo'; })) {
+    return;
+  }
   if (activeFiles.size > 0) {
     document.querySelectorAll('.file-section-header').forEach(function(h) {
       var match = [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
@@ -1046,6 +1074,7 @@ function _initAll() {
   _initNegocio();
   _handleHash();
   _initRevisionBar();
+  _updateExportBar();
   _startPolling();
 }
 
