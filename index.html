@@ -783,77 +783,69 @@ async function startUpload() {
   btn.disabled = true;
   btn.textContent = 'Subiendo archivos…';
 
-  // Build step labels
   var stepLabels = [];
-  for (var i = 0; i < files.length; i++) {
-    stepLabels.push('Subiendo ' + files[i].name + '…');
-  }
+  for (var i = 0; i < files.length; i++) stepLabels.push('Subiendo ' + files[i].name + '…');
   stepLabels.push('Registrando grupo en data.json…');
   stepLabels.push('Listo — el análisis comenzará en la próxima sesión');
-
   _initWorkflow(stepLabels);
 
   var folder = groupName;
   var uploadedFiles = [];
+  var success = false;
 
-  // Upload each file
-  for (var j = 0; j < files.length; j++) {
-    _setStep(j, 'active', null);
-    try {
+  try {
+    // Upload each file
+    for (var j = 0; j < files.length; j++) {
+      _setStep(j, 'active', null);
       var form = new FormData();
       form.append('file', files[j]);
       form.append('folder', folder);
       var r = await fetch(WORKER + '/upload', { method: 'POST', body: form });
       var res;
-      try { res = await r.json(); } catch(_) { throw new Error('Worker HTTP ' + r.status + ' — respuesta no válida'); }
+      try { res = await r.json(); } catch(_) { throw new Error('HTTP ' + r.status + ' — respuesta no válida del Worker'); }
       if (!res.ok) throw new Error(res.error || 'HTTP ' + r.status);
       _setStep(j, 'done', '✓ ' + files[j].name + ' subido');
       uploadedFiles.push({ name: files[j].name, type: files[j].name.split('.').pop() });
-    } catch(e) {
-      var msg = e.message.includes('Failed to fetch')
-        ? 'No se pudo conectar al Worker — verificá que está desplegado en Cloudflare'
-        : e.message;
-      _setStep(j, 'error', '✗ ' + files[j].name + ' — ' + msg);
-      btn.disabled = false;
-      btn.textContent = 'Subir →';
-      return;
     }
-  }
 
-  // Register group
-  var regStep = files.length;
-  _setStep(regStep, 'active', null);
-  try {
+    // Register group
+    var regStep = files.length;
+    _setStep(regStep, 'active', null);
     var rg = await fetch(WORKER + '/group', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: groupName, folder: folder, files: uploadedFiles })
     });
     var rgRes;
-    try { rgRes = await rg.json(); } catch(_) { throw new Error('Worker HTTP ' + rg.status + ' — respuesta no válida'); }
+    try { rgRes = await rg.json(); } catch(_) { throw new Error('HTTP ' + rg.status + ' — respuesta no válida del Worker'); }
     if (!rgRes.ok) throw new Error(rgRes.error || 'HTTP ' + rg.status);
     _setStep(regStep, 'done', '✓ Grupo ' + rgRes.badge + ' registrado');
     _setStep(regStep + 1, 'done', '✓ Listo — el análisis comenzará en la próxima sesión');
+
+    // Reset form
+    document.getElementById('upload-group-name').value = '';
+    filesInput.value = '';
+    var lbl = document.getElementById('upload-file-label');
+    lbl.textContent = '📂 Seleccionar archivos';
+    lbl.classList.remove('has-files');
+    success = true;
+
   } catch(e) {
-    var msg2 = e.message.includes('Failed to fetch')
+    var msg = e.message.includes('Failed to fetch')
       ? 'No se pudo conectar al Worker — verificá que está desplegado en Cloudflare'
       : e.message;
-    _setStep(regStep, 'error', '✗ Registro fallido — ' + msg2);
+    // Mark the active step as error
+    var activeStep = document.querySelector('.wf-step.active');
+    if (activeStep) {
+      var lbl2 = activeStep.querySelector('.wf-step-label');
+      activeStep.className = 'wf-step error';
+      if (lbl2) lbl2.textContent = '✗ ' + msg;
+    }
+  } finally {
     btn.disabled = false;
     btn.textContent = 'Subir →';
-    return;
+    if (success) setTimeout(loadFileList, 2000);
   }
-
-  // Reset form
-  document.getElementById('upload-group-name').value = '';
-  filesInput.value = '';
-  var lbl = document.getElementById('upload-file-label');
-  lbl.textContent = '📂 Seleccionar archivos';
-  lbl.classList.remove('has-files');
-  btn.disabled = false;
-  btn.textContent = 'Subir →';
-
-  setTimeout(function() { btn.disabled = false; btn.textContent = 'Subir →'; loadFileList(); }, 2000);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
