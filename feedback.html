@@ -141,6 +141,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .obs-filter-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;}
 .obs-filter-btn{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.2s;}
 .obs-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
+.obs-filter-btn.nav-disabled{opacity:0.25;cursor:default;pointer-events:none;}
 
 /* ── OBS STATS ── */
 .obs-stats{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
@@ -909,13 +910,13 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     <!-- Filtros por fuente de archivo -->
     <div class="obs-filter-bar">
       <span class="obs-filter-label">IR A:</span>
-      <button class="obs-filter-btn" onclick="scrollToObs('all')">↓ Todos</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('log')">↓ LOG</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('json')">↓ JSON</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('csv')">↓ CSV</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('py')">↓ PY</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('png')">↓ PNG</button>
-      <button class="obs-filter-btn" onclick="scrollToObs('chat')">↓ CHAT</button>
+      <button class="obs-filter-btn" data-obs-origin="all"  onclick="scrollToObs('all')">↓ Todos</button>
+      <button class="obs-filter-btn" data-obs-origin="log"  onclick="scrollToObs('log')">↓ LOG</button>
+      <button class="obs-filter-btn" data-obs-origin="json" onclick="scrollToObs('json')">↓ JSON</button>
+      <button class="obs-filter-btn" data-obs-origin="csv"  onclick="scrollToObs('csv')">↓ CSV</button>
+      <button class="obs-filter-btn" data-obs-origin="py"   onclick="scrollToObs('py')">↓ PY</button>
+      <button class="obs-filter-btn" data-obs-origin="png"  onclick="scrollToObs('png')">↓ PNG</button>
+      <button class="obs-filter-btn" data-obs-origin="chat" onclick="scrollToObs('chat')">↓ CHAT</button>
     </div>
 
     <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
@@ -1773,6 +1774,7 @@ function _applyFileFilter() {
     scope.textContent = 'Exportará: ' + names + ' · todos los módulos';
     scope.style.display = '';
   }
+  _updateObsNavBtns();
 }
 
 function toggleFileFilter(fshClass, fileId, btn) {
@@ -1833,6 +1835,17 @@ function _calcObsStats() {
   document.getElementById('obs-accion-count').textContent = accion;
   document.getElementById('obs-resuelta-count').textContent = resuelta;
   document.getElementById('obs-solo-count').textContent = solo;
+}
+function _updateObsNavBtns() {
+  const present = new Set();
+  document.querySelectorAll('#obs-list .obs-card').forEach(card => {
+    if (card.style.display !== 'none') present.add(card.dataset.origin);
+  });
+  document.querySelectorAll('.obs-filter-btn[data-obs-origin]').forEach(btn => {
+    const o = btn.dataset.obsOrigin;
+    const enabled = o === 'all' || present.has(o);
+    btn.classList.toggle('nav-disabled', !enabled);
+  });
 }
 function scrollToObs(origin) {
   if (origin === 'all') {
@@ -2006,7 +2019,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
 window.addEventListener('DOMContentLoaded', function() {
-  _calcObsStats();   // poblar contador al cargar
+  _calcObsStats();
+  _updateObsNavBtns();
   const hash = window.location.hash.slice(1);
   if (!hash) return;
   const tabMap = {
