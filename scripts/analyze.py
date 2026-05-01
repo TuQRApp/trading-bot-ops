@@ -277,6 +277,7 @@ def main():
         return
 
     changed = False
+    had_error = False
 
     for g in pending:
         print(f"\n[PENDING] {g['badge']} — {g['name']}")
@@ -285,7 +286,8 @@ def main():
                 changed = True
                 print(f"  -> en_revision")
         except Exception as e:
-            print(f"  ERROR: {e}")
+            print(f"  ERROR: {e}", file=sys.stderr)
+            had_error = True
 
     for g in pendiente_final:
         print(f"\n[PENDIENTE_FINAL] {g['badge']} — {g['name']}")
@@ -294,7 +296,8 @@ def main():
                 changed = True
                 print(f"  -> activo")
         except Exception as e:
-            print(f"  ERROR: {e}")
+            print(f"  ERROR: {e}", file=sys.stderr)
+            had_error = True
 
     if changed:
         print("\nWriting to Worker...")
@@ -302,6 +305,9 @@ def main():
         print("Done.")
     else:
         print("No changes.")
+
+    if had_error:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
