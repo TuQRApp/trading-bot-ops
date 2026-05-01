@@ -196,6 +196,9 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .btn-export:hover{background:rgba(37,99,235,0.16);}
 .btn-export.btn-sub{font-size:10px;border-color:var(--border);background:var(--surface);color:var(--muted);}
 .btn-export.btn-sub:hover{border-color:rgba(37,99,235,0.3);color:var(--nico);}
+.btn-save-comment{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(5,150,105,0.35);background:rgba(5,150,105,0.08);color:var(--trader);cursor:pointer;transition:all 0.2s;display:inline-block;margin-top:8px;}
+.btn-save-comment:hover{background:rgba(5,150,105,0.16);}
+.btn-save-comment.saved{background:rgba(5,150,105,0.18);border-color:rgba(5,150,105,0.5);}
 
 /* ── MODULE 5: Negocio ── */
 .neg-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
@@ -234,7 +237,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 /* ── PRINT ── */
 @media print {
   body::before,.nav-back,.tabs,.trigger-banner,.obs-filter-bar,.obs-stats,
-  .obs-filter-btn,.file-filter-bar,.export-bar,footer{display:none!important;}
+  .obs-filter-btn,.file-filter-bar,.export-bar,.btn-save-comment,footer{display:none!important;}
   .tab-panel{display:block!important;}
   .wrapper{padding:16px;}
   .file-section-header.print-hidden,.rec-card.print-hidden,
@@ -292,6 +295,11 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <div class="mes-title">Sin backtest cargado</div>
       <div class="mes-desc">El archivo anterior fue removido del sistema. Sube un nuevo reporte de backtest para activar este módulo.</div>
       <div class="mes-trigger">HTML · backtest.html — reporte generado por el motor de simulación</div>
+    </div>
+
+    <div class="rec-response" style="margin-top:24px;">
+      <div class="rec-response-label">🟢 Respuesta del trader — notas sobre backtest</div>
+      <div class="rec-response-text"></div>
     </div>
 
   </div>
@@ -1001,16 +1009,62 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Trader comments — contenteditable + localStorage
+function guardarComentario(btn) {
+  const block = btn.closest('.rec-response');
+  const el = block?.querySelector('.rec-response-text');
+  if (!el || !el.dataset.commentKey) return;
+  localStorage.setItem('trader_comment_' + el.dataset.commentKey, el.textContent);
+  btn.textContent = '✓ Guardado';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = 'Guardar comentario'; btn.classList.remove('saved'); }, 2000);
+}
+
+function _initResponseBlock(block, key) {
+  const el = block.querySelector('.rec-response-text');
+  if (!el) return;
+  el.dataset.commentKey = key;
+  el.setAttribute('contenteditable', 'true');
+  const saved = localStorage.getItem('trader_comment_' + key);
+  if (saved !== null && saved !== '') el.textContent = saved;
+  if (!block.querySelector('.btn-save-comment')) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-save-comment';
+    btn.textContent = 'Guardar comentario';
+    btn.onclick = function() { guardarComentario(btn); };
+    block.appendChild(btn);
+  }
+}
+
+function _makeResponseBlock(key) {
+  const block = document.createElement('div');
+  block.className = 'rec-response';
+  block.style.marginTop = '10px';
+  block.innerHTML = '<div class="rec-response-label">🟢 Respuesta del trader</div><div class="rec-response-text"></div>';
+  _initResponseBlock(block, key);
+  return block;
+}
+
+// Trader comments — M1 a M4
 window.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.rec-card').forEach(card => {
+  // M1: bloque estático de notas generales
+  document.querySelectorAll('#tab-backtest .rec-response').forEach(block => {
+    _initResponseBlock(block, 'M1-notas');
+  });
+  // M2: rec-cards (bloques ya en HTML)
+  document.querySelectorAll('#rec-list .rec-card').forEach(card => {
     const key = card.querySelector('.rec-num')?.textContent?.trim();
-    const el = card.querySelector('.rec-response-text');
-    if (!key || !el) return;
-    el.setAttribute('contenteditable', 'true');
-    const saved = localStorage.getItem('trader_comment_' + key);
-    if (saved !== null && saved !== '') el.textContent = saved;
-    el.addEventListener('input', () => localStorage.setItem('trader_comment_' + key, el.textContent));
+    const block = card.querySelector('.rec-response');
+    if (key && block) _initResponseBlock(block, key);
+  });
+  // M3: obs-cards — inyectar bloque de respuesta
+  document.querySelectorAll('#obs-list .obs-card').forEach((card, i) => {
+    card.querySelector('.obs-body').appendChild(
+      _makeResponseBlock('OBS-' + String(i + 1).padStart(3, '0'))
+    );
+  });
+  // M4: arch-cards — inyectar bloque de respuesta
+  document.querySelectorAll('.arch-list .arch-card').forEach((card, i) => {
+    card.appendChild(_makeResponseBlock('ARCH-' + String(i + 1).padStart(3, '0')));
   });
 });
 
