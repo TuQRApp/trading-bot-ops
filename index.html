@@ -789,6 +789,7 @@ async function startUpload() {
 
   var btn = document.getElementById('upload-btn');
   btn.disabled = true;
+  btn.textContent = 'Subiendo archivos…';
 
   // Build step labels
   var stepLabels = [];
@@ -818,6 +819,7 @@ async function startUpload() {
     } catch(e) {
       _setStep(j, 'error', '✗ ' + files[j].name + ' — ' + e.message);
       btn.disabled = false;
+      btn.textContent = 'Subir →';
       return;
     }
   }
@@ -838,6 +840,7 @@ async function startUpload() {
   } catch(e) {
     _setStep(regStep, 'error', '✗ Error: ' + e.message);
     btn.disabled = false;
+    btn.textContent = 'Subir →';
     return;
   }
 
@@ -848,6 +851,7 @@ async function startUpload() {
   lbl.textContent = '📂 Seleccionar archivos';
   lbl.classList.remove('has-files');
   btn.disabled = false;
+  btn.textContent = 'Subir →';
 
   // Reload file list after delay
   setTimeout(loadFileList, 2000);

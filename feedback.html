@@ -1011,6 +1011,40 @@ function _initAll() {
   _initNegocio();
   _handleHash();
   _initRevisionBar();
+  _startPolling();
+}
+
+// ── Live polling (20s) ───────────────────────────────────────────────────────
+var _pollTimer = null;
+
+function _startPolling() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  if (!window._renderData) return;
+  var nonFinal = window._renderData.groups.some(function(g) { return g.status !== 'activo'; });
+  if (!nonFinal) return;
+
+  _pollTimer = setInterval(function() {
+    fetch('./data.json?t=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(newData) {
+        var changed = newData.groups.some(function(ng) {
+          var og = window._renderData.groups.find(function(g) { return g.badge === ng.badge; });
+          return og && og.status !== ng.status;
+        });
+        if (!changed) return;
+        clearInterval(_pollTimer);
+        _pollTimer = null;
+        var hasDraft = Array.from(document.querySelectorAll('.correction-field'))
+          .some(function(ta) { return ta.value.trim() !== ''; });
+        if (hasDraft) {
+          var info = document.getElementById('revision-info');
+          if (info) info.textContent += ' · ⚠️ Estado actualizado — enviá la revisión para ver los cambios';
+        } else {
+          _renderFromData(newData);
+        }
+      })
+      .catch(function() {});
+  }, 20000);
 }
 
 // ── Bootstrap: fetch data.json and render ────────────────────────────────────
