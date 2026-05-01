@@ -384,7 +384,36 @@ a.tag:hover { opacity: 0.75; }
 .tag-bot    { color: var(--bot);    border-color: rgba(139,92,246,0.3);  background: rgba(139,92,246,0.08); }
 .tag-gate   { color: var(--gate);   border-color: rgba(239,68,68,0.3);   background: rgba(239,68,68,0.08); }
 .tag-muted  { color: var(--muted);  border-color: var(--border);         background: rgba(30,45,110,0.04); }
-.tag-pending{ color: var(--shared); border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
+.tag-pending  { color: var(--shared); border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
+.tag-revision { color: #b45309;       border-color: rgba(234,88,12,0.5);   background: rgba(234,88,12,0.10); font-weight: 700; }
+.tag-final    { color: var(--nico);   border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.08); }
+
+.revision-alert-row {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: rgba(234,88,12,0.07);
+  border: 1.5px solid rgba(234,88,12,0.35);
+  border-radius: 10px;
+  font-size: 13px;
+  color: #7c2d12;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.revision-alert-row a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+  text-decoration: none;
+  border: 1px solid rgba(234,88,12,0.4);
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(234,88,12,0.1);
+  white-space: nowrap;
+}
+.revision-alert-row a:hover { background: rgba(234,88,12,0.18); }
 
 /* Empty state */
 .files-empty {
@@ -665,16 +694,30 @@ function renderFileList(data) {
 
   var html = '<div class="files-list">';
   groups.forEach(function(g) {
-    var isPending = g.status === 'pending';
     var icon = _ftypeIcon(g.ftype);
-    var dateLabel = isPending ? 'Subido' : 'Analizado';
-    var statusTag = isPending
-      ? '<span class="tag tag-pending">⏳ Análisis pendiente</span>'
-      : '<span class="tag tag-trader">✓ Analizado</span>';
+    var statusTag, dateLabel, revisionAlert = '';
+    if (g.status === 'pending') {
+      statusTag  = '<span class="tag tag-pending">⏳ Análisis pendiente</span>';
+      dateLabel  = 'Subido';
+    } else if (g.status === 'en_revision') {
+      statusTag  = '<span class="tag tag-revision">⚠ Revisión requerida</span>';
+      dateLabel  = 'Analizado';
+      revisionAlert =
+        '<div class="revision-alert-row">' +
+        '<span>El borrador está listo. <strong>Revisá cada módulo, escribí tus correcciones y envialas.</strong> El ciclo no cierra sin tu validación.</span>' +
+        '<a href="feedback.html">Ir al análisis →</a>' +
+        '</div>';
+    } else if (g.status === 'pendiente_final') {
+      statusTag  = '<span class="tag tag-final">🔄 Análisis final en proceso</span>';
+      dateLabel  = 'Analizado';
+    } else {
+      statusTag  = '<span class="tag tag-trader">✓ Ciclo completo</span>';
+      dateLabel  = 'Analizado';
+    }
     var filesBadge = g.files && g.files.length > 1
       ? '<span class="tag tag-muted">' + g.files.length + ' archivos</span>'
       : '';
-    var m4Tags = isPending ? '' : _m4Tags(g);
+    var m4Tags = (g.status === 'pending') ? '' : _m4Tags(g);
     var badgeTag = '<span class="tag tag-muted">' + g.badge + '</span>';
 
     var categoryHtml = g.category
@@ -691,12 +734,12 @@ function renderFileList(data) {
             badgeTag + statusTag + filesBadge + m4Tags +
           '</div>' +
           categoryHtml + summaryHtml +
+          revisionAlert +
         '</div>' +
         '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(g.date) + '</div>' +
         '<div class="file-row-actions">' +
           '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>' +
-          '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\', \'' + g.name.replace(/'/g, "\\'") + '\')" ' +
-            (isPending ? '' : '') + '>Eliminar</button>' +
+          '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\', \'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
         '</div>' +
       '</div>';
   });

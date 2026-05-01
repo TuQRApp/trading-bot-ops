@@ -257,10 +257,20 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .correction-field::placeholder{color:var(--muted);font-style:italic;}
 .trader-notes-wrap{margin-top:20px;padding:16px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:10px;}
 .trader-notes-label{font-family:var(--font-mono);font-size:10px;color:var(--shared);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
-.revision-action-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid rgba(245,158,11,0.4);padding:12px 24px;display:flex;align-items:center;gap:16px;z-index:100;box-shadow:0 -4px 20px rgba(30,45,110,0.08);}
-.revision-info{font-family:var(--font-mono);font-size:11px;color:#92400e;flex:1;}
-.btn-submit-review{font-family:var(--font-mono);font-size:11px;padding:10px 20px;border-radius:8px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#92400e;cursor:pointer;font-weight:700;transition:all 0.2s;}
-.btn-submit-review:hover{background:rgba(245,158,11,0.2);}
+.revision-top-banner{display:none;width:100%;background:rgba(234,88,12,0.09);border-bottom:2px solid rgba(234,88,12,0.4);padding:14px 32px;box-sizing:border-box;}
+.revision-top-banner-inner{max-width:900px;margin:0 auto;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.revision-top-banner-icon{font-size:22px;flex-shrink:0;line-height:1;}
+.revision-top-banner-body{flex:1;}
+.revision-top-banner-title{font-family:var(--font-mono);font-size:12px;font-weight:700;color:#7c2d12;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;}
+.revision-top-banner-desc{font-size:13px;color:#92400e;line-height:1.5;}
+.revision-top-banner-desc strong{color:#7c2d12;}
+.revision-top-banner-badges{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+.revision-top-banner-badge{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;background:rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.35);color:#b45309;}
+
+.revision-action-bar{position:fixed;bottom:0;left:0;right:0;background:#fffbf5;border-top:3px solid #ea580c;padding:16px 32px;display:flex;align-items:center;gap:20px;z-index:100;box-shadow:0 -6px 24px rgba(234,88,12,0.15);}
+.revision-info{font-family:var(--font-mono);font-size:12px;color:#7c2d12;flex:1;font-weight:600;}
+.btn-submit-review{font-family:var(--font-mono);font-size:12px;padding:12px 24px;border-radius:8px;border:2px solid #ea580c;background:#ea580c;color:#fff;cursor:pointer;font-weight:700;transition:all 0.2s;letter-spacing:0.3px;}
+.btn-submit-review:hover{background:#c2410c;border-color:#c2410c;}
 .btn-submit-review:disabled{opacity:0.5;cursor:default;}
 
 /* ── PRINT ── */
@@ -276,6 +286,16 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 </style>
 </head>
 <body>
+<div class="revision-top-banner" id="revision-top-banner">
+  <div class="revision-top-banner-inner">
+    <div class="revision-top-banner-icon">⚠</div>
+    <div class="revision-top-banner-body">
+      <div class="revision-top-banner-title">Borrador pendiente de validación — ciclo abierto</div>
+      <div class="revision-top-banner-desc">Este análisis es un <strong>borrador generado por Claude</strong>. Revisá cada módulo (Recomendaciones, Observaciones, Feedback de código), escribí tus correcciones en los campos habilitados y <strong>enviá tu revisión usando el botón de abajo</strong>. <strong>El ciclo no cierra sin tu validación.</strong></div>
+      <div class="revision-top-banner-badges" id="revision-top-badges"></div>
+    </div>
+  </div>
+</div>
 <div class="wrapper">
 
   <a href="index.html" class="nav-back">← Volver al hub</a>
@@ -864,22 +884,37 @@ function requestRereview(badge) {
 function _initRevisionBar() {
   if (!window._renderData) return;
   var revGroups = window._renderData.groups.filter(function(g) { return g.status === 'en_revision'; });
+
+  // Top banner
+  var topBanner = document.getElementById('revision-top-banner');
+  var topBadges = document.getElementById('revision-top-badges');
+  if (revGroups.length > 0) {
+    topBanner.style.display = 'block';
+    topBadges.innerHTML = revGroups.map(function(g) {
+      return '<span class="revision-top-banner-badge">' + g.badge + ' · ' + g.name + '</span>';
+    }).join('');
+  } else {
+    topBanner.style.display = 'none';
+  }
+
   if (revGroups.length === 0) return;
+
+  // Bottom action bar
   var bar = document.getElementById('revision-action-bar');
   var infoEl = document.getElementById('revision-info');
   var btnsEl = document.getElementById('revision-btns');
   bar.style.display = 'flex';
-  infoEl.textContent = '⟳ Revisión pendiente: ' + revGroups.map(function(g) { return g.badge; }).join(', ') +
-    ' — completá las correcciones en cada tab y enviá cuando estés listo.';
+  btnsEl.innerHTML = '';
+  infoEl.textContent = 'Revisá cada módulo, completá tus correcciones y envialas. El análisis final no se genera sin tu OK.';
   revGroups.forEach(function(g) {
     var btn = document.createElement('button');
     btn.className = 'btn-submit-review';
     btn.dataset.badge = g.badge;
-    btn.textContent = 'Enviar revisión ' + g.badge;
+    btn.textContent = 'Enviar revisión · ' + g.badge;
     btn.onclick = function() { submitReview(g.badge); };
     btnsEl.appendChild(btn);
   });
-  document.body.style.paddingBottom = '68px';
+  document.body.style.paddingBottom = '80px';
 }
 
 // ── Post-render init ─────────────────────────────────────────────────────────
