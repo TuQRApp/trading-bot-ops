@@ -12,7 +12,7 @@ const FSH_PALETTE = ['fsh-a','fsh-b','fsh-c','fsh-d','fsh-e','fsh-f','fsh-g','fs
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
@@ -35,6 +35,7 @@ export default {
     if (pathname === '/data'    && method === 'GET')    return handleGetData(env);
     if (pathname === '/data'    && method === 'PUT')    return handlePutData(request, env);
     if (pathname === '/group'   && method === 'POST')   return handleRegisterGroup(request, env);
+    if (pathname === '/group'   && method === 'PATCH')  return handlePatchGroup(request, env);
     if (pathname === '/group'   && method === 'DELETE') return handleDeleteGroup(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
@@ -288,6 +289,74 @@ async function handleRegisterGroup(request, env) {
   } catch (e) {
     return json({ error: e.message }, 500);
   }
+}
+
+// ── /group  PATCH ────────────────────────────────────────────────────────────
+// Actions: submit_review | request_rereview
+// submit_review body: { badge, action, corrections:{cardId:text}, trader_notes, rereview_notes? }
+// request_rereview body: { badge, action, rereview_notes }
+
+async function handlePatchGroup(request, env) {
+  try {
+    const body = await request.json();
+    const { badge, action } = body;
+    if (!badge || !action) return json({ error: 'badge and action required' }, 400);
+
+    const { data, sha } = await readData(env);
+    const idx = data.groups.findIndex(g => g.badge === badge);
+    if (idx === -1) return json({ error: 'group not found' }, 404);
+    const group = data.groups[idx];
+
+    if (action === 'submit_review') {
+      const corrections = body.corrections || {};
+      for (const mod of ['m2', 'm3', 'm4']) {
+        if (!Array.isArray(group[mod])) continue;
+        for (const card of group[mod]) {
+          if (corrections[card.id] !== undefined) card.correction = corrections[card.id];
+        }
+      }
+      group.trader_notes = body.trader_notes || '';
+      group.revision_submitted = true;
+      group.status = 'pendiente_final';
+      await writeData(data, sha, env);
+      sendReviewSubmittedEmail(group, env).catch(() => {});
+      return json({ ok: true });
+    }
+
+    if (action === 'request_rereview') {
+      group.status = 'en_revision';
+      group.rereview_requested = true;
+      group.revision_submitted = false;
+      group.rereview_notes = body.rereview_notes || '';
+      await writeData(data, sha, env);
+      return json({ ok: true });
+    }
+
+    return json({ error: 'unknown action' }, 400);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function sendReviewSubmittedEmail(group, env) {
+  if (!env.RESEND_API_KEY) return;
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+      <h2 style="color:#1e2d6e;margin-bottom:4px">Revisión lista para finalizar</h2>
+      <p style="color:#64748b;margin-top:0">${group.badge} · ${group.name}</p>
+      <p style="font-size:14px;color:#1a2757">El trader revisó el borrador y envió sus correcciones.<br>Abrí Claude Code en el directorio Trading para finalizar el análisis.</p>
+      <p style="font-family:monospace;font-size:12px;color:#64748b;background:#f1f5f9;padding:10px 14px;border-radius:6px">status: pendiente_final → abrir Claude Code</p>
+    </div>`;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'Trading Bot <onboarding@resend.dev>',
+      to: ['nestragues@gmail.com'],
+      subject: '[Trading Bot] Revisión lista — ' + group.badge + ' — ' + group.name,
+      html,
+    }),
+  });
 }
 
 // ── /group  DELETE ───────────────────────────────────────────────────────────

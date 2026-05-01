@@ -12,23 +12,45 @@ Sistema de análisis de bots de trading. El trader sube archivos (Python, CSV) v
 
 ## INICIO DE SESIÓN — hacer siempre esto primero
 
-Al iniciar cualquier sesión en este directorio:
+Al iniciar cualquier sesión en este directorio, leer `data.json` y actuar según los estados:
 
-1. Leer `data.json` local
-2. Buscar grupos con `"status": "pending"`
-3. Si hay grupos pendientes → **anunciarlo al trader y comenzar el análisis automáticamente**, sin esperar que el trader lo pida
-4. Si no hay grupos pendientes → continuar normal
+---
 
-### Cómo analizar un grupo pending
+### Si hay grupos con `status: "pending"`
 
-1. Identificar `folder` y `files` del grupo en data.json
-2. Fetchear cada archivo desde GitHub:
+1. Fetchear cada archivo del grupo desde GitHub:
    `https://raw.githubusercontent.com/TuQRApp/trading-bot-ops/main/Archivos/{folder}/{filename}`
-3. Leer y analizar el código/CSV
-4. Generar borrador de m1–m4 (ver esquema abajo)
-5. Presentar el borrador al trader para revisión y corrección
-6. Una vez aprobado, escribir el análisis final a data.json via `PUT https://trading-upload.nestragues.workers.dev/data`
-7. Actualizar `status` a `"activo"`
+2. Leer y analizar el código/CSV en profundidad
+3. Generar borrador **completo** de m1–m4 sin pedir confirmación (ver esquema abajo)
+4. Agregar al grupo: `trader_notes: ""`, `revision_submitted: false`, `rereview_requested: false`
+5. Escribir el grupo con `status: "en_revision"` a data.json via `PUT https://trading-upload.nestragues.workers.dev/data`
+6. Enviar email al trader via curl a Resend API:
+   - Subject: `[Trading Bot] Borrador listo para revisar — {badge}`
+   - Body: link a `https://tuqrapp.github.io/trading-bot-ops/feedback.html`
+
+---
+
+### Si hay grupos con `status: "pendiente_final"`
+
+El trader revisó el borrador. Los campos `correction` en las cards y `trader_notes` tienen su feedback.
+
+1. Leer el grupo completo (borrador + corrections + trader_notes + rereview_notes si aplica)
+2. Incorporar todas las correcciones del trader en el análisis final
+3. Limpiar campos de revisión en el grupo: vaciar `correction` en cada card, `trader_notes: ""`, `revision_submitted: false`, `rereview_requested: false`, `rereview_notes: ""`
+4. Escribir el grupo con `status: "activo"` a data.json via `PUT /data`
+5. Enviar email al trader:
+   - Subject: `[Trading Bot] Análisis finalizado — {badge}`
+   - Body: link a feedback.html
+
+---
+
+### Si hay grupos con `status: "en_revision"` sin acción tuya
+
+El trader está revisando. No hacer nada.
+
+### Si no hay grupos en ninguno de estos estados
+
+Continuar normal con lo que el usuario pida.
 
 ---
 

@@ -244,6 +244,25 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .neg-decision-just:hover{background:rgba(30,45,110,0.04);}
 .neg-decision-just:focus{outline:none;background:rgba(30,45,110,0.06);}
 
+/* ── REVISION MODE ── */
+.fsh-status-badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;flex-shrink:0;}
+.fsh-status-revision{background:rgba(245,158,11,0.12);color:#92400e;border:1px solid rgba(245,158,11,0.4);}
+.fsh-status-final{background:rgba(30,45,110,0.06);color:var(--muted);border:1px solid var(--border);}
+.btn-rereview{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(37,99,235,0.3);background:rgba(37,99,235,0.06);color:var(--nico);cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.btn-rereview:hover{background:rgba(37,99,235,0.14);}
+.correction-wrap{margin-top:10px;}
+.correction-label{font-family:var(--font-mono);font-size:10px;color:var(--shared);display:block;margin-bottom:4px;}
+.correction-field{width:100%;font-family:var(--font-display);font-size:12px;color:var(--text);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:8px 12px;background:rgba(245,158,11,0.03);outline:none;resize:vertical;min-height:52px;}
+.correction-field:focus{border-color:rgba(245,158,11,0.6);background:rgba(245,158,11,0.06);}
+.correction-field::placeholder{color:var(--muted);font-style:italic;}
+.trader-notes-wrap{margin-top:20px;padding:16px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:10px;}
+.trader-notes-label{font-family:var(--font-mono);font-size:10px;color:var(--shared);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+.revision-action-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid rgba(245,158,11,0.4);padding:12px 24px;display:flex;align-items:center;gap:16px;z-index:100;box-shadow:0 -4px 20px rgba(30,45,110,0.08);}
+.revision-info{font-family:var(--font-mono);font-size:11px;color:#92400e;flex:1;}
+.btn-submit-review{font-family:var(--font-mono);font-size:11px;padding:10px 20px;border-radius:8px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#92400e;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-submit-review:hover{background:rgba(245,158,11,0.2);}
+.btn-submit-review:disabled{opacity:0.5;cursor:default;}
+
 /* ── PRINT ── */
 @media print {
   body::before,.nav-back,.tabs,.trigger-banner,.obs-filter-bar,.obs-stats,
@@ -371,7 +390,14 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   </footer>
 
 </div>
+
+<div class="revision-action-bar" id="revision-action-bar" style="display:none">
+  <div class="revision-info" id="revision-info"></div>
+  <div id="revision-btns"></div>
+</div>
 <script>
+var WORKER_URL = 'https://trading-upload.nestragues.workers.dev';
+
 // ── Utilidades ──────────────────────────────────────────────────────────────
 function _esc(s) {
   return String(s)
@@ -389,12 +415,27 @@ function _fmtTs(iso) {
 
 // ── Renderer helpers ─────────────────────────────────────────────────────────
 function _fshHtml(g, count) {
+  var statusBadge = '';
+  if (g.status === 'en_revision') statusBadge = '<span class="fsh-status-badge fsh-status-revision">⟳ EN REVISIÓN</span>';
+  else if (g.status === 'pendiente_final') statusBadge = '<span class="fsh-status-badge fsh-status-final">⏳ ESPERANDO ANÁLISIS FINAL</span>';
+  var rereviBtn = (g.status === 'activo')
+    ? '<button class="btn-rereview" onclick="requestRereview(\'' + _esc(g.badge) + '\')">↩ Solicitar re-análisis</button>'
+    : '';
   return '<div class="file-section-header ' + g.fsh_class + '">' +
     '<div class="fsh-icon ftype-' + g.ftype + '">' + g.icon + '</div>' +
     '<span class="fsh-name">' + _esc(g.name) + '</span>' +
     '<span class="fsh-badge">' + _esc(g.badge) + '</span>' +
+    (statusBadge || '') +
     '<div class="fsh-line"></div>' +
     '<span class="fsh-count">' + _esc(count) + '</span>' +
+    (rereviBtn || '') +
+    '</div>';
+}
+
+function _correctionFieldHtml(cardId, badge) {
+  return '<div class="correction-wrap">' +
+    '<label class="correction-label">✏️ Corrección</label>' +
+    '<textarea class="correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Dejar vacío si está bien…"></textarea>' +
     '</div>';
 }
 
@@ -445,7 +486,7 @@ function _renderM1Group(g) {
       '<div class="mes-desc">' + _esc(m1.empty_desc) + '</div>' +
       '<div class="mes-trigger">' + _esc(m1.empty_trigger) + '</div>' +
       '</div>';
-    html += _responseBlockHtml('notas sobre backtest');
+    if (g.status !== 'en_revision') html += _responseBlockHtml('notas sobre backtest');
   }
 
   else if (m1.type === 'quality') {
@@ -464,7 +505,7 @@ function _renderM1Group(g) {
       html += '</div>';
     });
     html += _scoreHtml(m1.score);
-    html += _responseBlockHtml(g.name);
+    if (g.status !== 'en_revision') html += _responseBlockHtml(g.name);
   }
 
   else if (m1.type === 'readiness') {
@@ -475,7 +516,15 @@ function _renderM1Group(g) {
     m1.metrics.forEach(function(m) { html += _qmCardHtml(m); });
     html += '</div>';
     html += _scoreHtml(m1.score);
-    html += _responseBlockHtml(g.name);
+    if (g.status !== 'en_revision') html += _responseBlockHtml(g.name);
+  }
+
+  if (g.status === 'en_revision') {
+    html += '<div class="trader-notes-wrap">' +
+      '<label class="trader-notes-label">📝 Notas generales del trader</label>' +
+      '<textarea class="notes-area correction-field" data-badge="' + _esc(g.badge) + '" data-card-id="__trader_notes__" placeholder="Observaciones generales sobre este análisis…">' +
+      _esc(g.trader_notes || '') + '</textarea>' +
+      '</div>';
   }
 
   return html;
@@ -496,7 +545,11 @@ function _renderM2Group(g) {
     var plbl = r.prioridad === 'alta' ? 'Alta prioridad' : 'Media prioridad';
     var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
     var elbl = _estadoLbl[r.estado] || r.estado;
-    html += '<div class="rec-card">' +
+    var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
+    var responseHtml = (g.status !== 'en_revision')
+      ? '<div class="rec-response"><div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div></div>'
+      : '';
+    html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
         '<span class="rec-num">' + _esc(r.id) + '</span>' +
         '<div class="rec-title">' + _esc(r.title) + '</div>' +
@@ -507,7 +560,7 @@ function _renderM2Group(g) {
         '</div>' +
       '</div>' +
       '<div class="rec-desc">' + _esc(r.desc) + '</div>' +
-      '<div class="rec-response"><div class="rec-response-label">🟢 Comentarios del Trader</div><div class="rec-response-text"></div></div>' +
+      correctionHtml + responseHtml +
       '</div>';
   });
   return html;
@@ -529,23 +582,25 @@ function _renderM3Group(g) {
   }
   var html = _fshHtml(g, count);
   m3.forEach(function(o) {
-    var ts = new Date(o.timestamp);
-    var datePart = ts.toISOString().slice(0,10);
-    var timePart = String(ts.getUTCHours()).padStart(2,'0') + ':' + String(ts.getUTCMinutes()).padStart(2,'0');
+    var ts = o.timestamp ? new Date(o.timestamp) : null;
+    var datePart = ts ? ts.toISOString().slice(0,10) : (o.date ? o.date.slice(0,10) : '—');
+    var timePart = ts ? String(ts.getUTCHours()).padStart(2,'0') + ':' + String(ts.getUTCMinutes()).padStart(2,'0') : '';
     var accionCss = o.accion === 'si' ? 'obs-accion-si' : o.accion === 'resuelta' ? 'obs-accion-resuelta' : 'obs-accion-no';
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
-    html += '<div class="obs-card" style="--obs-color:' + o.color + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion) + '">' +
+    var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
+    html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
         '<div class="obs-timestamp">' + datePart + '<br>' + timePart + '</div>' +
-        '<div class="obs-source-badge src-' + o.origin + '">' + o.origin.toUpperCase() + '</div>' +
+        '<div class="obs-source-badge src-' + (o.origin||'chat') + '">' + (o.origin||'?').toUpperCase() + '</div>' +
       '</div>' +
       '<div class="obs-body">' +
         '<div class="obs-title">' + _esc(o.title) + '</div>' +
-        '<div class="obs-text">' + _esc(o.text) + '</div>' +
+        '<div class="obs-text">' + _esc(o.text||o.desc||'') + '</div>' +
         '<div class="obs-meta">' +
           '<span class="obs-tag ' + accionCss + '">' + accionLbl + '</span>' +
-          '<span class="obs-context">' + _esc(o.context) + '</span>' +
+          '<span class="obs-context">' + _esc(o.context||'') + '</span>' +
         '</div>' +
+        corrHtml3 +
       '</div>' +
       '</div>';
   });
@@ -579,13 +634,14 @@ function _renderM4Group(g) {
       idAttr = ' id="' + anchorId + '"';
     }
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
-    html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '"' + idAttr + '>' +
+    var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
+    html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
-        '<span class="arch-category ' + catCss + '">' + _esc(a.label) + '</span>' +
+        '<span class="arch-category ' + catCss + '">' + _esc(a.label||a.categoria) + '</span>' +
         '<span class="arch-title">' + _esc(a.title) + '</span>' +
       '</div>' +
       '<div class="arch-desc">' + _esc(a.desc) + '</div>' +
-      codeHtml +
+      codeHtml + corrHtml4 +
       '</div>';
   });
   return html;
@@ -757,6 +813,75 @@ function _makeResponseBlock(key) {
   return block;
 }
 
+// ── Revision actions ─────────────────────────────────────────────────────────
+function submitReview(badge) {
+  var btns = document.querySelectorAll('.btn-submit-review[data-badge="' + badge + '"]');
+  btns.forEach(function(b) { b.disabled = true; b.textContent = 'Enviando…'; });
+  var corrections = {};
+  document.querySelectorAll('.correction-field[data-badge="' + badge + '"]').forEach(function(ta) {
+    var val = ta.value.trim();
+    var cid = ta.dataset.cardId;
+    if (val && cid !== '__trader_notes__') corrections[cid] = val;
+  });
+  var notesEl = document.querySelector('.correction-field[data-badge="' + badge + '"][data-card-id="__trader_notes__"]');
+  var trader_notes = notesEl ? notesEl.value.trim() : '';
+  fetch(WORKER_URL + '/group', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: badge, action: 'submit_review', corrections: corrections, trader_notes: trader_notes })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      alert('Revisión enviada. Nicolás recibirá un email para finalizar el análisis.');
+      location.reload();
+    } else {
+      alert('Error: ' + (res.error || 'desconocido'));
+      btns.forEach(function(b) { b.disabled = false; b.textContent = 'Enviar revisión'; });
+    }
+  })
+  .catch(function(e) {
+    alert('Error al enviar: ' + e.message);
+    btns.forEach(function(b) { b.disabled = false; b.textContent = 'Enviar revisión'; });
+  });
+}
+
+function requestRereview(badge) {
+  var notes = prompt('¿Qué querés que se revise o corrija en el nuevo análisis?\n(Podés dejarlo vacío para un re-análisis completo)');
+  if (notes === null) return;
+  fetch(WORKER_URL + '/group', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: badge, action: 'request_rereview', rereview_notes: notes })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) { location.reload(); }
+    else alert('Error: ' + (res.error || 'desconocido'));
+  });
+}
+
+function _initRevisionBar() {
+  if (!window._renderData) return;
+  var revGroups = window._renderData.groups.filter(function(g) { return g.status === 'en_revision'; });
+  if (revGroups.length === 0) return;
+  var bar = document.getElementById('revision-action-bar');
+  var infoEl = document.getElementById('revision-info');
+  var btnsEl = document.getElementById('revision-btns');
+  bar.style.display = 'flex';
+  infoEl.textContent = '⟳ Revisión pendiente: ' + revGroups.map(function(g) { return g.badge; }).join(', ') +
+    ' — completá las correcciones en cada tab y enviá cuando estés listo.';
+  revGroups.forEach(function(g) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-submit-review';
+    btn.dataset.badge = g.badge;
+    btn.textContent = 'Enviar revisión ' + g.badge;
+    btn.onclick = function() { submitReview(g.badge); };
+    btnsEl.appendChild(btn);
+  });
+  document.body.style.paddingBottom = '68px';
+}
+
 // ── Post-render init ─────────────────────────────────────────────────────────
 function _buildFileFilterBtns() {
   var seen = new Set();
@@ -885,10 +1010,12 @@ function _initAll() {
   _updateObsNavBtns();
   _initNegocio();
   _handleHash();
+  _initRevisionBar();
 }
 
 // ── Bootstrap: fetch data.json and render ────────────────────────────────────
 function _renderFromData(data) {
+  window._renderData = data;
   var m1Html = '', m2Html = '', m3Html = '', m4Html = '';
   data.groups.forEach(function(g) {
     m1Html += _renderM1Group(g);
