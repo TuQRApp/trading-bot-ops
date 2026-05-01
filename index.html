@@ -596,7 +596,7 @@ footer {
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
 var WORKER = 'https://trading-upload.nestragues.workers.dev';
-var DATA_URL = './data.json';
+var DATA_URL = WORKER + '/data';
 
 // ── Init ────────────────────────────────────────────────────────────────────
 document.getElementById('fecha').textContent =
@@ -705,7 +705,7 @@ function renderFileList(data) {
 }
 
 function loadFileList() {
-  fetch(DATA_URL + '?t=' + Date.now())
+  fetch(DATA_URL)
     .then(function(r) { return r.json(); })
     .then(function(data) { renderFileList(data); })
     .catch(function() {
