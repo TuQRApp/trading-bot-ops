@@ -33,7 +33,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 /* ── MODULE 1: Backtest Quality ── */
 .strategy-selector{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;}
-
+.strat-btn{font-family:var(--font-mono);font-size:11px;padding:7px 16px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.strat-btn:hover{border-color:var(--nico);color:var(--nico);background:rgba(59,130,246,0.08);}
 
 .quality-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:28px;}
 .qm-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;}
@@ -333,6 +334,12 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     <div class="last-updated has-data">
       <span class="lu-label">Último análisis:</span>
       <span>2026-04-30 · 21:00 · backtest_canal_fib.py · Canal Fib 20 barras · M3 · 180 días · 3 símbolos · 559 trades totales</span>
+    </div>
+
+    <div class="strategy-selector" style="margin-top:16px;">
+      <button class="strat-btn" onclick="scrollToQuality('xauusd')">↓ XAUUSD (Oro)</button>
+      <button class="strat-btn" onclick="scrollToQuality('xagusd')">↓ XAGUSD (Plata)</button>
+      <button class="strat-btn" onclick="scrollToQuality('btcusd')">↓ BTCUSD (Bitcoin)</button>
     </div>
 
     <!-- Métricas XAUUSD -->
@@ -909,14 +916,14 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
     <!-- Filtros por fuente de archivo -->
     <div class="obs-filter-bar">
-      <span class="obs-filter-label">FUENTE:</span>
-      <button class="obs-filter-btn active" onclick="filterObs('all',this)">Todos</button>
-      <button class="obs-filter-btn" onclick="filterObs('log',this)">LOG</button>
-      <button class="obs-filter-btn" onclick="filterObs('json',this)">JSON</button>
-      <button class="obs-filter-btn" onclick="filterObs('csv',this)">CSV</button>
-      <button class="obs-filter-btn" onclick="filterObs('py',this)">PY</button>
-      <button class="obs-filter-btn" onclick="filterObs('png',this)">PNG</button>
-      <button class="obs-filter-btn" onclick="filterObs('chat',this)">CHAT</button>
+      <span class="obs-filter-label">IR A:</span>
+      <button class="obs-filter-btn" onclick="scrollToObs('all')">↓ Todos</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('log')">↓ LOG</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('json')">↓ JSON</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('csv')">↓ CSV</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('py')">↓ PY</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('png')">↓ PNG</button>
+      <button class="obs-filter-btn" onclick="scrollToObs('chat')">↓ CHAT</button>
     </div>
 
     <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
@@ -1825,29 +1832,36 @@ function showTab(id, btn) {
   btn.classList.add('active');
 }
 
-function _calcObsStats(origin) {
+function _calcObsStats() {
   const cards = document.querySelectorAll('#obs-list .obs-card');
   let total = 0, accion = 0, resuelta = 0, solo = 0;
   cards.forEach(card => {
-    const show = origin === 'all' || card.dataset.origin === origin;
-    card.classList.toggle('hidden', !show);
-    if (show) {
-      total++;
-      const a = card.dataset.accion;
-      if (a === 'si') accion++;
-      else if (a === 'resuelta') resuelta++;
-      else solo++;
-    }
+    total++;
+    const a = card.dataset.accion;
+    if (a === 'si') accion++;
+    else if (a === 'resuelta') resuelta++;
+    else solo++;
   });
   document.getElementById('obs-total').textContent = total;
   document.getElementById('obs-accion-count').textContent = accion;
   document.getElementById('obs-resuelta-count').textContent = resuelta;
   document.getElementById('obs-solo-count').textContent = solo;
 }
-function filterObs(origin, btn) {
-  document.querySelectorAll('.obs-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  _calcObsStats(origin);
+function scrollToObs(origin) {
+  if (origin === 'all') {
+    document.getElementById('obs-list').scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+  const cards = document.querySelectorAll('#obs-list .obs-card');
+  for (const card of cards) {
+    if (card.dataset.origin === origin) {
+      card.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+  }
+}
+function scrollToQuality(id) {
+  document.getElementById('quality-' + id).scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 // Contar arch-cards por archivo y categoría → guardar en localStorage para index.html
@@ -2005,7 +2019,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
 window.addEventListener('DOMContentLoaded', function() {
-  _calcObsStats('all');   // poblar contador al cargar
+  _calcObsStats();   // poblar contador al cargar
   const hash = window.location.hash.slice(1);
   if (!hash) return;
   const tabMap = {
