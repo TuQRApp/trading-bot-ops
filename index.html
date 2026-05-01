@@ -840,7 +840,6 @@ async function startUpload() {
 
   var folder = groupName;
   var uploadedFiles = [];
-  var success = false;
 
   try {
     // Upload each file
@@ -877,23 +876,27 @@ async function startUpload() {
     var lbl = document.getElementById('upload-file-label');
     lbl.textContent = '📂 Seleccionar archivos';
     lbl.classList.remove('has-files');
-    success = true;
+
+    // Re-habilitar solo después de que la lista recargue
+    btn.textContent = 'Recargando…';
+    loadFileList();
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.textContent = 'Subir →';
+    }, 3000);
 
   } catch(e) {
     var msg = e.message.includes('Failed to fetch')
       ? 'No se pudo conectar al Worker — verificá que está desplegado en Cloudflare'
       : e.message;
-    // Mark the active step as error
     var activeStep = document.querySelector('.wf-step.active');
     if (activeStep) {
       var lbl2 = activeStep.querySelector('.wf-step-label');
       activeStep.className = 'wf-step error';
       if (lbl2) lbl2.textContent = '✗ ' + msg;
     }
-  } finally {
     btn.disabled = false;
     btn.textContent = 'Subir →';
-    if (success) setTimeout(loadFileList, 2000);
   }
 }
 
