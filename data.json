@@ -17,7 +17,7 @@
           "type": "py"
         }
       ],
-      "status": "pendiente_final",
+      "status": "activo",
       "m1": {
         "type": "empty",
         "last_updated": "2026-05-01 | obv_macd_adx_bot_final_v2.py",
@@ -73,7 +73,7 @@
           "prioridad": "alta",
           "estado": "pendiente",
           "title": "Divergencia simple equivale a divergencia doble: la logica de confirmacion es inutil",
-          "desc": "En detectar_doble_divergencia(), cuando se detecta precio LL con solo OBV HL O solo MACD HL (divergencia simple), se asigna señales.iloc[i] = 1, el mismo valor que para la doble divergencia. El comentario del codigo la denomina 'doble divergencia' como ventaja clave de la estrategia, pero la implementacion hace que una sola confirmacion sea suficiente. Esto duplica aproximadamente las señales y elimina el filtro de calidad. Se recomienda usar señales.iloc[i] = 0.5 o un valor distinto para divergencia simple, o simplemente no generar señal cuando solo una de las dos condiciones se cumple.",
+          "desc": "En detectar_doble_divergencia(), cuando se detecta precio LL con solo OBV HL O solo MACD HL (divergencia simple), se asigna senales.iloc[i] = 1, el mismo valor que para la doble divergencia. El comentario del codigo la denomina 'doble divergencia' como ventaja clave de la estrategia, pero la implementacion hace que una sola confirmacion sea suficiente. Esto duplica aproximadamente las senales y elimina el filtro de calidad. Se recomienda usar senales.iloc[i] = 0.5 o un valor distinto para divergencia simple, o simplemente no generar senal cuando solo una de las dos condiciones se cumple.",
           "comment": ""
         },
         {
@@ -92,8 +92,8 @@
           "tipo_label": "Logica",
           "prioridad": "media",
           "estado": "pendiente",
-          "title": "Backtest ignora slippage y no modela apertura real de posicion en barra de señal",
-          "desc": "En la funcion backtest(), la entrada se realiza al Close de la vela de señal (row['Close']), lo que es imposible en la realidad ya que la señal se detecta al cierre de esa misma vela. La entrada deberia realizarse al Open de la siguiente vela. Ademas, el spread y comision se restan como valor fijo pero no se aplican al precio de entrada, lo que puede inflar el PnL en instrumentos con spreads altos como BTCUSD.",
+          "title": "Backtest ignora slippage y no modela apertura real de posicion en barra de senal",
+          "desc": "En la funcion backtest(), la entrada se realiza al Close de la vela de senal (row['Close']), lo que es imposible en la realidad ya que la senal se detecta al cierre de esa misma vela. La entrada deberia realizarse al Open de la siguiente vela. Ademas, el spread y comision se restan como valor fijo pero no se aplican al precio de entrada, lo que puede inflar el PnL en instrumentos con spreads altos como BTCUSD.",
           "comment": ""
         },
         {
@@ -102,8 +102,8 @@
           "tipo_label": "Parametro",
           "prioridad": "media",
           "estado": "pendiente",
-          "title": "Calculo de Sharpe usa factor de anualización incorrecto para M5",
-          "desc": "La formula usa np.sqrt(525_600/5) = sqrt(105120) asumiendo que hay 525600 minutos en un año de trading continuo (365 dias x 24h). Los mercados de indices operan aproximadamente 252 dias x 6.5 horas = ~98280 minutos, lo que da sqrt(98280/5) = sqrt(19656). Usar el factor continuo sobreestima el Sharpe anualizado para indices y subestima la comparacion con benchmarks estandar. Para cripto (BTCUSD) si seria apropiado el factor 24/7. Se recomienda parametrizar el factor de anualizacion por tipo de instrumento.",
+          "title": "Calculo de Sharpe usa factor de anualizacion incorrecto para M5",
+          "desc": "La formula usa np.sqrt(525_600/5) = sqrt(105120) asumiendo que hay 525600 minutos en un ano de trading continuo (365 dias x 24h). Los mercados de indices operan aproximadamente 252 dias x 6.5 horas = ~98280 minutos, lo que da sqrt(98280/5) = sqrt(19656). Usar el factor continuo sobreestima el Sharpe anualizado para indices y subestima la comparacion con benchmarks estandar. Para cripto (BTCUSD) si seria apropiado el factor 24/7. Se recomienda parametrizar el factor de anualizacion por tipo de instrumento.",
           "comment": ""
         },
         {
@@ -140,8 +140,8 @@
           "id": "OBS-002",
           "tipo": "error",
           "origin": "obv_macd_adx_bot_final_v2.py",
-          "title": "señales.iloc[i] = valor dentro de bucle for es uso desaconsejado de iloc con asignacion",
-          "desc": "En detectar_doble_divergencia(), el uso de 'señales.iloc[i] = 1' dentro de un bucle es lento y puede generar SettingWithCopyWarning en pandas >= 2.0. Para series de indices enteros, se deberia usar señales.iat[i] = 1 para asignacion puntual eficiente, o acumular los indices en listas y hacer la asignacion vectorizada al final del bucle.",
+          "title": "senales.iloc[i] = valor dentro de bucle for es uso desaconsejado de iloc con asignacion",
+          "desc": "En detectar_doble_divergencia(), el uso de 'senales.iloc[i] = 1' dentro de un bucle es lento y puede generar SettingWithCopyWarning en pandas >= 2.0. Para series de indices enteros, se deberia usar senales.iat[i] = 1 para asignacion puntual eficiente, o acumular los indices en listas y hacer la asignacion vectorizada al final del bucle.",
           "comment": ""
         },
         {
@@ -149,7 +149,7 @@
           "tipo": "warn",
           "origin": "obv_macd_adx_bot_final_v2.py",
           "title": "Loop de escaneo usa time.sleep fijo sin compensar el tiempo de procesamiento",
-          "desc": "run_bot() ejecuta time.sleep(CONFIG['loop_seconds']) al final de cada ciclo sin descontar el tiempo que tarda el escaneo de los 21 simbolos. Si el procesamiento tarda 15 segundos, el intervalo real entre ciclos es de 45 segundos, no 30. En mercados volatiles esto puede hacer que se pierdan señales o que se ejecuten con lag. Se recomienda registrar el tiempo de inicio del ciclo y dormir max(0, loop_seconds - elapsed).",
+          "desc": "run_bot() ejecuta time.sleep(CONFIG['loop_seconds']) al final de cada ciclo sin descontar el tiempo que tarda el escaneo de los 21 simbolos. Si el procesamiento tarda 15 segundos, el intervalo real entre ciclos es de 45 segundos, no 30. En mercados volatiles esto puede hacer que se pierdan senales o que se ejecuten con lag. Se recomienda registrar el tiempo de inicio del ciclo y dormir max(0, loop_seconds - elapsed).",
           "comment": ""
         },
         {
@@ -165,7 +165,7 @@
           "tipo": "warn",
           "origin": "obv_macd_adx_bot_final_v2.py",
           "title": "get_signal_live usa barra iloc[-2] para evitar barra en formacion pero no lo documenta",
-          "desc": "La funcion usa iloc[-2] para leer el ADX de M15 y el sesgo de H1, lo cual es correcto para evitar el sesgo de look-ahead en la barra en formacion. Sin embargo, para la senal de divergencia M5, el bucle busca en range(-4, -1), lo que puede incluir la barra en formacion (iloc[-1]) dependiendo de si 'k' alcanza -1. La condicion range(-4, -1) excluye -1 correctamente, pero la logica deberia documentarse explicitamente y validarse con un assert len(señales_m5) > 4.",
+          "desc": "La funcion usa iloc[-2] para leer el ADX de M15 y el sesgo de H1, lo cual es correcto para evitar el sesgo de look-ahead en la barra en formacion. Sin embargo, para la senal de divergencia M5, el bucle busca en range(-4, -1), lo que puede incluir la barra en formacion (iloc[-1]) dependiendo de si 'k' alcanza -1. La condicion range(-4, -1) excluye -1 correctamente, pero la logica deberia documentarse explicitamente y validarse con un assert len(senales_m5) > 4.",
           "comment": ""
         },
         {
@@ -181,7 +181,7 @@
           "tipo": "info",
           "origin": "obv_macd_adx_bot_final_v2.py",
           "title": "El backtest no implementa gestion de capital con multiples simbolos simultaneos",
-          "desc": "La funcion backtest() opera con un unico simbolo y un capital aislado. En produccion el bot puede tener hasta 6 posiciones simultaneas en distintos simbolos, cada una consumiendo 2% de equity. El backtest no modela la correlacion entre instrumentos ni el drawdown agregado del portfolio. Los resultados por simbolo podrian ser engañosos como indicadores del rendimiento real del sistema completo.",
+          "desc": "La funcion backtest() opera con un unico simbolo y un capital aislado. En produccion el bot puede tener hasta 6 posiciones simultaneas en distintos simbolos, cada una consumiendo 2% de equity. El backtest no modela la correlacion entre instrumentos ni el drawdown agregado del portfolio. Los resultados por simbolo podrian ser enganosos como indicadores del rendimiento real del sistema completo.",
           "comment": ""
         },
         {
@@ -201,15 +201,14 @@
           "desc": "Las asignaciones booleanas directas sobre Series derivadas de operaciones encadenadas pueden operar sobre copias en lugar del objeto original, produciendo plus_dm y minus_dm sin la correccion aplicada, lo que resulta en ADX incorrecto.",
           "code": "plus_dm[~overlap]  = 0\nminus_dm[overlap]  = 0",
           "fix": "plus_dm  = plus_dm.where(overlap, 0)\nminus_dm = minus_dm.where(~overlap, 0)",
-          "comment": "",
-          "correction": "ok"
+          "comment": "El trader confirmo la correccion como valida. Se mantiene la propuesta de usar .where() en lugar de asignacion in-place para compatibilidad con pandas >= 2.0."
         },
         {
           "id": "H-02",
           "categoria": "bug",
           "title": "risk_pct duplicado en CONFIG: la primera definicion es ignorada silenciosamente",
           "desc": "Python sobreescribe la primera clave con la segunda en el mismo dict literal. Si alguien edita solo la primera ocurrencia creyendo que cambia el riesgo, el cambio no tendra efecto.",
-          "code": "CONFIG = {\n    ...\n    \"risk_pct\": 0.02,   # linea ~57\n    ...\n    \"risk_pct\": 0.02,   # linea ~84 — sobreescribe\n    ...\n}",
+          "code": "CONFIG = {\n    ...\n    \"risk_pct\": 0.02,   # linea ~57\n    ...\n    \"risk_pct\": 0.02,   # linea ~84 - sobreescribe\n    ...\n}",
           "fix": "# Mantener solo UNA entrada:\nCONFIG = {\n    ...\n    \"risk_pct\": 0.02,   # 2% de equity por trade\n    ...\n}",
           "comment": ""
         },
@@ -228,16 +227,16 @@
           "title": "demo_mode=False hardcodeado sin confirmacion interactiva antes de operar cuenta real",
           "desc": "El bot arranca en modo real sin ningun mecanismo de confirmacion del operador. Un error de configuracion o un doble-click accidental sobre el script ejecutara ordenes reales inmediatamente tras conectarse a MT5.",
           "code": "\"demo_mode\": False,\n...\nconectar()\nrun_bot()  # <- sin confirmacion",
-          "fix": "if not CONFIG[\"demo_mode\"]:\n    acc = mt5.account_info()\n    print(f\"\\n⚠️  CUENTA REAL: {acc.company} | Balance: {acc.balance:,.2f}\")\n    resp = input(\"Escriba CONFIRMO para continuar: \")\n    if resp.strip() != \"CONFIRMO\":\n        print(\"Cancelado.\"); mt5.shutdown(); sys.exit(0)\nrun_bot()",
+          "fix": "if not CONFIG[\"demo_mode\"]:\n    acc = mt5.account_info()\n    print(f\"\\n CUENTA REAL: {acc.company} | Balance: {acc.balance:,.2f}\")\n    resp = input(\"Escriba CONFIRMO para continuar: \")\n    if resp.strip() != \"CONFIRMO\":\n        print(\"Cancelado.\"); mt5.shutdown(); sys.exit(0)\nrun_bot()",
           "comment": ""
         },
         {
           "id": "H-05",
           "categoria": "riesgo",
-          "title": "Divergencia simple genera la misma señal que divergencia doble, neutralizando el filtro principal",
-          "desc": "El algoritmo asigna señal = 1 tanto para divergencia doble (OBV HL Y MACD HL) como para divergencia simple (OBV HL O MACD HL). El nombre 'doble divergencia' que se usa como ventaja de marketing de la estrategia no se implementa realmente.",
-          "code": "if precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1\nelif precio_ll and (obv_hl or macd_hl):\n    señales.iloc[i] = 1  # igual entramos",
-          "fix": "if precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1   # doble divergencia confirmada\n# Eliminar el elif o asignar valor distinto para tracking:\n# elif precio_ll and (obv_hl or macd_hl):\n#     señales.iloc[i] = 0  # divergencia simple: no operar",
+          "title": "Divergencia simple genera la misma senal que divergencia doble, neutralizando el filtro principal",
+          "desc": "El algoritmo asigna senal = 1 tanto para divergencia doble (OBV HL Y MACD HL) como para divergencia simple (OBV HL O MACD HL). El nombre 'doble divergencia' que se usa como ventaja de marketing de la estrategia no se implementa realmente.",
+          "code": "if precio_ll and obv_hl and macd_hl:\n    senales.iloc[i] = 1\nelif precio_ll and (obv_hl or macd_hl):\n    senales.iloc[i] = 1  # igual entramos",
+          "fix": "if precio_ll and obv_hl and macd_hl:\n    senales.iloc[i] = 1   # doble divergencia confirmada\n# Eliminar el elif o asignar valor distinto para tracking:\n# elif precio_ll and (obv_hl or macd_hl):\n#     senales.iloc[i] = 0  # divergencia simple: no operar",
           "comment": ""
         },
         {
@@ -245,7 +244,7 @@
           "categoria": "riesgo",
           "title": "_pos_entry_time no persiste entre reinicios: timeout nunca se dispara tras crash",
           "desc": "Si el bot se reinicia con posiciones abiertas, el dict global queda vacio y el mecanismo de timeout por barras M5 no funciona para esas posiciones preexistentes, que podrian quedar abiertas indefinidamente.",
-          "code": "_pos_entry_time = {}  # reiniciado en cada arranque\n...\nif p.ticket not in _pos_entry_time:\n    _pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)\n    # p.time es el tiempo real de apertura — esto SI es correcto",
+          "code": "_pos_entry_time = {}  # reiniciado en cada arranque\n...\nif p.ticket not in _pos_entry_time:\n    _pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)\n    # p.time es el tiempo real de apertura - esto SI es correcto",
           "fix": "# En este caso p.time ya contiene el timestamp real de apertura del broker,\n# por lo que el fallback es correcto. Agregar log para visibilidad:\nif p.ticket not in _pos_entry_time:\n    _pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)\n    log.info(f\"  Posicion existente registrada: ticket={p.ticket} \"\n             f\"abierta hace {(ahora_dt - _pos_entry_time[p.ticket]).total_seconds()/60:.0f} min\")",
           "comment": ""
         },
@@ -254,7 +253,7 @@
           "categoria": "ausencia",
           "title": "Sin validacion de horario de mercado antes de escanear o abrir ordenes",
           "desc": "Indices europeos (UK100, DE40, STOXX50) cierran a las 22:00 UTC. Commodities agricolas tienen sesiones especificas. El bot puede intentar abrir ordenes fuera de horario, recibir retcodes de error de MT5, y generar spam en los logs sin ninguna logica de recuperacion.",
-          "code": "for sym in CONFIG[\"symbols\"]:\n    sig, estado = get_signal_live(sym)\n    if sig != 0:\n        señales_activas.append((sym, sig, estado))\n        # <- sin verificacion de horario",
+          "code": "for sym in CONFIG[\"symbols\"]:\n    sig, estado = get_signal_live(sym)\n    if sig != 0:\n        senales_activas.append((sym, sig, estado))\n        # <- sin verificacion de horario",
           "fix": "MARKET_HOURS_UTC = {\n    \"UK100\": (7, 21), \"DE40\": (7, 21), \"STOXX50\": (7, 21),\n    \"BTCUSD\": (0, 24),  # 24/7\n    # ... completar por instrumento\n}\ndef mercado_abierto(sym):\n    h = datetime.utcnow().hour\n    lo, hi = MARKET_HOURS_UTC.get(sym, (0, 24))\n    return lo <= h < hi\n\nfor sym in CONFIG[\"symbols\"]:\n    if not mercado_abierto(sym):\n        continue\n    sig, estado = get_signal_live(sym)",
           "comment": ""
         },
@@ -281,15 +280,15 @@
           "categoria": "mejora",
           "title": "Factor de anualizacion de Sharpe incorrecto para instrumentos no-24/7",
           "desc": "Se usa sqrt(525600/5) asumiendo mercado continuo 365 dias. Para indices con ~252 dias de trading el factor correcto es sqrt(252*78) donde 78 son las velas M5 por sesion de 6.5 horas.",
-          "code": "sharpe = dr.mean() / dr.std() * np.sqrt(525_600/5)\n# 525600 min/año continuo — incorrecto para indices",
-          "fix": "# Para indices (252 dias x 6.5h x 12 velas M5/h = 19656 velas/año)\n# Para cripto (365 dias x 24h x 12 = 105120)\nANUAL_BARS = {\n    \"cripto\": 105120,\n    \"default\": 19656,\n}\nfactor = ANUAL_BARS.get(\"default\")\nsharpe = dr.mean() / dr.std() * np.sqrt(factor) if dr.std() > 0 else 0",
+          "code": "sharpe = dr.mean() / dr.std() * np.sqrt(525_600/5)\n# 525600 min/ano continuo - incorrecto para indices",
+          "fix": "# Para indices (252 dias x 6.5h x 12 velas M5/h = 19656 velas/ano)\n# Para cripto (365 dias x 24h x 12 = 105120)\nANUAL_BARS = {\n    \"cripto\": 105120,\n    \"default\": 19656,\n}\nfactor = ANUAL_BARS.get(\"default\")\nsharpe = dr.mean() / dr.std() * np.sqrt(factor) if dr.std() > 0 else 0",
           "comment": ""
         }
       ],
       "category": "Live Bot | 21 instruments | IC Markets MT5 | OBV+MACD Divergence+ADX Multi-TF",
       "summary": "Bot de trading en vivo para MT5 que opera 21 instrumentos (indices, energia, metales, agricolas, cripto) usando una estrategia de doble divergencia OBV+MACD filtrada por ADX en triple marco temporal (M5/M15/H1). Incluye modulo de backtest interno, generacion de reportes HTML con graficos base64, gestion de riesgo por ATR y cierre por timeout. El codigo esta en estado funcional pero contiene duplicaciones en CONFIG, ausencia de validacion de sesiones de mercado, y logica de sizing con fallbacks fragiles que pueden generar riesgo real incorrecto en cuenta live.",
       "trader_notes": "",
-      "revision_submitted": true,
+      "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": ""
     }
