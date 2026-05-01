@@ -738,6 +738,10 @@ function deleteGroup(badge, name) {
       // Update active-group counter
       var statEl = document.getElementById('stat-grupos');
       if (statEl) statEl.textContent = Math.max(0, parseInt(statEl.textContent, 10) - 1);
+      // Clear all trader comments and counts from localStorage
+      Object.keys(localStorage).forEach(function(k) {
+        if (k.startsWith('trader_comment_') || k === 'tradingbot_counts') localStorage.removeItem(k);
+      });
     } else {
       alert('Error al eliminar: ' + (res.error || 'desconocido'));
       if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
