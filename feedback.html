@@ -110,6 +110,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .fsh-json{border-left:3px solid rgba(37,99,235,0.5);}
 .fsh-log {border-left:3px solid rgba(124,58,237,0.5);}
 .fsh-fib {border-left:3px solid rgba(236,72,153,0.5);}
+.fsh-v3  {border-left:3px solid rgba(6,182,212,0.5);}
 
 /* ── MODULE 3: Live observations ── */
 .obs-list{display:flex;flex-direction:column;gap:12px;}
@@ -483,6 +484,87 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <div class="rec-response-text"></div>
     </div>
 
+    <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
+    <div class="file-section-header fsh-v3">
+      <div class="fsh-icon ftype-py">🤖</div>
+      <span class="fsh-name">bot_canal_fib_v3.py</span>
+      <span class="fsh-badge">FILE-003</span>
+      <div class="fsh-line"></div>
+      <span class="fsh-count">Bot en vivo · Canal Fibonacci con Circuit Breaker</span>
+    </div>
+
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Este archivo</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot_canal_fib_v3.py — bot en vivo, 747 líneas</div>
+      </div>
+    </div>
+    <div class="last-updated has-data">
+      <span class="lu-label">Último análisis:</span>
+      <span>2026-05-01 · bot_canal_fib_v3.py · 747 líneas · XAUUSD / XAGUSD / BTCUSD · Circuit Breaker 3 niveles</span>
+    </div>
+
+    <div class="quality-grid" style="margin-top:16px;">
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Circuit Breaker</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">3 niveles</div>
+        <div class="qm-target">CB1 · CB2 · CB3</div>
+        <div class="qm-comment">CB1: 3 pérdidas consecutivas → pausa 4h. CB2: 4% DD diario → sin operar hoy. CB3: 10% DD total → detención completa, reinicio manual requerido.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Cap de lote</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">LOT_CAP_X = 5×</div>
+        <div class="qm-target">equity_ef = min(equity, $50k)</div>
+        <div class="qm-comment">El 2% se calcula siempre sobre equity capeado. Resuelve el riesgo ilimitado del backtest cuando el capital crece mucho.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Log de trades</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">CSV estructurado</div>
+        <div class="qm-target">canal_fib_trades.csv</div>
+        <div class="qm-comment">Registra apertura, TP/SL ejecutados, PnL real (profit + comisión + swap). Permite análisis forense entre sesiones.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Reconexión MT5</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">Automática</div>
+        <div class="qm-target">check_connection() cada ciclo</div>
+        <div class="qm-comment">Si MT5 pierde conexión el bot la detecta en ≤20 segundos e intenta reconectar sin detener el proceso.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Modo demo</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">No implementado</div>
+        <div class="qm-target">Riesgo: arranque directo en real</div>
+        <div class="qm-comment">No existe flag --demo ni confirmación de arranque. Ejecutar el script sin cambiar CONFIG opera directamente en cuenta real.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Órdenes fin sesión</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">GTC sin cancelar</div>
+        <div class="qm-target">Riesgo: ejecución fuera horario</div>
+        <div class="qm-comment">ORDER_TIME_GTC significa que las órdenes límite no ejecutadas en sesión quedan activas y pueden dispararse fuera del horario operativo.</div>
+      </div>
+    </div>
+
+    <div class="overall-score" style="margin-top:20px;">
+      <div class="score-circle" style="border-color:var(--trader);color:var(--trader);background:rgba(5,150,105,0.08);">7.0</div>
+      <div>
+        <div class="score-text-title">Preparación para live: Aceptable con fixes pendientes</div>
+        <div class="score-text-sub">
+          ✅ Circuit Breaker de 3 niveles implementado<br>
+          ✅ Cap de lote 5× — el 2% es real aunque el equity crezca<br>
+          ✅ Log CSV + registrar_cierres() — trazabilidad completa de deals<br>
+          ✅ SESSION_HOURS en CONFIG — ajustable sin editar código<br>
+          🟡 CAPITAL_INI=$10.000 hardcodeado — ajustar al capital real antes de arrancar<br>
+          🔴 Log file apunta a "bot_canal_fib_v2.log" siendo v3 (línea 163)<br>
+          🔴 ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse<br>
+          🔴 Órdenes GTC sin cancelación al fin de sesión — riesgo de ejecución fuera de horario
+        </div>
+      </div>
+    </div>
+
+    <div class="rec-response" style="margin-top:20px;">
+      <div class="rec-response-label">🟢 Respuesta del trader — bot_canal_fib_v3.py</div>
+      <div class="rec-response-text"></div>
+    </div>
+
   </div>
 
   <!-- ══════════════════════════════════════ -->
@@ -690,6 +772,117 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
+      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
+      <div class="file-section-header fsh-v3">
+        <div class="fsh-icon ftype-py">🤖</div>
+        <span class="fsh-name">bot_canal_fib_v3.py</span>
+        <span class="fsh-badge">FILE-003</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">6 recomendaciones</span>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-01</span>
+          <div class="rec-title">Corregir nombre del log: apunta a "v2.log" siendo bot v3</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-media">Media prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">Línea 163: el FileHandler crea "bot_canal_fib_v2.log" en lugar de "bot_canal_fib_v3.log". Los logs se mezclan con los de una versión anterior si ambas corrieron en el mismo directorio. Fix de una cadena.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-02</span>
+          <div class="rec-title">Cambiar ORDER_FILLING_IOC por ORDER_FILLING_RETURN en órdenes límite</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">IOC (Immediate or Cancel) cancela el volumen no llenado si hay fill parcial. En una orden límite SELL_LIMIT/BUY_LIMIT en MT5, IOC puede resultar en que solo se ejecute 1 de los 3 lotes enviados y los otros 2 se cancelen. ORDER_FILLING_RETURN devuelve el remanente al libro — comportamiento correcto para órdenes límite pendientes.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-03</span>
+          <div class="rec-title">Cancelar órdenes GTC pendientes al fin de sesión</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Arquitectura</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">Las 3 órdenes límite se envían con ORDER_TIME_GTC. Si el precio no llega al nivel de entrada durante la sesión, las órdenes quedan activas y pueden ejecutarse cuando el mercado retome — potencialmente en las horas siguientes fuera de sesión. Fix: al inicio de cada ciclo, cancelar las órdenes pendientes cuyo símbolo esté fuera de horario SESSION_HOURS.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-04</span>
+          <div class="rec-title">Validar que manage_breakeven() no actúe si TP1 fue cancelado manualmente</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">manage_breakeven() detecta que TP1 se ejecutó por la AUSENCIA de una orden TP1 pendiente. Si la orden TP1 fue cancelada manualmente (o expiró), el bot mueve el SL a breakeven aunque TP1 nunca se ejecutó — protegiendo el trade demasiado pronto y exponiendo a un SL prematuro. Fix: verificar en history_deals_get() que haya un deal real de cierre de TP1 antes de mover el SL.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-05</span>
+          <div class="rec-title">Invalidar _costos_cache periódicamente — spread cambia durante noticias</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Arquitectura</span>
+            <span class="badge badge-prio-media">Media prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">get_costos() guarda spread y comisión en _costos_cache y nunca los recalcula. El spread en XAUUSD puede multiplicarse por 5–10× durante noticias macro (NFP, FOMC). El bot usará el spread del arranque para calcular niveles, lo que hace que los TPs y SLs sean incorrectos en momentos de alta volatilidad. Fix: expirar el cache cada hora o al inicio de cada sesión.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">V3-06</span>
+          <div class="rec-title">Ajustar CAPITAL_INI al equity real antes de arrancar</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-param">Parámetro</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">CAPITAL_INI=10_000 está hardcodeado. Es el capital de referencia para el cap de lote (LOT_CAP_X=5×). Si la cuenta tiene $15.000, el equity efectivo máximo queda en $50.000 en lugar de $75.000 — el cap es más restrictivo de lo necesario. Si la cuenta tiene $8.000, el cap es $40.000 — más amplio que el equity real. Fix: o leer desde mt5.account_info().balance al arrancar, o documentar claramente que debe editarse antes de cada sesión.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -878,6 +1071,63 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
         </div>
       </div>
 
+      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
+      <div class="file-section-header fsh-v3">
+        <div class="fsh-icon ftype-py">🤖</div>
+        <span class="fsh-name">bot_canal_fib_v3.py</span>
+        <span class="fsh-badge">FILE-003</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">3 observaciones</span>
+      </div>
+
+      <!-- V3-OBS-001 · 2026-05-01 · PY -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-05-01<br>análisis</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">FileHandler escribe en "bot_canal_fib_v2.log" — el bot v3 mezcla logs con la versión anterior</div>
+          <div class="obs-text">Línea 163: logging.FileHandler("bot_canal_fib_v2.log"). Si el bot v2 corrió en el mismo directorio, los logs de v3 se añaden al archivo equivocado y se hace imposible distinguir qué versión generó qué entrada. Fix inmediato: cambiar a "bot_canal_fib_v3.log".</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">bot_canal_fib_v3.py · línea 163 · logging.FileHandler</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- V3-OBS-002 · 2026-05-01 · PY -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-05-01<br>análisis</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">registrar_cierres() solo mira las últimas 2 horas — deals perdidos si el bot estuvo offline</div>
+          <div class="obs-text">El lookback es timedelta(hours=2). Si el bot se reinicia después de una caída de más de 2 horas durante la sesión, los deals de SL/TP ocurridos en ese período no se registran en el CSV ni notifican al circuit breaker — el conteo de pérdidas consecutivas queda incompleto. Fix: expandir el lookback a la duración de la sesión (12h para metales, 8h para BTC) o persistir el estado del CB entre reinicios.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">bot_canal_fib_v3.py · registrar_cierres() · timedelta(hours=2)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- V3-OBS-003 · 2026-05-01 · PY -->
+      <div class="obs-card" style="--obs-color:var(--muted)" data-origin="py" data-accion="no">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-05-01<br>análisis</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">Circuit Breaker no escala — tras pausa de 4h el counter vuelve a 0 sin penalización adicional</div>
+          <div class="obs-text">Después de una pausa CB nivel 1 (3 pérdidas consecutivas → 4h de pausa), consec_loss se resetea a 0. El bot puede volver a operar inmediatamente y repetir la misma racha de pérdidas sin escalado. Un CB escalado (ej. 2ª activación → 8h, 3ª → suspensión del día) daría más tiempo al mercado para normalizarse.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-no">Solo observación</span>
+            <span class="obs-context">bot_canal_fib_v3.py · CircuitBreaker · puede_operar() · línea 641–644</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -890,11 +1140,12 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <div class="trigger-list">
         <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot.py — auditoría completa de lógica, riesgo y arquitectura</div>
         <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest.py — metodología, look-ahead bias, modelo de costos</div>
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> bot_canal_fib_v3.py — bot en vivo Canal Fibonacci</div>
       </div>
     </div>
     <div class="last-updated has-data" id="lu-arquitectura">
       <span class="lu-label">Último análisis:</span>
-      <span>2026-04-30 · 20:27 · obv_macd_adx_bot_final_v2.py · 1039 líneas · 12 hallazgos</span>
+      <span>2026-05-01 · bot_canal_fib_v3.py · 747 líneas · 11 hallazgos · (también: FILE-001 12h · FILE-002 6h)</span>
     </div>
 
     <div style="background:rgba(5,150,105,0.05);border:1px solid rgba(5,150,105,0.2);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-family:var(--font-mono);font-size:11px;color:#065f46;line-height:1.9;">
@@ -1210,6 +1461,195 @@ CONFIG = {<br>
         </div>
       </div>
 
+      <!-- ── FILE-003 · bot_canal_fib_v3.py · 2026-05-01 ── -->
+      <div class="file-section-header fsh-v3">
+        <div class="fsh-icon ftype-py">🤖</div>
+        <span class="fsh-name">bot_canal_fib_v3.py</span>
+        <span class="fsh-badge">FILE-003</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">11 hallazgos · 4 bugs · 3 riesgos · 3 ausencias · 1 mejora</span>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Línea 163</span>
+          <span class="arch-title">FileHandler escribe en "bot_canal_fib_v2.log" — bot es v3</span>
+        </div>
+        <div class="arch-desc">El logging escribe en el archivo de la versión anterior. Si v2 corrió en el mismo directorio, los logs se mezclan y es imposible distinguir qué versión generó qué entrada.</div>
+        <div class="arch-code">
+# Actual — línea 163:<br>
+logging.FileHandler("bot_canal_fib_v2.log", ...)<br>
+<br>
+# Fix:<br>
+logging.FileHandler("bot_canal_fib_v3.log", ...)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · place_orders()</span>
+          <span class="arch-title">ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse</span>
+        </div>
+        <div class="arch-desc">IOC cancela el volumen no llenado inmediatamente. Para una SELL_LIMIT/BUY_LIMIT que activa en momentos de baja liquidez, una fill parcial haría que los lotes restantes se cancelen en lugar de quedar pendientes. ORDER_FILLING_RETURN devuelve el remanente al libro de órdenes — comportamiento correcto.</div>
+        <div class="arch-code">
+# Actual:<br>
+"type_filling": mt5.ORDER_FILLING_IOC,  # ❌<br>
+<br>
+# Fix:<br>
+"type_filling": mt5.ORDER_FILLING_RETURN,  # ✓
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · manage_breakeven()</span>
+          <span class="arch-title">Detecta TP1 ejecutado por AUSENCIA de orden — actúa si la orden fue cancelada manualmente</span>
+        </div>
+        <div class="arch-desc">La lógica <code>tp1_pending = any(... "TP1" in o.comment ...)</code> asume que si no hay orden TP1 pendiente es porque se ejecutó. Si el usuario cancela la orden TP1 manualmente (o el broker la rechaza), el bot mueve el SL a breakeven sin que TP1 se haya ejecutado — protegiendo prematuramente con resultado negativo.</div>
+        <div class="arch-code">
+# Fix: verificar deal real de TP1 en historial<br>
+desde = datetime.now(UTC) - timedelta(hours=8)<br>
+deals = mt5.history_deals_get(desde, datetime.now(UTC))<br>
+tp1_ejecutado = any(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;d.symbol == symbol and d.magic == MAGIC<br>
+&nbsp;&nbsp;&nbsp;&nbsp;and "TP1" in d.comment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for d in (deals or [])<br>
+)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · lot_tercio()</span>
+          <span class="arch-title">3 × lot_tercio puede diferir de lot_total — riesgo real ≠ 2%</span>
+        </div>
+        <div class="arch-desc">Al redondear lot_total/3 al step, la suma de los 3 tramos puede ser menor que lot_total. Con lot_total=0.04 y step=0.01: lot_1_3=0.01, se colocan 0.03 en total — se pierde el 25% del riesgo calculado. El 3er tramo debería compensar la diferencia.</div>
+        <div class="arch-code">
+# Fix: ajustar el 3er tramo<br>
+t1 = round(lot_total / 3 / step) * step<br>
+t1 = max(info.volume_min, t1)<br>
+t3 = max(info.volume_min,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;round((lot_total - 2 * t1) / step) * step)<br>
+return t1, t1, t3  # retornar los 3 tramos
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · get_costos()</span>
+          <span class="arch-title">_costos_cache indefinido — spread obsoleto durante noticias macro</span>
+        </div>
+        <div class="arch-desc">El spread se cachea al primer acceso y nunca se invalida. En XAUUSD el spread puede multiplicarse ×5–10 durante NFP, FOMC o CPI. Los niveles de entrada, SL y TP se calculan con un spread que puede ser 10× inferior al real, haciendo los TPs inalcanzables y el SL más ajustado de lo esperado.</div>
+        <div class="arch-code">
+# Fix: expirar cache cada hora<br>
+_costos_cache = {}   # {symbol: (spread, comm, timestamp)}<br>
+<br>
+def get_costos(symbol):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cached = _costos_cache.get(symbol)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if cached and (datetime.now(UTC) - cached[2]).seconds < 3600:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return cached[0], cached[1]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;# ... recalcular y guardar con timestamp
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · registrar_cierres()</span>
+          <span class="arch-title">Lookback de 2h — deals perdidos si el bot estuvo offline más de 2 horas</span>
+        </div>
+        <div class="arch-desc">Si el bot cae y se reinicia después de 2+ horas, los deals de SL/TP ocurridos en ese período no se detectan. El circuit breaker no los computa — el conteo de pérdidas consecutivas queda incompleto y el CB puede no dispararse cuando debería.</div>
+        <div class="arch-code">
+# Fix: lookback dinámico desde último deal conocido<br>
+desde = datetime.utcfromtimestamp(_last_deal_id_time)<br>
+# o usar el inicio de la sesión actual como mínimo<br>
+desde = max(inicio_sesion, datetime.now(UTC) - timedelta(hours=12))
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · place_orders()</span>
+          <span class="arch-title">Órdenes GTC no se cancelan al fin de sesión — pueden ejecutarse fuera de horario</span>
+        </div>
+        <div class="arch-desc">ORDER_TIME_GTC mantiene las órdenes activas indefinidamente. Una SELL_LIMIT colocada a las 11:50 UTC en XAUUSD (sesión hasta 12:00) puede ejecutarse a las 13:00 UTC fuera del horario operativo definido en SESSION_HOURS. El bot no tiene lógica de limpieza de órdenes expiradas.</div>
+        <div class="arch-code">
+# Fix: cancelar órdenes pendientes fuera de sesión<br>
+for sym in available:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;hora = datetime.now(UTC).hour<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if hora not in SESSION_HOURS.get(sym, range(24)):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for o in (mt5.orders_get(symbol=sym) or []):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if o.magic == MAGIC:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia · CircuitBreaker</span>
+          <span class="arch-title">CB sin escalado — tras pausa el counter vuelve a 0 sin penalización adicional</span>
+        </div>
+        <div class="arch-desc">Después de cada pausa CB nivel 1, <code>consec_loss = 0</code> y la pausa se borra. El bot puede volver a acumular 3 pérdidas consecutivas e inmediatamente recibir otra pausa idéntica. Un CB escalado (2ª activación → 8h, 3ª → suspensión del día) protege mejor en mercados que se deterioran gradualmente.</div>
+        <div class="arch-code">
+# Fix: contar activaciones del CB<br>
+self.cb1_count = 0<br>
+<br>
+# En registrar_resultado(), al disparar CB1:<br>
+self.cb1_count += 1<br>
+horas_pausa = CB_PAUSA_HORAS * self.cb1_count<br>
+self.pausa_hasta = datetime.now(UTC) + timedelta(hours=horas_pausa)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia · run()</span>
+          <span class="arch-title">Sin modo demo — el script arranca en cuenta real sin confirmación</span>
+        </div>
+        <div class="arch-desc">No existe flag --demo ni pregunta de confirmación al arrancar. Un error al lanzar el script en la ventana de terminal equivocada ejecuta órdenes reales. Mismo patrón que FILE-001 (R-04).</div>
+        <div class="arch-code">
+# Fix: argumento CLI<br>
+import argparse<br>
+p = argparse.ArgumentParser()<br>
+p.add_argument("--live", action="store_true",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;help="Operar en cuenta real")<br>
+args = p.parse_args()<br>
+if not args.live:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;log.info("Modo demo — sin órdenes reales"); ...
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia · CircuitBreaker</span>
+          <span class="arch-title">Estado del CB no persiste entre reinicios — pérdidas previas no se recuperan</span>
+        </div>
+        <div class="arch-desc">Si el bot se reinicia, <code>consec_loss = 0</code> y <code>equity_dia = equity_actual</code>. Un reinicio tras 2 pérdidas consecutivas borra el historial del CB y permite operar como si fuera el inicio del día. Persistir el estado en un JSON pequeño al cierre resolvería esto.</div>
+        <div class="arch-code">
+# Fix: guardar/cargar estado del CB<br>
+import json<br>
+CB_STATE_FILE = "cb_state.json"<br>
+<br>
+# Al cerrar (KeyboardInterrupt):<br>
+json.dump({"consec_loss": cb.consec_loss,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"equity_dia": cb.equity_dia}, open(CB_STATE_FILE,"w"))<br>
+# Al iniciar: cargar si existe
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-003">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-mejora">🔵 Mejora · run()</span>
+          <span class="arch-title">CAPITAL_INI hardcodeado — leer del equity real al arrancar</span>
+        </div>
+        <div class="arch-desc">CAPITAL_INI=10_000 es el capital base para el cap de lote. Si la cuenta tiene un capital distinto al hardcodeado, el equity efectivo máximo (CAPITAL_INI × 5) es incorrecto — demasiado bajo o demasiado alto. La solución más simple: leer el balance al iniciar y usarlo como referencia.</div>
+        <div class="arch-code">
+# Fix: en run(), después de connect()<br>
+acct = mt5.account_info()<br>
+CAPITAL_INI = acct.balance  # referencia real<br>
+log.info(f"Capital base: ${CAPITAL_INI:,.0f} | Cap: ${CAPITAL_INI*LOT_CAP_X:,.0f}")
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1522,8 +1962,9 @@ function _makeResponseBlock(key) {
 // Trader comments — M1 a M4
 window.addEventListener('DOMContentLoaded', function() {
   // M1: bloque estático de notas generales
+  const _m1Keys = ['M1-notas', 'M1-notas-fib', 'M1-notas-v3'];
   document.querySelectorAll('#tab-backtest .rec-response').forEach((block, i) => {
-    _initResponseBlock(block, i === 0 ? 'M1-notas' : 'M1-notas-fib');
+    _initResponseBlock(block, _m1Keys[i] || ('M1-notas-' + i));
   });
   // M2: rec-cards (bloques ya en HTML)
   document.querySelectorAll('#rec-list .rec-card').forEach(card => {
