@@ -312,8 +312,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="page-sub">Herramienta del producto · 5 módulos de análisis y feedback al trader</div>
 
   <div class="export-bar" id="export-bar">
-    <button class="btn-export" onclick="exportReport()">⬇ Exportar informe — todos los módulos</button>
-    <span class="export-scope" id="export-scope" style="display:none;"></span>
+    <button class="btn-export" onclick="exportReport()">⬇ Exportar informe</button>
   </div>
 
   <div class="file-filter-bar" id="file-filter-bar">
@@ -693,14 +692,12 @@ var activeFiles = new Set();
 
 function _applyFileFilter() {
   var headers = document.querySelectorAll('.file-section-header');
-  var scope = document.getElementById('export-scope');
   if (activeFiles.size === 0) {
     headers.forEach(function(h) {
       h.style.display = '';
       var n = h.nextElementSibling;
       while (n && !n.classList.contains('file-section-header')) { n.style.display = ''; n = n.nextElementSibling; }
     });
-    if (scope) { scope.style.display = 'none'; scope.textContent = ''; }
     _updateObsNavBtns();
     return;
   }
@@ -710,11 +707,6 @@ function _applyFileFilter() {
     var n = h.nextElementSibling;
     while (n && !n.classList.contains('file-section-header')) { n.style.display = match ? '' : 'none'; n = n.nextElementSibling; }
   });
-  if (scope) {
-    var names = [...document.querySelectorAll('.file-filter-btn.active:not(#ff-all)')].map(function(b) { return b.textContent.trim(); }).join(' + ');
-    scope.textContent = 'Exportará: ' + names + ' · todos los módulos';
-    scope.style.display = '';
-  }
   _updateObsNavBtns();
 }
 
@@ -725,46 +717,46 @@ function toggleFileFilter(fshClass, fileId, btn) {
   activeFiles.add(fshClass);
   btn.classList.add('active');
   _applyFileFilter();
+  _updateExportBar();
 }
 
 function _updateExportBar() {
   if (!window._renderData) return;
-  var allActivo = window._renderData.groups.length > 0 &&
-    window._renderData.groups.every(function(g) { return g.status === 'activo'; });
   var btn = document.querySelector('#export-bar .btn-export');
   var bar = document.getElementById('export-bar');
   if (!btn || !bar) return;
 
-  // Remove any existing locked message
   var prev = bar.querySelector('.export-locked-msg');
   if (prev) prev.remove();
 
-  if (allActivo) {
+  // Find the currently selected file's group
+  var selectedBtn = document.querySelector('.file-filter-btn.active');
+  var selectedBadge = selectedBtn ? selectedBtn.dataset.badge : null;
+  var selectedGroup = selectedBadge && window._renderData.groups.find(function(g) { return g.badge === selectedBadge; });
+  var isActivo = selectedGroup && selectedGroup.status === 'activo';
+
+  if (isActivo) {
     btn.disabled = false;
   } else {
     btn.disabled = true;
     var msg = document.createElement('span');
     msg.className = 'export-locked-msg';
-    msg.textContent = '🔒 Disponible cuando el ciclo esté completo (feedback final Claude)';
+    msg.textContent = '🔒 Disponible cuando el ciclo esté completo';
     bar.appendChild(msg);
   }
 }
 
 function exportReport() {
-  if (window._renderData && !window._renderData.groups.every(function(g) { return g.status === 'activo'; })) {
-    return;
-  }
-  if (activeFiles.size > 0) {
-    document.querySelectorAll('.file-section-header').forEach(function(h) {
-      var match = [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
-      h.classList.toggle('print-hidden', !match);
-      var n = h.nextElementSibling;
-      while (n && !n.classList.contains('file-section-header')) {
-        n.classList.toggle('print-hidden', !match);
-        n = n.nextElementSibling;
-      }
-    });
-  }
+  // Only export the currently selected file
+  document.querySelectorAll('.file-section-header').forEach(function(h) {
+    var match = activeFiles.size === 0 || [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
+    h.classList.toggle('print-hidden', !match);
+    var n = h.nextElementSibling;
+    while (n && !n.classList.contains('file-section-header')) {
+      n.classList.toggle('print-hidden', !match);
+      n = n.nextElementSibling;
+    }
+  });
   window.print();
   setTimeout(function() { document.querySelectorAll('.print-hidden').forEach(function(el) { el.classList.remove('print-hidden'); }); }, 1500);
 }
@@ -958,6 +950,7 @@ function _buildFileFilterBtns() {
     fileRegistry[fileId] = fshClass;
     var fb = document.createElement('button');
     fb.className = 'file-filter-btn';
+    fb.dataset.badge = fileId;
     fb.textContent = icon + ' ' + name;
     fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(fshClass, fileId);
     filterBar.insertBefore(fb, hint || null);
