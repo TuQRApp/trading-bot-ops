@@ -907,16 +907,9 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       </div>
     </div>
 
-    <!-- Filtros por fuente de archivo -->
+    <!-- Filtros por fuente de archivo — generados dinámicamente por _updateObsNavBtns() -->
     <div class="obs-filter-bar">
       <span class="obs-filter-label">IR A:</span>
-      <button class="obs-filter-btn" data-obs-origin="all"  onclick="scrollToObs('all')">↓ Todos</button>
-      <button class="obs-filter-btn" data-obs-origin="log"  onclick="scrollToObs('log')">↓ LOG</button>
-      <button class="obs-filter-btn" data-obs-origin="json" onclick="scrollToObs('json')">↓ JSON</button>
-      <button class="obs-filter-btn" data-obs-origin="csv"  onclick="scrollToObs('csv')">↓ CSV</button>
-      <button class="obs-filter-btn" data-obs-origin="py"   onclick="scrollToObs('py')">↓ PY</button>
-      <button class="obs-filter-btn" data-obs-origin="png"  onclick="scrollToObs('png')">↓ PNG</button>
-      <button class="obs-filter-btn" data-obs-origin="chat" onclick="scrollToObs('chat')">↓ CHAT</button>
     </div>
 
     <!-- Lista — newest first. Claude inserta nuevas entradas AL INICIO de este div -->
@@ -1838,15 +1831,25 @@ function _calcObsStats() {
   document.getElementById('obs-solo-count').textContent = solo;
 }
 function _updateObsNavBtns() {
+  const allOrigins = new Set();
   const present = new Set();
   document.querySelectorAll('#obs-list .obs-card').forEach(card => {
+    allOrigins.add(card.dataset.origin);
     if (card.style.display !== 'none') present.add(card.dataset.origin);
   });
-  document.querySelectorAll('.obs-filter-btn[data-obs-origin]').forEach(btn => {
-    const o = btn.dataset.obsOrigin;
-    const enabled = o === 'all' || present.has(o);
-    btn.classList.toggle('nav-disabled', !enabled);
-  });
+  const bar = document.querySelector('.obs-filter-bar');
+  if (!bar) return;
+  bar.querySelectorAll('.obs-filter-btn').forEach(b => b.remove());
+  const mk = (origin, label) => {
+    const b = document.createElement('button');
+    b.className = 'obs-filter-btn' + (origin !== 'all' && !present.has(origin) ? ' nav-disabled' : '');
+    b.dataset.obsOrigin = origin;
+    b.onclick = () => scrollToObs(origin);
+    b.textContent = '↓ ' + label;
+    bar.appendChild(b);
+  };
+  mk('all', 'Todos');
+  [...allOrigins].sort().forEach(o => mk(o, o.toUpperCase()));
 }
 function scrollToObs(origin) {
   if (origin === 'all') {
