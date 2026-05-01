@@ -205,6 +205,34 @@ async function handlePutData(request, env) {
   }
 }
 
+// ── Resend email notification ────────────────────────────────────────────────
+
+async function sendUploadEmail(group, env) {
+  if (!env.RESEND_API_KEY) return;
+  const fileList = group.files.map(f => `<li style="font-family:monospace">${f.name}</li>`).join('');
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+      <h2 style="color:#1e2d6e;margin-bottom:4px">Nuevo archivo subido</h2>
+      <p style="color:#64748b;margin-top:0">${group.badge} · ${new Date(group.date).toISOString().slice(0,16).replace('T',' ')} UTC</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0">
+        <tr><td style="color:#64748b;width:110px;padding:6px 0">Nombre</td><td style="font-weight:700">${group.name}</td></tr>
+        <tr><td style="color:#64748b;padding:6px 0">Carpeta</td><td style="font-family:monospace">${group.folder}</td></tr>
+        <tr><td style="color:#64748b;padding:6px 0">Archivos</td><td><ul style="margin:0;padding-left:18px">${fileList}</ul></td></tr>
+      </table>
+      <a href="https://tuqrapp.github.io/trading-bot-ops/" style="display:inline-block;background:#1e2d6e;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px">Ver dashboard →</a>
+    </div>`;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'Trading Bot <onboarding@resend.dev>',
+      to: ['nestragues@gmail.com'],
+      subject: '[Trading Bot] ' + group.badge + ' — ' + group.name,
+      html,
+    }),
+  });
+}
+
 // ── /group  POST ─────────────────────────────────────────────────────────────
 // Registers a new group in data.json after files have been uploaded
 // Body: { name: string, folder: string, files: [{name, type}] }
@@ -255,6 +283,7 @@ async function handleRegisterGroup(request, env) {
 
     data.groups.push(newGroup);
     await writeData(data, sha, env);
+    sendUploadEmail(newGroup, env).catch(() => {}); // fire-and-forget
     return json({ ok: true, badge, group: newGroup });
   } catch (e) {
     return json({ error: e.message }, 500);
