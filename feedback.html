@@ -290,8 +290,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="revision-top-banner-inner">
     <div class="revision-top-banner-icon">⚠</div>
     <div class="revision-top-banner-body">
-      <div class="revision-top-banner-title">Borrador pendiente de validación — ciclo abierto</div>
-      <div class="revision-top-banner-desc">Este análisis es un <strong>borrador generado por Claude</strong>. Revisá cada módulo (Recomendaciones, Observaciones, Feedback de código), escribí tus correcciones en los campos habilitados y <strong>enviá tu revisión usando el botón de abajo</strong>. <strong>El ciclo no cierra sin tu validación.</strong></div>
+      <div class="revision-top-banner-title">Pendiente primera revisión Trader — ciclo abierto</div>
+      <div class="revision-top-banner-desc">Este análisis es un <strong>borrador generado por Claude</strong>. Revisá cada módulo (Recomendaciones, Observaciones, Feedback de código), escribí tus correcciones en los campos habilitados y <strong>pinchá "Enviar Revisión" abajo</strong>. <strong>El ciclo no cierra sin tu revisión.</strong></div>
       <div class="revision-top-banner-badges" id="revision-top-badges"></div>
     </div>
   </div>
@@ -436,8 +436,8 @@ function _fmtTs(iso) {
 // ── Renderer helpers ─────────────────────────────────────────────────────────
 function _fshHtml(g, count) {
   var statusBadge = '';
-  if (g.status === 'en_revision') statusBadge = '<span class="fsh-status-badge fsh-status-revision">⟳ EN REVISIÓN</span>';
-  else if (g.status === 'pendiente_final') statusBadge = '<span class="fsh-status-badge fsh-status-final">⏳ ESPERANDO ANÁLISIS FINAL</span>';
+  if (g.status === 'en_revision') statusBadge = '<span class="fsh-status-badge fsh-status-revision">⚠ PENDIENTE REVISIÓN TRADER</span>';
+  else if (g.status === 'pendiente_final') statusBadge = '<span class="fsh-status-badge fsh-status-final">🔄 PENDIENTE FEEDBACK FINAL CLAUDE</span>';
   var rereviBtn = (g.status === 'activo')
     ? '<button class="btn-rereview" onclick="requestRereview(\'' + _esc(g.badge) + '\')">↩ Solicitar re-análisis</button>'
     : '';
@@ -905,7 +905,7 @@ function _initRevisionBar() {
   var btnsEl = document.getElementById('revision-btns');
   bar.style.display = 'flex';
   btnsEl.innerHTML = '';
-  infoEl.textContent = 'Revisá cada módulo, completá tus correcciones y envialas. El análisis final no se genera sin tu OK.';
+  infoEl.textContent = 'Pendiente primera revisión Trader — revisá cada módulo, escribí tus correcciones y envialas. El feedback final Claude no se genera sin tu revisión.';
   revGroups.forEach(function(g) {
     var btn = document.createElement('button');
     btn.className = 'btn-submit-review';
