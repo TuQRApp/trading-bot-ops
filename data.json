@@ -1,0 +1,691 @@
+{
+  "version": "1.0",
+  "groups": [
+    {
+      "id": "fsh-py",
+      "fsh_class": "fsh-py",
+      "name": "obv_macd_adx_bot_final_v2.py",
+      "badge": "FILE-001",
+      "icon": "🐍",
+      "ftype": "py",
+      "date": "2026-04-30T20:27:00Z",
+      "files": [
+        { "name": "obv_macd_adx_bot_final_v2.py", "type": "py" }
+      ],
+      "status": "activo",
+      "m1": {
+        "type": "empty",
+        "last_updated": null,
+        "empty_title": "FILE-001 sin backtest cargado",
+        "empty_desc": "El backtest del bot OBV+MACD+ADX fue removido del sistema. Sube un nuevo reporte para activar este módulo.",
+        "empty_trigger": "HTML · backtest.html — reporte generado por el motor de simulación"
+      },
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "logic",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Corregir ATR: usar EWM consistente con el resto de indicadores",
+          "desc": "calc_atr() usa rolling SMA (línea 205) mientras todos los demás indicadores usan EWM. El SL y TP reales son sistemáticamente distintos a los del backtest. Es causa directa de divergencia entre PF simulado y real. Fix de una línea: cambiar .rolling(period).mean() por .ewm(span=period, adjust=False).mean().",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "logic",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Eliminar divergencia simple como señal de entrada",
+          "desc": "Líneas 277-278 y 290-291: cuando solo OBV o solo MACD divergen, el bot entra con el mismo riesgo que si fuera doble divergencia. El nombre dice \"Doble Divergencia\" pero en la práctica acepta señales simples. Eliminar los elif reducirá el número de trades pero mejorará la calidad promedio de cada entrada.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "arch",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Eliminar risk_pct duplicado en CONFIG",
+          "desc": "risk_pct está declarado dos veces en CONFIG: línea 68 (sección Riesgo) y línea 92 (sección Bot). Python acepta claves duplicadas — el segundo valor sobrescribe al primero en silencio. Hoy ambas son 0.02, pero cambiar una sin ver la otra hace correr el bot con riesgo incorrecto sin ningún error ni warning.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "arch",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Implementar circuit breakers de parada automática",
+          "desc": "El bot opera 24/7 sin límite de pérdida diaria. Mínimo recomendado: (1) parar si drawdown del día supera 5% del equity, (2) parar si 4 trades consecutivos cierran en pérdida, (3) no operar en ventanas de baja liquidez (22:00–00:00 UTC). La Spec menciona circuit breakers pero ninguno está implementado.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "arch",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Persistir _pos_entry_time al reiniciar el bot",
+          "desc": "_pos_entry_time es un dict en memoria que se pierde al reiniciar. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2h — pueden quedar abiertas indefinidamente. Fix: al iniciar, cargar las posiciones existentes directamente desde p.time de MT5.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-004",
+          "origin": "py",
+          "color": "var(--shared)",
+          "accion": "si",
+          "timestamp": "2026-04-30T20:27:00Z",
+          "title": "bare except:pass silencia errores críticos en get_costos_reales()",
+          "text": "Dos bloques except:pass (líneas 145 y 153) tragan cualquier excepción sin rastro en el log. Si la conexión con MT5 falla durante la consulta de costos, el bot usa spread genérico ($5 USD) sin ningún aviso. Los errores de costos afectan directamente el cálculo de lotaje y el PnL esperado.",
+          "context": "obv_macd_adx_bot_final_v2.py · líneas 145, 153",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "origin": "py",
+          "color": "var(--shared)",
+          "accion": "si",
+          "timestamp": "2026-04-30T20:27:00Z",
+          "title": "_pos_entry_time se pierde al reiniciar — posiciones huérfanas sin timeout",
+          "text": "El dict _pos_entry_time vive solo en memoria. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2 horas. Pueden quedar abiertas indefinidamente hasta intervención manual.",
+          "context": "obv_macd_adx_bot_final_v2.py · línea 900 (_pos_entry_time)",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "origin": "py",
+          "color": "var(--gate)",
+          "accion": "si",
+          "timestamp": "2026-04-30T20:27:00Z",
+          "title": "Divergencia simple entra con mismo lotaje que doble divergencia",
+          "text": "Líneas 277-278 y 290-291: cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo valor de señal (1/-1) que una doble divergencia confirmada. Infla el número de trades y degrada la calidad promedio de señales.",
+          "context": "obv_macd_adx_bot_final_v2.py · líneas 277-278, 290-291",
+          "comment": ""
+        },
+        {
+          "id": "OBS-001",
+          "origin": "py",
+          "color": "var(--gate)",
+          "accion": "si",
+          "timestamp": "2026-04-30T20:27:00Z",
+          "title": "ATR calculado diferente en backtest vs. bot en vivo",
+          "text": "calc_atr() usa rolling SMA (línea 205) mientras todos los demás indicadores usan EWM. El SL y TP reales son sistemáticamente distintos a los del backtest, contribuyendo directamente a la diferencia entre el PF simulado y el real.",
+          "context": "obv_macd_adx_bot_final_v2.py · línea 205",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "A-001",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Línea 1035",
+          "title": "Print hardcodeado \"máx 3 posiciones\" vs CONFIG[\"max_positions\"] = 6",
+          "desc": "El mensaje de arranque imprime \"máx 3 posiciones\" pero CONFIG[\"max_positions\"] es 6. Dato falso en consola desde el primer ciclo — confunde al operar en vivo.",
+          "code": "# Línea 1035 — incorrecto:\nprint(\"🔴 CUENTA REAL | ... | máx 3 posiciones | ...\")\n\n# Fix:\nprint(f\"🔴 CUENTA REAL | ... | máx {CONFIG['max_positions']} posiciones | ...\")",
+          "comment": ""
+        },
+        {
+          "id": "A-002",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Líneas 277–278 / 290–291",
+          "title": "Divergencia simple produce la misma señal que la doble",
+          "desc": "Cuando solo OBV o solo MACD divergen (no ambos), el bot abre posición con el mismo valor de señal (1/-1) que una doble divergencia. El nombre dice \"Doble Divergencia\" pero en la práctica opera con OR, no AND.",
+          "code": "# Actual:\nif precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1  # doble ✅\nelif precio_ll and (obv_hl or macd_hl):\n    señales.iloc[i] = 1  # simple = mismo resultado ❌\n\n# Fix: eliminar el elif",
+          "comment": ""
+        },
+        {
+          "id": "A-003",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Línea 205",
+          "title": "ATR usa SMA — el resto del código usa EWM — SL/TP divergen entre backtest y live",
+          "desc": "calc_atr() usa rolling(period).mean() (media simple) mientras calc_adx() y los demás usan ewm() (Wilder). El ATR del backtest difiere del ATR en vivo, haciendo que los SL y TP reales sean distintos a los simulados.",
+          "code": "# Actual — línea 205:\nreturn ...max(axis=1).rolling(period).mean()\n\n# Fix — consistente con el resto:\nreturn ...max(axis=1).ewm(span=period, adjust=False).mean()",
+          "comment": ""
+        },
+        {
+          "id": "A-004",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Líneas 68 y 92",
+          "title": "risk_pct declarado dos veces en CONFIG — el segundo sobrescribe al primero en silencio",
+          "desc": "Python acepta claves duplicadas en dict literal; el último valor gana. Hoy ambas son 0.02, pero cambiar una sin ver la otra hace correr el bot con riesgo incorrecto sin ningún error ni warning.",
+          "code": "# Línea 68 (sección Riesgo):\n\"risk_pct\": 0.02,  # ← primera definición\n...\n# Línea 92 (sección Bot):\n\"risk_pct\": 0.02,  # ← sobrescribe silenciosamente ❌\n\n# Fix: eliminar la de línea 68",
+          "comment": ""
+        },
+        {
+          "id": "A-005",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · Líneas 145, 153",
+          "title": "bare except:pass silencia errores críticos de MT5 en get_costos_reales()",
+          "desc": "Dos bloques except: pass tragan cualquier excepción sin rastro en el log. Si la conexión con MT5 falla, el bot usa spread genérico ($5 USD) sin ningún aviso. Los errores de costos afectan directamente el cálculo de lotaje y el PnL esperado.",
+          "code": "# Actual:\nexcept: pass\n\n# Fix:\nexcept Exception as e:\n    log.warning(f\"{symbol}: error costos — {e}. Usando fallback.\")",
+          "comment": ""
+        },
+        {
+          "id": "A-006",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · Líneas 733–738",
+          "title": "Señales de hasta 4 barras M5 atrás pueden re-dispararse",
+          "desc": "get_signal_live() busca señal en las últimas 4 barras cerradas. Una divergencia detectada hace 15 minutos sigue siendo \"válida\" en el siguiente ciclo. syms_en_pos lo mitiga, pero solo mientras la posición esté abierta.",
+          "code": "# Fix: registrar timestamp de la última señal ejecutada por símbolo\n_ultima_señal = {}  # sym → timestamp de la barra señal\n# Verificar que timestamp != _ultima_señal[sym] antes de abrir",
+          "comment": ""
+        },
+        {
+          "id": "A-007",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · Línea 93",
+          "title": "demo_mode: False por defecto — arranque directo en cuenta real",
+          "desc": "Correr el script sin cambiar CONFIG ejecuta órdenes reales inmediatamente. No hay flag CLI ni confirmación de arranque. Un error al editar el archivo puede costar dinero real.",
+          "code": "# Fix: leer de argumento CLI\nimport argparse\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--demo\", action=\"store_true\")\nargs = parser.parse_args()\nCONFIG[\"demo_mode\"] = args.demo",
+          "comment": ""
+        },
+        {
+          "id": "A-008",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia vs Spec · Circuit Breakers",
+          "title": "Sin parada automática por drawdown diario ni trades consecutivos perdedores",
+          "desc": "El bot opera 24/7 sin límite de pérdida diaria. No existe lógica de parada si el DD diario supera X%, si hay N trades consecutivos perdedores, ni restricciones de horario de baja liquidez.",
+          "code": "# Estructura mínima en run_bot():\nMAX_DD_DIARIO = 0.05\nif (balance_ini - account.equity) / balance_ini > MAX_DD_DIARIO:\n    log.warning(\"⛔ Circuit breaker: DD diario superado\")\n    time.sleep(3600); continue",
+          "comment": ""
+        },
+        {
+          "id": "A-009",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia vs Spec · Timeout live",
+          "title": "_pos_entry_time se resetea al reiniciar — posiciones huérfanas sin timeout",
+          "desc": "El dict _pos_entry_time vive en memoria. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2h.",
+          "code": "# Fix: al iniciar, cargar posiciones existentes desde MT5\nfor p in posiciones_del_bot():\n    if p.ticket not in _pos_entry_time:\n        _pos_entry_time[p.ticket] = datetime.utcfromtimestamp(p.time)",
+          "comment": ""
+        },
+        {
+          "id": "A-010",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia vs Spec · Estado JSON",
+          "title": "Estado JSON sin detalle por posición — sin ticket, SL, TP, PnL flotante",
+          "desc": "guardar_estado() solo registra cuántas posiciones hay y qué símbolos. Sin precio de entrada, SL, TP ni PnL flotante por ticket es imposible hacer análisis forense entre sesiones sin conectarse a MT5.",
+          "code": "# Fix: agregar detalle de posiciones en guardar_estado()\n\"posiciones_detalle\": [\n    {\"ticket\": p.ticket, \"symbol\": p.symbol,\n     \"entrada\": p.price_open, \"sl\": p.sl, \"tp\": p.tp,\n     \"pnl_float\": p.profit}\n    for p in pos_bot]",
+          "comment": ""
+        },
+        {
+          "id": "A-011",
+          "categoria": "mejora",
+          "label": "🔵 Mejora · guardar_estado()",
+          "title": "Escritura JSON sincrónica bloquea el loop principal",
+          "desc": "guardar_estado() se llama sincrónicamente cada 30 s. Si el disco tiene latencia o la ruta es de red, el bot pierde tiempo de monitoreo durante la escritura.",
+          "code": "# Fix: escribir en thread separado\nimport threading\nthreading.Thread(target=guardar_estado, args=(data,), daemon=True).start()",
+          "comment": ""
+        },
+        {
+          "id": "A-012",
+          "categoria": "mejora",
+          "label": "🔵 Mejora · run_bot()",
+          "title": "Sin audit log de señales rechazadas",
+          "desc": "El bot loguea señales ejecutadas pero no las rechazadas por max_positions o símbolo ya abierto. Sin ese registro es imposible el análisis post-trade de oportunidades perdidas.",
+          "code": "# Agregar en run_bot(), sección abrir posiciones:\nif n_pos >= CONFIG[\"max_positions\"]:\n    log.info(f\"SIGNAL_REJECTED {sym} reason=max_pos\")\nif sym in syms_en_pos:\n    log.info(f\"SIGNAL_REJECTED {sym} reason=already_open\")",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "fsh-fib",
+      "fsh_class": "fsh-fib",
+      "name": "Canal Fibonacci",
+      "badge": "FILE-002",
+      "icon": "📈",
+      "ftype": "csv",
+      "date": "2026-04-30T21:00:00Z",
+      "files": [
+        { "name": "backtest_canal_fib.py", "type": "py" },
+        { "name": "canal_fib_backtest.html", "type": "html" },
+        { "name": "canal_fib_XAUUSD.csv", "type": "csv" },
+        { "name": "canal_fib_XAGUSD.csv", "type": "csv" },
+        { "name": "canal_fib_BTCUSD.csv", "type": "csv" }
+      ],
+      "status": "activo",
+      "m1": {
+        "type": "quality",
+        "last_updated": "2026-04-30T21:00:00Z",
+        "last_updated_meta": "backtest_canal_fib.py · Canal Fib 20 barras · M3 · 180 días · 3 símbolos · 559 trades totales",
+        "fsh_count": "5 archivos · XAUUSD / XAGUSD / BTCUSD · 180 días · M3",
+        "symbols": [
+          {
+            "id": "xauusd",
+            "label": "XAUUSD — Oro",
+            "metrics": [
+              { "name": "Trades totales",    "value": "173",        "target": "180 días · M3 · Gold",      "light": "yellow", "comment": "Alta frecuencia en M3. Volumen inflado por el rally de oro Nov 2025 – Abr 2026. Condición de mercado no representativa de todos los regímenes." },
+              { "name": "Retorno total",     "value": "+17.863%",   "target": "$10.000 → $1.796.328",      "light": "red",    "comment": "Retorno extraordinario en período de tendencia fuerte. Señal de sobreajuste — los niveles Fibonacci largos capturan casi todo el rally." },
+              { "name": "Lot cap alcanzado", "value": "100.0 lotes","target": "Desde: Abr 2026",           "light": "red",    "comment": "Cuando lot_max se alcanza, las pérdidas pueden superar $30k/trade. El tramo cubierto por lot_max no es representativo del riesgo real del 2%." },
+              { "name": "Validación OOS",    "value": "0 días",     "target": "Target: ≥60 días OOS",      "light": "red",    "comment": "Todo el período (180 días) es in-sample. Sin datos fuera de muestra no se puede estimar la robustez del sistema." },
+              { "name": "Slippage modelado", "value": "No incluido","target": "M3 = alta sensibilidad",    "light": "yellow", "comment": "En M3 el slippage puede representar 20–40% del TP1. El backtest asume ejecución exacta al precio de señal." },
+              { "name": "Lookahead bias",    "value": "Ninguno",    "target": "Canal: barras [i-20, i-1]", "light": "green",  "comment": "El canal Fibonacci usa solo las 20 barras anteriores a la señal. La metodología es correcta en este aspecto." }
+            ]
+          },
+          {
+            "id": "xagusd",
+            "label": "XAGUSD — Plata",
+            "metrics": [
+              { "name": "Trades totales",    "value": "162",        "target": "180 días · M3 · Silver",    "light": "yellow", "comment": "La plata tuvo tendencia alcista fuerte en el período. Mayoría de trades LONG, capturando el movimiento dominante." },
+              { "name": "Retorno total",     "value": "+7.400%",    "target": "$10.000 → $749.996",        "light": "red",    "comment": "Retorno extremo asociado al capital compuesto y a la tendencia unidireccional. No generalizable a mercados laterales o bajistas." },
+              { "name": "Lot cap alcanzado", "value": "100.0 lotes","target": "Período avanzado",          "light": "red",    "comment": "Mismo riesgo que XAUUSD: una vez alcanzado lot_max, las pérdidas son desproporcionadas al capital teórico del 2%." },
+              { "name": "Validación OOS",    "value": "0 días",     "target": "Target: ≥60 días OOS",      "light": "red",    "comment": "Sin datos fuera de muestra. El sistema no ha sido probado en condiciones de mercado lateral o bajista en plata." },
+              { "name": "Slippage modelado", "value": "No incluido","target": "XAGUSD más ilíquido",       "light": "yellow", "comment": "La plata tiene menor liquidez que el oro en lotes grandes. El impacto del slippage puede ser más significativo que en XAUUSD." },
+              { "name": "Lookahead bias",    "value": "Ninguno",    "target": "Canal: barras [i-20, i-1]", "light": "green",  "comment": "Canal calculado solo con barras previas. La metodología es correcta en este aspecto." }
+            ]
+          },
+          {
+            "id": "btcusd",
+            "label": "BTCUSD — Bitcoin",
+            "metrics": [
+              { "name": "Trades totales",    "value": "224",           "target": "Sesión: 14:00–22:00 UTC",   "light": "yellow", "comment": "Mayor número de trades — BTC opera solo 8h/día en el backtest. Alta frecuencia en M3 dentro de esa ventana." },
+              { "name": "Retorno total",     "value": "+2.181%",       "target": "$10.000 → $228.107",        "light": "yellow", "comment": "Retorno alto pero más moderado que metales. BTC tuvo mayor volatilidad y pérdidas más frecuentes en el período." },
+              { "name": "Lot cap BTC",       "value": "10.0 lotes máx","target": "vs. 100.0 en metales",      "light": "yellow", "comment": "El contrato BTC es mucho mayor. El cap de 10.0 se alcanza antes, pero cada pérdida en esa zona puede representar miles de USD." },
+              { "name": "Validación OOS",    "value": "0 días",        "target": "Target: ≥60 días OOS",      "light": "red",    "comment": "Sin out-of-sample. La restricción de sesión 14:00–22:00 UTC tampoco ha sido validada fuera del período analizado." },
+              { "name": "Filtro sesión",     "value": "14:00–22:00 UTC","target": "Ventana de liquidez BTC",  "light": "green",  "comment": "La restricción de horario es correcta — coincide con la mayor liquidez de BTC (mercado americano activo)." },
+              { "name": "Lookahead bias",    "value": "Ninguno",       "target": "Canal: barras [i-20, i-1]", "light": "green",  "comment": "El canal se calcula correctamente con barras históricas. Sin contaminación de datos futuros." }
+            ]
+          }
+        ],
+        "score": {
+          "value": "4.2",
+          "color_border": "var(--shared)",
+          "color_text": "var(--shared)",
+          "color_bg": "rgba(217,119,6,0.08)",
+          "title": "Calidad metodológica Canal Fibonacci: Regular",
+          "bullets": [
+            { "type": "ok",   "text": "Sin lookahead bias — canal calculado con barras [i-20, i-1]" },
+            { "type": "ok",   "text": "Costos reales IC Markets Raw incluidos (spread + comisión por símbolo)" },
+            { "type": "ok",   "text": "Sesión BTC correctamente restringida a 14:00–22:00 UTC" },
+            { "type": "warn", "text": "Período 180 días: un solo régimen (tendencia alcista fuerte en metales y BTC)" },
+            { "type": "warn", "text": "Sin slippage — crítico en M3 donde cada pip pesa más en TP1" },
+            { "type": "bad",  "text": "Capital compuesto → lot_max alcanzado = riesgo no controlado en período tardío" },
+            { "type": "bad",  "text": "Sin validación out-of-sample — resultados no son generalizables" },
+            { "type": "bad",  "text": "Retornos +2.000–17.000% son señal de sobreajuste al régimen del período" }
+          ]
+        }
+      },
+      "m2": [
+        {
+          "id": "F-01",
+          "tipo": "logic",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Corregir el template HTML: muestra \"2.5%\" pero RISK_PCT es 2%",
+          "desc": "El template HTML generado por backtest_canal_fib.py imprime \"Riesgo 2.5% compuesto\" pero RISK_PCT=0.02 en el código. Dato falso en el reporte — confunde al leer el HTML generado. Fix de una línea en la sección de templates del script.",
+          "comment": ""
+        },
+        {
+          "id": "F-02",
+          "tipo": "arch",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Limitar el capital compuesto o implementar un tope de equity",
+          "desc": "El capital compuesto hace que el lotaje crezca indefinidamente hasta alcanzar volume_max (100.0 para metales, 10.0 para BTC). Una vez en el cap, cada pérdida puede representar $30k+ — ya no es el 2% prometido del capital real. Para live: implementar un tope de equity a partir del cual el lotaje deja de escalar (ej. capital_base fijo al inicio de cada mes).",
+          "comment": ""
+        },
+        {
+          "id": "F-03",
+          "tipo": "logic",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Agregar período de validación out-of-sample antes de operar en vivo",
+          "desc": "El 100% del backtest (180 días) es in-sample — los parámetros del canal Fibonacci (20 barras, niveles 1.191, 0.809, etc.) fueron elegidos sobre el mismo período que se analiza. Mínimo recomendado: reservar los últimos 60 días como OOS antes de cualquier decisión de operar en vivo. Sin OOS, los resultados no son estadísticamente válidos.",
+          "comment": ""
+        },
+        {
+          "id": "F-04",
+          "tipo": "logic",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Registrar y cerrar los trades OPEN al final del backtest",
+          "desc": "El script salta los trades OPEN (posiciones que no cerraron dentro de los 200 barras de simulación) sin registrarlos ni cerrarlos al precio final. El capital final y el número de trades están subestimados — no se sabe cuántos trades quedaron abiertos ni en qué estado. Fix: cerrar al precio de la última barra y registrar el resultado.",
+          "comment": ""
+        },
+        {
+          "id": "F-05",
+          "tipo": "arch",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Implementar max_positions antes de cualquier deployment en vivo",
+          "desc": "El backtest no tiene límite de posiciones simultáneas — si los tres símbolos dan señal al mismo tiempo, el bot abre tres trades en paralelo. En vivo esto puede triplicar la exposición real. El bot v2 sí tiene max_positions; este script necesita la misma lógica para simular condiciones reales de operación.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "FIB-OBS-001",
+          "origin": "csv",
+          "color": "var(--gate)",
+          "accion": "si",
+          "timestamp": "2026-04-30T21:00:00Z",
+          "title": "XAUUSD — lot_max 100.0 alcanzado en Abr 2026 — pérdidas de $30k+ por trade",
+          "text": "Los CSVs de XAUUSD muestran que el lotaje llegó a 100.0 desde aproximadamente Abril 2026. En ese tramo las pérdidas individuales superan los $30.000 USD por trade — no corresponden al 2% de riesgo configurado sino a un riesgo ilimitado respecto al capital teórico. El capital compuesto sin tope de equity es el origen del problema.",
+          "context": "canal_fib_XAUUSD.csv · columna lot_size · tramo Abr 2026",
+          "comment": ""
+        },
+        {
+          "id": "FIB-OBS-002",
+          "origin": "csv",
+          "color": "var(--shared)",
+          "accion": "no",
+          "timestamp": "2026-04-30T21:00:00Z",
+          "title": "Los tres símbolos operaron en tendencia fuerte alcista — sesgo de régimen de mercado",
+          "text": "El período Nov 2025 – Abr 2026 fue de rally sostenido en XAUUSD, XAGUSD y BTCUSD. La mayoría de trades en los tres CSV son LONG y ganadores. El canal Fibonacci en tendencia funciona bien por diseño — el sistema no ha sido probado en mercado lateral o bajista. Los retornos (+7.000% a +17.000%) reflejan el régimen favorable, no la robustez del sistema.",
+          "context": "canal_fib_XAUUSD.csv + canal_fib_XAGUSD.csv + canal_fib_BTCUSD.csv",
+          "comment": ""
+        },
+        {
+          "id": "FIB-OBS-003",
+          "origin": "csv",
+          "color": "var(--muted)",
+          "accion": "no",
+          "timestamp": "2026-04-30T21:00:00Z",
+          "title": "BTCUSD muestra mayor frecuencia de pérdidas consecutivas que los metales",
+          "text": "El CSV de BTCUSD (224 trades) tiene clusters de pérdidas más frecuentes que XAUUSD y XAGUSD. Esto es consistente con la mayor volatilidad de BTC en M3 — los niveles Fibonacci del canal de 20 barras son más frecuentemente quebrados por el ruido del precio. Considerar canal más largo (30–40 barras) o timeframe superior para BTC.",
+          "context": "canal_fib_BTCUSD.csv · comparación vs. XAUUSD / XAGUSD",
+          "comment": ""
+        },
+        {
+          "id": "FIB-OBS-004",
+          "origin": "py",
+          "color": "var(--shared)",
+          "accion": "si",
+          "timestamp": "2026-04-30T21:00:00Z",
+          "title": "Canal de 20 barras M3 = ventana de 60 minutos — muy corta para señales Fibonacci robustas",
+          "text": "CANAL_LENGTH=20 en M3 significa que el máximo y mínimo del canal se calculan sobre los últimos 60 minutos. Los niveles Fibonacci derivados de una ventana tan corta son altamente sensibles al ruido intradiario. En señales clásicas de Fibonacci, el canal debería representar al menos una sesión completa o un swing de mayor orden (H1/H4).",
+          "context": "backtest_canal_fib.py · CANAL_LENGTH=20 · TIMEFRAME=M3",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "B-001",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Template HTML",
+          "title": "Template muestra \"Riesgo 2.5% compuesto\" pero RISK_PCT=0.02 (2%)",
+          "desc": "El string del template HTML generado por el script imprime \"2.5%\" pero RISK_PCT = 0.02 en la configuración. El reporte generado muestra datos falsos desde la primera línea del resumen.",
+          "code": "# En la sección de template HTML del script:\n\"Riesgo 2.5% compuesto\"  # ← incorrecto ❌\n\n# Fix:\nf\"Riesgo {RISK_PCT*100:.1f}% compuesto\"  # ← dinámico ✓",
+          "comment": ""
+        },
+        {
+          "id": "B-002",
+          "categoria": "bug",
+          "label": "🔴 Bug real · backtest()",
+          "title": "Trades OPEN al final del período no se registran — capital final subestimado",
+          "desc": "Cuando una posición no cierra dentro de las 200 barras de simulación, el script la descarta silenciosamente con resultado = \"OPEN\" sin registrar el trade ni ajustar el capital. El capital final y el número total de trades están subestimados en una cantidad desconocida.",
+          "code": "# Actual — trades OPEN simplemente saltados:\nresultado = \"OPEN\"\n# … no se agregan al CSV ni se cierra la posición\n\n# Fix: cerrar al precio de la última barra\nprecio_cierre = bars['close'].iloc[-1]\npnl = calcular_pnl(entrada, precio_cierre, direccion, lots)\nregistrar_trade(resultado=\"OPEN_CLOSE\", pnl=pnl, ...)",
+          "comment": ""
+        },
+        {
+          "id": "B-003",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · calc_lot()",
+          "title": "Capital compuesto sin tope — lot_max alcanzado = riesgo ilimitado respecto al 2%",
+          "desc": "El lot sizing crece con el capital compuesto hasta volume_max. Una vez en el cap (100.0 para metales, 10.0 para BTC), las pérdidas por trade superan el 2% prometido — en XAUUSD Abril 2026 llegan a $30k+. El sistema pierde su garantía de riesgo controlado.",
+          "code": "# Fix: fijar capital_base al inicio o por período\nCAPITAL_BASE = capital_ini  # no crece con las ganancias\n# Alternativamente: tope de equity\ncapital_efectivo = min(capital_actual, CAPITAL_BASE * 3)\nlots = calc_lot(capital_efectivo, risk_pct, ...)",
+          "comment": ""
+        },
+        {
+          "id": "B-004",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · backtest()",
+          "title": "Sin max_positions — tres símbolos pueden abrir simultáneamente triplicando la exposición",
+          "desc": "El backtest no limita el número de posiciones simultáneas. Si XAUUSD, XAGUSD y BTCUSD dan señal en la misma barra M3, los tres trades se abren en paralelo. En vivo esto multiplica la exposición real por 3, superando cualquier límite de riesgo diario.",
+          "code": "# Fix: agregar contador de posiciones abiertas\npos_abiertas = 0\nMAX_POS = 2  # máximo 2 símbolos simultáneos\n\nfor sym in SYMBOLS:\n    if pos_abiertas >= MAX_POS:\n        break\n    # … abrir trade y pos_abiertas += 1",
+          "comment": ""
+        },
+        {
+          "id": "B-005",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia · Metodología",
+          "title": "Sin validación out-of-sample — todo el período (180 días) es in-sample",
+          "desc": "Los parámetros del sistema (CANAL_LENGTH=20, niveles Fibonacci, RISK_PCT, TPs) se evalúan sobre el mismo período de 180 días sin ningún dato reservado para validación. Imposible estimar la robustez real del sistema fuera del período conocido.",
+          "code": "# Estructura mínima de validación:\nPERIODO_TOTAL = 180  # días\nPERIODO_IS = 120     # in-sample (entrenamiento)\nPERIODO_OOS = 60     # out-of-sample (validación)\n\n# Correr backtest en IS, validar en OOS\n# Sin ajustar parámetros al ver el OOS",
+          "comment": ""
+        },
+        {
+          "id": "B-006",
+          "categoria": "mejora",
+          "label": "🔵 Mejora · configuración",
+          "title": "Session hours hardcodeado por símbolo — inflexible para cambios de timezone del broker",
+          "desc": "Las horas de sesión de BTCUSD (14:00–22:00 UTC) están hardcodeadas en un dict dentro del script. Si IC Markets cambia el horario de verano/invierno o el servidor, hay que editar el código. La configuración de sesión debería estar en CONFIG o en un archivo externo.",
+          "code": "# Actual — hardcodeado:\nSESSION_HOURS = {\"BTCUSD\": (14, 22)}\n\n# Mejor: en CONFIG\nCONFIG = {\n    \"session_hours\": {\"BTCUSD\": (14, 22)},\n    # fácil de ajustar sin tocar la lógica\n}",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "fsh-v3",
+      "fsh_class": "fsh-v3",
+      "name": "bot_canal_fib_v3.py",
+      "badge": "FILE-003",
+      "icon": "🤖",
+      "ftype": "py",
+      "date": "2026-05-01T09:00:00Z",
+      "files": [
+        { "name": "bot_canal_fib_v3.py", "type": "py" }
+      ],
+      "status": "activo",
+      "m1": {
+        "type": "readiness",
+        "last_updated": "2026-05-01T09:00:00Z",
+        "last_updated_meta": "bot_canal_fib_v3.py · 747 líneas · XAUUSD / XAGUSD / BTCUSD · Circuit Breaker 3 niveles",
+        "fsh_count": "Bot en vivo · Canal Fibonacci con Circuit Breaker",
+        "metrics": [
+          { "name": "Circuit Breaker",    "value": "3 niveles",        "target": "CB1 · CB2 · CB3",                   "light": "green", "comment": "CB1: 3 pérdidas consecutivas → pausa 4h. CB2: 4% DD diario → sin operar hoy. CB3: 10% DD total → detención completa, reinicio manual requerido." },
+          { "name": "Cap de lote",        "value": "LOT_CAP_X = 5×",   "target": "equity_ef = min(equity, $50k)",      "light": "green", "comment": "El 2% se calcula siempre sobre equity capeado. Resuelve el riesgo ilimitado del backtest cuando el capital crece mucho." },
+          { "name": "Log de trades",      "value": "CSV estructurado",  "target": "canal_fib_trades.csv",              "light": "green", "comment": "Registra apertura, TP/SL ejecutados, PnL real (profit + comisión + swap). Permite análisis forense entre sesiones." },
+          { "name": "Reconexión MT5",     "value": "Automática",        "target": "check_connection() cada ciclo",     "light": "green", "comment": "Si MT5 pierde conexión el bot la detecta en ≤20 segundos e intenta reconectar sin detener el proceso." },
+          { "name": "Modo demo",          "value": "No implementado",   "target": "Riesgo: arranque directo en real",  "light": "red",   "comment": "No existe flag --demo ni confirmación de arranque. Ejecutar el script sin cambiar CONFIG opera directamente en cuenta real." },
+          { "name": "Órdenes fin sesión", "value": "GTC sin cancelar",  "target": "Riesgo: ejecución fuera horario",   "light": "red",   "comment": "ORDER_TIME_GTC significa que las órdenes límite no ejecutadas en sesión quedan activas y pueden dispararse fuera del horario operativo." }
+        ],
+        "score": {
+          "value": "7.0",
+          "color_border": "var(--trader)",
+          "color_text": "var(--trader)",
+          "color_bg": "rgba(5,150,105,0.08)",
+          "title": "Preparación para live: Aceptable con fixes pendientes",
+          "bullets": [
+            { "type": "ok",   "text": "Circuit Breaker de 3 niveles implementado" },
+            { "type": "ok",   "text": "Cap de lote 5× — el 2% es real aunque el equity crezca" },
+            { "type": "ok",   "text": "Log CSV + registrar_cierres() — trazabilidad completa de deals" },
+            { "type": "ok",   "text": "SESSION_HOURS en CONFIG — ajustable sin editar código" },
+            { "type": "warn", "text": "CAPITAL_INI=$10.000 hardcodeado — ajustar al capital real antes de arrancar" },
+            { "type": "bad",  "text": "Log file apunta a \"bot_canal_fib_v2.log\" siendo v3 (línea 163)" },
+            { "type": "bad",  "text": "ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse" },
+            { "type": "bad",  "text": "Órdenes GTC sin cancelación al fin de sesión — riesgo de ejecución fuera de horario" }
+          ]
+        }
+      },
+      "m2": [
+        {
+          "id": "V3-01",
+          "tipo": "logic",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Corregir nombre del log: apunta a \"v2.log\" siendo bot v3",
+          "desc": "Línea 163: el FileHandler crea \"bot_canal_fib_v2.log\" en lugar de \"bot_canal_fib_v3.log\". Los logs se mezclan con los de una versión anterior si ambas corrieron en el mismo directorio. Fix de una cadena.",
+          "comment": ""
+        },
+        {
+          "id": "V3-02",
+          "tipo": "logic",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Cambiar ORDER_FILLING_IOC por ORDER_FILLING_RETURN en órdenes límite",
+          "desc": "IOC (Immediate or Cancel) cancela el volumen no llenado si hay fill parcial. En una orden límite SELL_LIMIT/BUY_LIMIT en MT5, IOC puede resultar en que solo se ejecute 1 de los 3 lotes enviados y los otros 2 se cancelen. ORDER_FILLING_RETURN devuelve el remanente al libro — comportamiento correcto para órdenes límite pendientes.",
+          "comment": ""
+        },
+        {
+          "id": "V3-03",
+          "tipo": "arch",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Cancelar órdenes GTC pendientes al fin de sesión",
+          "desc": "Las 3 órdenes límite se envían con ORDER_TIME_GTC. Si el precio no llega al nivel de entrada durante la sesión, las órdenes quedan activas y pueden ejecutarse cuando el mercado retome — potencialmente en las horas siguientes fuera de sesión. Fix: al inicio de cada ciclo, cancelar las órdenes pendientes cuyo símbolo esté fuera de horario SESSION_HOURS.",
+          "comment": ""
+        },
+        {
+          "id": "V3-04",
+          "tipo": "logic",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Validar que manage_breakeven() no actúe si TP1 fue cancelado manualmente",
+          "desc": "manage_breakeven() detecta que TP1 se ejecutó por la AUSENCIA de una orden TP1 pendiente. Si la orden TP1 fue cancelada manualmente (o expiró), el bot mueve el SL a breakeven aunque TP1 nunca se ejecutó — protegiendo el trade demasiado pronto y exponiendo a un SL prematuro. Fix: verificar en history_deals_get() que haya un deal real de cierre de TP1 antes de mover el SL.",
+          "comment": ""
+        },
+        {
+          "id": "V3-05",
+          "tipo": "arch",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Invalidar _costos_cache periódicamente — spread cambia durante noticias",
+          "desc": "get_costos() guarda spread y comisión en _costos_cache y nunca los recalcula. El spread en XAUUSD puede multiplicarse por 5–10× durante noticias macro (NFP, FOMC). El bot usará el spread del arranque para calcular niveles, lo que hace que los TPs y SLs sean incorrectos en momentos de alta volatilidad. Fix: expirar el cache cada hora o al inicio de cada sesión.",
+          "comment": ""
+        },
+        {
+          "id": "V3-06",
+          "tipo": "param",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Ajustar CAPITAL_INI al equity real antes de arrancar",
+          "desc": "CAPITAL_INI=10_000 está hardcodeado. Es el capital de referencia para el cap de lote (LOT_CAP_X=5×). Si la cuenta tiene $15.000, el equity efectivo máximo queda en $50.000 en lugar de $75.000 — el cap es más restrictivo de lo necesario. Fix: o leer desde mt5.account_info().balance al arrancar, o documentar claramente que debe editarse antes de cada sesión.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "V3-OBS-001",
+          "origin": "py",
+          "color": "var(--shared)",
+          "accion": "si",
+          "timestamp": "2026-05-01T09:00:00Z",
+          "title": "FileHandler escribe en \"bot_canal_fib_v2.log\" — el bot v3 mezcla logs con la versión anterior",
+          "text": "Línea 163: logging.FileHandler(\"bot_canal_fib_v2.log\"). Si el bot v2 corrió en el mismo directorio, los logs de v3 se añaden al archivo equivocado y se hace imposible distinguir qué versión generó qué entrada. Fix inmediato: cambiar a \"bot_canal_fib_v3.log\".",
+          "context": "bot_canal_fib_v3.py · línea 163 · logging.FileHandler",
+          "comment": ""
+        },
+        {
+          "id": "V3-OBS-002",
+          "origin": "py",
+          "color": "var(--shared)",
+          "accion": "si",
+          "timestamp": "2026-05-01T09:00:00Z",
+          "title": "registrar_cierres() solo mira las últimas 2 horas — deals perdidos si el bot estuvo offline",
+          "text": "El lookback es timedelta(hours=2). Si el bot se reinicia después de una caída de más de 2 horas durante la sesión, los deals de SL/TP ocurridos en ese período no se registran en el CSV ni notifican al circuit breaker — el conteo de pérdidas consecutivas queda incompleto. Fix: expandir el lookback a la duración de la sesión (12h para metales, 8h para BTC) o persistir el estado del CB entre reinicios.",
+          "context": "bot_canal_fib_v3.py · registrar_cierres() · timedelta(hours=2)",
+          "comment": ""
+        },
+        {
+          "id": "V3-OBS-003",
+          "origin": "py",
+          "color": "var(--muted)",
+          "accion": "no",
+          "timestamp": "2026-05-01T09:00:00Z",
+          "title": "Circuit Breaker no escala — tras pausa de 4h el counter vuelve a 0 sin penalización adicional",
+          "text": "Después de una pausa CB nivel 1 (3 pérdidas consecutivas → 4h de pausa), consec_loss se resetea a 0. El bot puede volver a operar inmediatamente y repetir la misma racha de pérdidas sin escalado. Un CB escalado (ej. 2ª activación → 8h, 3ª → suspensión del día) daría más tiempo al mercado para normalizarse.",
+          "context": "bot_canal_fib_v3.py · CircuitBreaker · puede_operar() · línea 641–644",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "C-001",
+          "categoria": "bug",
+          "label": "🔴 Bug real · Línea 163",
+          "title": "FileHandler escribe en \"bot_canal_fib_v2.log\" — bot es v3",
+          "desc": "El logging escribe en el archivo de la versión anterior. Si v2 corrió en el mismo directorio, los logs se mezclan y es imposible distinguir qué versión generó qué entrada.",
+          "code": "# Actual — línea 163:\nlogging.FileHandler(\"bot_canal_fib_v2.log\", ...)\n\n# Fix:\nlogging.FileHandler(\"bot_canal_fib_v3.log\", ...)",
+          "comment": ""
+        },
+        {
+          "id": "C-002",
+          "categoria": "bug",
+          "label": "🔴 Bug real · place_orders()",
+          "title": "ORDER_FILLING_IOC en órdenes límite — fills parciales pueden cancelarse",
+          "desc": "IOC cancela el volumen no llenado inmediatamente. Para una SELL_LIMIT/BUY_LIMIT que activa en momentos de baja liquidez, una fill parcial haría que los lotes restantes se cancelen en lugar de quedar pendientes. ORDER_FILLING_RETURN devuelve el remanente al libro de órdenes — comportamiento correcto.",
+          "code": "# Actual:\n\"type_filling\": mt5.ORDER_FILLING_IOC,  # ❌\n\n# Fix:\n\"type_filling\": mt5.ORDER_FILLING_RETURN,  # ✓",
+          "comment": ""
+        },
+        {
+          "id": "C-003",
+          "categoria": "bug",
+          "label": "🔴 Bug real · manage_breakeven()",
+          "title": "Detecta TP1 ejecutado por AUSENCIA de orden — actúa si la orden fue cancelada manualmente",
+          "desc": "La lógica tp1_pending = any(... \"TP1\" in o.comment ...) asume que si no hay orden TP1 pendiente es porque se ejecutó. Si el usuario cancela la orden TP1 manualmente (o el broker la rechaza), el bot mueve el SL a breakeven sin que TP1 se haya ejecutado — protegiendo prematuramente con resultado negativo.",
+          "code": "# Fix: verificar deal real de TP1 en historial\ndesde = datetime.now(UTC) - timedelta(hours=8)\ndeals = mt5.history_deals_get(desde, datetime.now(UTC))\ntp1_ejecutado = any(\n    d.symbol == symbol and d.magic == MAGIC\n    and \"TP1\" in d.comment\n    for d in (deals or [])\n)",
+          "comment": ""
+        },
+        {
+          "id": "C-004",
+          "categoria": "bug",
+          "label": "🔴 Bug real · lot_tercio()",
+          "title": "3 × lot_tercio puede diferir de lot_total — riesgo real ≠ 2%",
+          "desc": "Al redondear lot_total/3 al step, la suma de los 3 tramos puede ser menor que lot_total. Con lot_total=0.04 y step=0.01: lot_1_3=0.01, se colocan 0.03 en total — se pierde el 25% del riesgo calculado. El 3er tramo debería compensar la diferencia.",
+          "code": "# Fix: ajustar el 3er tramo\nt1 = round(lot_total / 3 / step) * step\nt1 = max(info.volume_min, t1)\nt3 = max(info.volume_min,\n     round((lot_total - 2 * t1) / step) * step)\nreturn t1, t1, t3  # retornar los 3 tramos",
+          "comment": ""
+        },
+        {
+          "id": "C-005",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · get_costos()",
+          "title": "_costos_cache indefinido — spread obsoleto durante noticias macro",
+          "desc": "El spread se cachea al primer acceso y nunca se invalida. En XAUUSD el spread puede multiplicarse ×5–10 durante NFP, FOMC o CPI. Los niveles de entrada, SL y TP se calculan con un spread que puede ser 10× inferior al real, haciendo los TPs inalcanzables y el SL más ajustado de lo esperado.",
+          "code": "# Fix: expirar cache cada hora\n_costos_cache = {}   # {symbol: (spread, comm, timestamp)}\n\ndef get_costos(symbol):\n    cached = _costos_cache.get(symbol)\n    if cached and (datetime.now(UTC) - cached[2]).seconds < 3600:\n        return cached[0], cached[1]\n    # ... recalcular y guardar con timestamp",
+          "comment": ""
+        },
+        {
+          "id": "C-006",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · registrar_cierres()",
+          "title": "Lookback de 2h — deals perdidos si el bot estuvo offline más de 2 horas",
+          "desc": "Si el bot cae y se reinicia después de 2+ horas, los deals de SL/TP ocurridos en ese período no se detectan. El circuit breaker no los computa — el conteo de pérdidas consecutivas queda incompleto y el CB puede no dispararse cuando debería.",
+          "code": "# Fix: lookback dinámico desde último deal conocido\ndesde = datetime.utcfromtimestamp(_last_deal_id_time)\n# o usar el inicio de la sesión actual como mínimo\ndesde = max(inicio_sesion, datetime.now(UTC) - timedelta(hours=12))",
+          "comment": ""
+        },
+        {
+          "id": "C-007",
+          "categoria": "riesgo",
+          "label": "🟠 Riesgo · place_orders()",
+          "title": "Órdenes GTC no se cancelan al fin de sesión — pueden ejecutarse fuera de horario",
+          "desc": "ORDER_TIME_GTC mantiene las órdenes activas indefinidamente. Una SELL_LIMIT colocada a las 11:50 UTC en XAUUSD (sesión hasta 12:00) puede ejecutarse a las 13:00 UTC fuera del horario operativo definido en SESSION_HOURS. El bot no tiene lógica de limpieza de órdenes expiradas.",
+          "code": "# Fix: cancelar órdenes pendientes fuera de sesión\nfor sym in available:\n    hora = datetime.now(UTC).hour\n    if hora not in SESSION_HOURS.get(sym, range(24)):\n        for o in (mt5.orders_get(symbol=sym) or []):\n            if o.magic == MAGIC:\n                mt5.order_send({\"action\": mt5.TRADE_ACTION_REMOVE, \"order\": o.ticket})",
+          "comment": ""
+        },
+        {
+          "id": "C-008",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia · CircuitBreaker",
+          "title": "CB sin escalado — tras pausa el counter vuelve a 0 sin penalización adicional",
+          "desc": "Después de cada pausa CB nivel 1, consec_loss = 0 y la pausa se borra. El bot puede volver a acumular 3 pérdidas consecutivas e inmediatamente recibir otra pausa idéntica. Un CB escalado (2ª activación → 8h, 3ª → suspensión del día) protege mejor en mercados que se deterioran gradualmente.",
+          "code": "# Fix: contar activaciones del CB\nself.cb1_count = 0\n\n# En registrar_resultado(), al disparar CB1:\nself.cb1_count += 1\nhoras_pausa = CB_PAUSA_HORAS * self.cb1_count\nself.pausa_hasta = datetime.now(UTC) + timedelta(hours=horas_pausa)",
+          "comment": ""
+        },
+        {
+          "id": "C-009",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia · run()",
+          "title": "Sin modo demo — el script arranca en cuenta real sin confirmación",
+          "desc": "No existe flag --demo ni pregunta de confirmación al arrancar. Un error al lanzar el script en la ventana de terminal equivocada ejecuta órdenes reales. Mismo patrón que FILE-001 (R-04).",
+          "code": "# Fix: argumento CLI\nimport argparse\np = argparse.ArgumentParser()\np.add_argument(\"--live\", action=\"store_true\",\n               help=\"Operar en cuenta real\")\nargs = p.parse_args()\nif not args.live:\n    log.info(\"Modo demo — sin órdenes reales\"); ...",
+          "comment": ""
+        },
+        {
+          "id": "C-010",
+          "categoria": "ausencia",
+          "label": "🟡 Ausencia · CircuitBreaker",
+          "title": "Estado del CB no persiste entre reinicios — pérdidas previas no se recuperan",
+          "desc": "Si el bot se reinicia, consec_loss = 0 y equity_dia = equity_actual. Un reinicio tras 2 pérdidas consecutivas borra el historial del CB y permite operar como si fuera el inicio del día. Persistir el estado en un JSON pequeño al cierre resolvería esto.",
+          "code": "# Fix: guardar/cargar estado del CB\nimport json\nCB_STATE_FILE = \"cb_state.json\"\n\n# Al cerrar (KeyboardInterrupt):\njson.dump({\"consec_loss\": cb.consec_loss,\n           \"equity_dia\": cb.equity_dia}, open(CB_STATE_FILE,\"w\"))\n# Al iniciar: cargar si existe",
+          "comment": ""
+        },
+        {
+          "id": "C-011",
+          "categoria": "mejora",
+          "label": "🔵 Mejora · run()",
+          "title": "CAPITAL_INI hardcodeado — leer del equity real al arrancar",
+          "desc": "CAPITAL_INI=10_000 es el capital base para el cap de lote. Si la cuenta tiene un capital distinto al hardcodeado, el equity efectivo máximo (CAPITAL_INI × 5) es incorrecto — demasiado bajo o demasiado alto. La solución más simple: leer el balance al iniciar y usarlo como referencia.",
+          "code": "# Fix: en run(), después de connect()\nacct = mt5.account_info()\nCAPITAL_INI = acct.balance  # referencia real\nlog.info(f\"Capital base: ${CAPITAL_INI:,.0f} | Cap: ${CAPITAL_INI*LOT_CAP_X:,.0f}\")",
+          "comment": ""
+        }
+      ]
+    }
+  ]
+}
