@@ -1543,6 +1543,43 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+// Inyectar referencia de archivo en cada card de M2 y M4
+window.addEventListener('DOMContentLoaded', function() {
+  function addFileSrc(listSel, cardSel, insertFn) {
+    const list = document.querySelector(listSel);
+    if (!list) return;
+    let fname = null;
+    Array.from(list.children).forEach(el => {
+      if (el.classList.contains('file-section-header')) {
+        fname = el.querySelector('.fsh-name')?.textContent?.trim() || null;
+      } else if (el.matches && el.matches(cardSel) && fname && !el.querySelector('.file-src-badge')) {
+        insertFn(el, fname);
+      }
+    });
+  }
+  // M2: línea de archivo entre rec-header y rec-desc
+  addFileSrc('#rec-list', '.rec-card', (card, fname) => {
+    const hdr = card.querySelector('.rec-header');
+    if (!hdr) return;
+    const d = document.createElement('div');
+    d.className = 'file-src-badge obs-context';
+    d.style.padding = '2px 0 6px';
+    d.textContent = '📄 ' + fname;
+    hdr.insertAdjacentElement('afterend', d);
+  });
+  // M4: línea de archivo al final de arch-header
+  addFileSrc('.arch-list', '.arch-card', (card, fname) => {
+    const hdr = card.querySelector('.arch-header');
+    if (!hdr) return;
+    if (hdr.querySelector('.file-src-badge')) return;
+    const d = document.createElement('div');
+    d.className = 'file-src-badge obs-context';
+    d.style.marginTop = '3px';
+    d.textContent = '📄 ' + fname;
+    hdr.appendChild(d);
+  });
+});
+
 // Activar tab y scroll desde URL hash (ej: feedback.html#arch-bugs)
 window.addEventListener('DOMContentLoaded', function() {
   _calcObsStats('all');   // poblar contador al cargar
