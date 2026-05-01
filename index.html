@@ -441,6 +441,7 @@ a.tag:hover { opacity: 0.75; }
 .tag-pending  { color: var(--shared); border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
 .tag-revision { color: #b45309;       border-color: rgba(234,88,12,0.5);   background: rgba(234,88,12,0.10); font-weight: 700; }
 .tag-final    { color: var(--nico);   border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.08); }
+.claude-timer { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 8px; }
 
 .revision-alert-row {
   margin-top: 10px;
@@ -733,6 +734,29 @@ function _m4Tags(group) {
   return tags;
 }
 
+var _autoRefreshInterval = null;
+
+function _claudeElapsed(badge) {
+  var key = 'tb_cw_' + badge;
+  var saved = localStorage.getItem(key);
+  if (!saved) return '';
+  var start = parseInt(saved, 10);
+  if (isNaN(start)) return '';
+  var secs = Math.floor((Date.now() - start) / 1000);
+  if (secs < 0) secs = 0;
+  var m = Math.floor(secs / 60), s = secs % 60;
+  return m > 0 ? m + 'm ' + s + 's' : s + 's';
+}
+
+function _claudeTimerStart(badge) {
+  var key = 'tb_cw_' + badge;
+  if (!localStorage.getItem(key)) localStorage.setItem(key, Date.now().toString());
+}
+
+function _claudeTimerClear(badge) {
+  localStorage.removeItem('tb_cw_' + badge);
+}
+
 function renderFileList(data) {
   var container = document.getElementById('files-list-container');
   var groups = (data.groups || []).slice().sort(function(a, b) {
@@ -742,6 +766,23 @@ function renderFileList(data) {
   // Update stat chip
   var active = groups.filter(function(g) { return g.status === 'activo'; }).length;
   document.getElementById('stat-grupos').textContent = active;
+
+  // Manage timers and auto-refresh
+  var waitingStatuses = ['pending', 'pendiente_final'];
+  groups.forEach(function(g) {
+    if (waitingStatuses.indexOf(g.status) !== -1) {
+      _claudeTimerStart(g.badge);
+    } else {
+      _claudeTimerClear(g.badge);
+    }
+  });
+  var anyWaiting = groups.some(function(g) { return waitingStatuses.indexOf(g.status) !== -1; });
+  if (anyWaiting && !_autoRefreshInterval) {
+    _autoRefreshInterval = setInterval(loadFileList, 10000);
+  } else if (!anyWaiting && _autoRefreshInterval) {
+    clearInterval(_autoRefreshInterval);
+    _autoRefreshInterval = null;
+  }
 
   if (groups.length === 0) {
     container.innerHTML =
@@ -758,7 +799,9 @@ function renderFileList(data) {
     var icon = _ftypeIcon(g.ftype);
     var statusTag, dateLabel, revisionAlert = '';
     if (g.status === 'pending') {
-      statusTag  = '<span class="tag tag-pending">⏳ Pendiente primer análisis Claude</span>';
+      var elapsed = _claudeElapsed(g.badge);
+      var timerStr = elapsed ? ' <span class="claude-timer">⏱ ' + elapsed + '</span>' : '';
+      statusTag  = '<span class="tag tag-pending">⏳ Pendiente primer análisis Claude</span>' + timerStr;
       dateLabel  = 'Subido';
     } else if (g.status === 'en_revision') {
       statusTag  = '<span class="tag tag-revision">⚠ Pendiente primera revisión Trader</span>';
@@ -769,7 +812,9 @@ function renderFileList(data) {
         '<a href="feedback.html">Ir al análisis →</a>' +
         '</div>';
     } else if (g.status === 'pendiente_final') {
-      statusTag  = '<span class="tag tag-final">🔄 Pendiente de feedback final Claude</span>';
+      var elapsed2 = _claudeElapsed(g.badge);
+      var timerStr2 = elapsed2 ? ' <span class="claude-timer">⏱ ' + elapsed2 + '</span>' : '';
+      statusTag  = '<span class="tag tag-final">🔄 Pendiente de feedback final Claude</span>' + timerStr2;
       dateLabel  = 'Analizado';
     } else {
       statusTag  = '<span class="tag tag-trader">✓ Ciclo completo</span>';
