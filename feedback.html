@@ -318,8 +318,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
   <div class="file-filter-bar" id="file-filter-bar">
     <span class="file-filter-label">VER:</span>
-    <button class="file-filter-btn active" id="ff-all" onclick="toggleFileFilter('all','all',this)">Todos</button>
-    <span class="file-filter-hint">selección múltiple</span>
+    <span class="file-filter-hint">selecciona un archivo</span>
   </div>
 
   <div class="tabs">
@@ -720,23 +719,11 @@ function _applyFileFilter() {
 }
 
 function toggleFileFilter(fshClass, fileId, btn) {
-  var allBtn = document.getElementById('ff-all');
-  if (fileId === 'all') {
-    activeFiles.clear();
-    document.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(function(b) { b.classList.remove('active'); });
-    allBtn.classList.add('active');
-    _applyFileFilter();
-    return;
-  }
-  allBtn.classList.remove('active');
-  if (activeFiles.has(fshClass)) {
-    activeFiles.delete(fshClass);
-    btn.classList.remove('active');
-  } else {
-    activeFiles.add(fshClass);
-    btn.classList.add('active');
-  }
-  if (activeFiles.size === 0) allBtn.classList.add('active');
+  // Radio behavior: only one file at a time
+  activeFiles.clear();
+  document.querySelectorAll('.file-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  activeFiles.add(fshClass);
+  btn.classList.add('active');
   _applyFileFilter();
 }
 
@@ -931,17 +918,9 @@ function _initRevisionBar() {
   if (!window._renderData) return;
   var revGroups = window._renderData.groups.filter(function(g) { return g.status === 'en_revision'; });
 
-  // Top banner
+  // Top banner — never shown in revision step
   var topBanner = document.getElementById('revision-top-banner');
-  var topBadges = document.getElementById('revision-top-badges');
-  if (revGroups.length > 0) {
-    topBanner.style.display = 'block';
-    topBadges.innerHTML = revGroups.map(function(g) {
-      return '<span class="revision-top-banner-badge">' + g.badge + ' · ' + g.name + '</span>';
-    }).join('');
-  } else {
-    topBanner.style.display = 'none';
-  }
+  if (topBanner) topBanner.style.display = 'none';
 
   if (revGroups.length === 0) return;
 
@@ -951,7 +930,7 @@ function _initRevisionBar() {
   var btnsEl = document.getElementById('revision-btns');
   bar.style.display = 'flex';
   btnsEl.innerHTML = '';
-  infoEl.textContent = 'Pendiente primera revisión Trader — revisá cada módulo, escribí tus correcciones y envialas. El feedback final Claude no se genera sin tu revisión.';
+  infoEl.textContent = 'Revisa el feedback recibido en cada uno de los 4 módulos. Agrega tus comentarios y correcciones y presiona enviar cuando hayas terminado';
   revGroups.forEach(function(g) {
     var btn = document.createElement('button');
     btn.className = 'btn-submit-review';
@@ -983,6 +962,9 @@ function _buildFileFilterBtns() {
     fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(fshClass, fileId);
     filterBar.insertBefore(fb, hint || null);
   });
+  // Auto-select first file
+  var firstBtn = filterBar.querySelector('.file-filter-btn');
+  if (firstBtn) firstBtn.click();
 }
 
 function _countArchCards() {
