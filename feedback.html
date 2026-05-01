@@ -109,6 +109,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .fsh-csv {border-left:3px solid rgba(5,150,105,0.5);}
 .fsh-json{border-left:3px solid rgba(37,99,235,0.5);}
 .fsh-log {border-left:3px solid rgba(124,58,237,0.5);}
+.fsh-fib {border-left:3px solid rgba(236,72,153,0.5);}
 
 /* ── MODULE 3: Live observations ── */
 .obs-list{display:flex;flex-direction:column;gap:12px;}
@@ -302,6 +303,178 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
       <div class="rec-response-text"></div>
     </div>
 
+    <!-- ── FILE-002 · Canal Fibonacci · 2026-04-30 ── -->
+    <div class="file-section-header fsh-fib">
+      <div class="fsh-icon ftype-csv">📈</div>
+      <span class="fsh-name">Canal Fibonacci</span>
+      <span class="fsh-badge">FILE-002</span>
+      <div class="fsh-line"></div>
+      <span class="fsh-count">5 archivos · XAUUSD / XAGUSD / BTCUSD · 180 días · M3</span>
+    </div>
+
+    <div class="trigger-banner">
+      <span class="trigger-banner-label">Archivos</span>
+      <div class="trigger-list">
+        <div class="trigger-chip"><span class="tc-type tc-py">PY</span> backtest_canal_fib.py — motor de backtest</div>
+        <div class="trigger-chip"><span class="tc-type tc-html">HTML</span> canal_fib_backtest.html — reporte generado</div>
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_XAUUSD.csv — 173 trades</div>
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_XAGUSD.csv — 162 trades</div>
+        <div class="trigger-chip"><span class="tc-type tc-csv">CSV</span> canal_fib_BTCUSD.csv — 224 trades</div>
+      </div>
+    </div>
+    <div class="last-updated has-data">
+      <span class="lu-label">Último análisis:</span>
+      <span>2026-04-30 · backtest_canal_fib.py · Canal Fib 20 barras · M3 · 180 días · 3 símbolos · 559 trades totales</span>
+    </div>
+
+    <div class="strategy-selector" style="margin-top:16px;">
+      <button class="strat-btn active" onclick="showQuality('xauusd',this)">XAUUSD (Oro)</button>
+      <button class="strat-btn" onclick="showQuality('xagusd',this)">XAGUSD (Plata)</button>
+      <button class="strat-btn" onclick="showQuality('btcusd',this)">BTCUSD (Bitcoin)</button>
+    </div>
+
+    <!-- Métricas XAUUSD -->
+    <div id="quality-xauusd" class="quality-grid">
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">173</div>
+        <div class="qm-target">180 días · M3 · Gold</div>
+        <div class="qm-comment">Alta frecuencia en M3. Volumen inflado por el rally de oro Nov 2025 – Abr 2026. Condición de mercado no representativa de todos los regímenes.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">+17.863%</div>
+        <div class="qm-target">$10.000 → $1.796.328</div>
+        <div class="qm-comment">Retorno extraordinario en período de tendencia fuerte. Señal de sobreajuste — los niveles Fibonacci largos capturan casi todo el rally.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lot cap alcanzado</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">100.0 lotes</div>
+        <div class="qm-target">Desde: Abr 2026</div>
+        <div class="qm-comment">Cuando lot_max se alcanza, las pérdidas pueden superar $30k/trade. El tramo cubierto por lot_max no es representativo del riesgo real del 2%.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">0 días</div>
+        <div class="qm-target">Target: ≥60 días OOS</div>
+        <div class="qm-comment">Todo el período (180 días) es in-sample. Sin datos fuera de muestra no se puede estimar la robustez del sistema.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Slippage modelado</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">No incluido</div>
+        <div class="qm-target">M3 = alta sensibilidad</div>
+        <div class="qm-comment">En M3 el slippage puede representar 20–40% del TP1. El backtest asume ejecución exacta al precio de señal.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">Ninguno</div>
+        <div class="qm-target">Canal: barras [i-20, i-1]</div>
+        <div class="qm-comment">El canal Fibonacci usa solo las 20 barras anteriores a la señal. La metodología es correcta en este aspecto.</div>
+      </div>
+    </div>
+
+    <!-- Métricas XAGUSD -->
+    <div id="quality-xagusd" class="quality-grid" style="display:none;">
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">162</div>
+        <div class="qm-target">180 días · M3 · Silver</div>
+        <div class="qm-comment">La plata tuvo tendencia alcista fuerte en el período. Mayoría de trades LONG, capturando el movimiento dominante.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">+7.400%</div>
+        <div class="qm-target">$10.000 → $749.996</div>
+        <div class="qm-comment">Retorno extremo asociado al capital compuesto y a la tendencia unidireccional. No generalizable a mercados laterales o bajistas.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lot cap alcanzado</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">100.0 lotes</div>
+        <div class="qm-target">Período avanzado</div>
+        <div class="qm-comment">Mismo riesgo que XAUUSD: una vez alcanzado lot_max, las pérdidas son desproporcionadas al capital teórico del 2%.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">0 días</div>
+        <div class="qm-target">Target: ≥60 días OOS</div>
+        <div class="qm-comment">Sin datos fuera de muestra. El sistema no ha sido probado en condiciones de mercado lateral o bajista en plata.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Slippage modelado</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">No incluido</div>
+        <div class="qm-target">XAGUSD más ilíquido</div>
+        <div class="qm-comment">La plata tiene menor liquidez que el oro en lotes grandes. El impacto del slippage puede ser más significativo que en XAUUSD.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">Ninguno</div>
+        <div class="qm-target">Canal: barras [i-20, i-1]</div>
+        <div class="qm-comment">Canal calculado solo con barras previas. La metodología es correcta en este aspecto.</div>
+      </div>
+    </div>
+
+    <!-- Métricas BTCUSD -->
+    <div id="quality-btcusd" class="quality-grid" style="display:none;">
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Trades totales</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">224</div>
+        <div class="qm-target">Sesión: 14:00–22:00 UTC</div>
+        <div class="qm-comment">Mayor número de trades — BTC opera solo 8h/día en el backtest. Alta frecuencia en M3 dentro de esa ventana.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Retorno total</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">+2.181%</div>
+        <div class="qm-target">$10.000 → $228.107</div>
+        <div class="qm-comment">Retorno alto pero más moderado que metales. BTC tuvo mayor volatilidad y pérdidas más frecuentes en el período.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lot cap BTC</span><div class="qm-light light-yellow"></div></div>
+        <div class="qm-val">10.0 lotes máx</div>
+        <div class="qm-target">vs. 100.0 en metales</div>
+        <div class="qm-comment">El contrato BTC es mucho mayor. El cap de 10.0 se alcanza antes, pero cada pérdida en esa zona puede representar miles de USD.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Validación OOS</span><div class="qm-light light-red"></div></div>
+        <div class="qm-val">0 días</div>
+        <div class="qm-target">Target: ≥60 días OOS</div>
+        <div class="qm-comment">Sin out-of-sample. La restricción de sesión 14:00–22:00 UTC tampoco ha sido validada fuera del período analizado.</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Filtro sesión</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">14:00–22:00 UTC</div>
+        <div class="qm-target">Ventana de liquidez BTC</div>
+        <div class="qm-comment">La restricción de horario es correcta — coincide con la mayor liquidez de BTC (mercado americano activo).</div>
+      </div>
+      <div class="qm-card">
+        <div class="qm-header"><span class="qm-name">Lookahead bias</span><div class="qm-light light-green"></div></div>
+        <div class="qm-val">Ninguno</div>
+        <div class="qm-target">Canal: barras [i-20, i-1]</div>
+        <div class="qm-comment">El canal se calcula correctamente con barras históricas. Sin contaminación de datos futuros.</div>
+      </div>
+    </div>
+
+    <div class="overall-score" style="margin-top:20px;">
+      <div class="score-circle" style="border-color:var(--shared);color:var(--shared);background:rgba(217,119,6,0.08);">4.2</div>
+      <div>
+        <div class="score-text-title">Calidad metodológica Canal Fibonacci: Regular</div>
+        <div class="score-text-sub">
+          ✅ Sin lookahead bias — canal calculado con barras [i-20, i-1]<br>
+          ✅ Costos reales IC Markets Raw incluidos (spread + comisión por símbolo)<br>
+          ✅ Sesión BTC correctamente restringida a 14:00–22:00 UTC<br>
+          🟡 Período 180 días: un solo régimen (tendencia alcista fuerte en metales y BTC)<br>
+          🟡 Sin slippage — crítico en M3 donde cada pip pesa más en TP1<br>
+          🔴 Capital compuesto → lot_max alcanzado = riesgo no controlado en período tardío<br>
+          🔴 Sin validación out-of-sample — resultados no son generalizables<br>
+          🔴 Retornos +2.000–17.000% son señal de sobreajuste al régimen del período
+        </div>
+      </div>
+    </div>
+
+    <div class="rec-response" style="margin-top:20px;">
+      <div class="rec-response-label">🟢 Respuesta del trader — Canal Fibonacci</div>
+      <div class="rec-response-text"></div>
+    </div>
+
   </div>
 
   <!-- ══════════════════════════════════════ -->
@@ -409,6 +582,100 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
           </div>
         </div>
         <div class="rec-desc">_pos_entry_time es un dict en memoria que se pierde al reiniciar. Si el bot reinicia con posiciones abiertas en MT5, esas posiciones no tienen tiempo de entrada registrado y nunca activan el timeout de 2h — pueden quedar abiertas indefinidamente. Fix: al iniciar, cargar las posiciones existentes directamente desde p.time de MT5.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <!-- ── FILE-002 · backtest_canal_fib.py · 2026-04-30 ── -->
+      <div class="file-section-header fsh-fib">
+        <div class="fsh-icon ftype-csv">📈</div>
+        <span class="fsh-name">Canal Fibonacci</span>
+        <span class="fsh-badge">FILE-002</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">5 recomendaciones</span>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">F-01</span>
+          <div class="rec-title">Corregir el template HTML: muestra "2.5%" pero RISK_PCT es 2%</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-media">Media prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">El template HTML generado por backtest_canal_fib.py imprime "Riesgo 2.5% compuesto" pero RISK_PCT=0.02 en el código. Dato falso en el reporte — confunde al leer el HTML generado. Fix de una línea en la sección de templates del script.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">F-02</span>
+          <div class="rec-title">Limitar el capital compuesto o implementar un tope de equity</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Arquitectura</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">El capital compuesto hace que el lotaje crezca indefinidamente hasta alcanzar volume_max (100.0 para metales, 10.0 para BTC). Una vez en el cap, cada pérdida puede representar $30k+ — ya no es el 2% prometido del capital real. Para live: implementar un tope de equity a partir del cual el lotaje deja de escalar (ej. capital_base fijo al inicio de cada mes).</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">F-03</span>
+          <div class="rec-title">Agregar período de validación out-of-sample antes de operar en vivo</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Metodología</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">El 100% del backtest (180 días) es in-sample — los parámetros del canal Fibonacci (20 barras, niveles 1.191, 0.809, etc.) fueron elegidos sobre el mismo período que se analiza. Mínimo recomendado: reservar los últimos 60 días como OOS antes de cualquier decisión de operar en vivo. Sin OOS, los resultados no son estadísticamente válidos.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">F-04</span>
+          <div class="rec-title">Registrar y cerrar los trades OPEN al final del backtest</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-logic">Lógica del bot</span>
+            <span class="badge badge-prio-media">Media prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">El script salta los trades OPEN (posiciones que no cerraron dentro de los 200 barras de simulación) sin registrarlos ni cerrarlos al precio final. El capital final y el número de trades están subestimados — no se sabe cuántos trades quedaron abiertos ni en qué estado. Fix: cerrar al precio de la última barra y registrar el resultado.</div>
+        <div class="rec-response">
+          <div class="rec-response-label">🟢 Respuesta del trader</div>
+          <div class="rec-response-text">—</div>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <span class="rec-num">F-05</span>
+          <div class="rec-title">Implementar max_positions antes de cualquier deployment en vivo</div>
+          <div class="rec-badges">
+            <span class="badge badge-tipo-arch">Arquitectura</span>
+            <span class="badge badge-prio-alta">Alta prioridad</span>
+            <span class="badge badge-estado-pend">Pendiente</span>
+          </div>
+        </div>
+        <div class="rec-desc">El backtest no tiene límite de posiciones simultáneas — si los tres símbolos dan señal al mismo tiempo, el bot abre tres trades en paralelo. En vivo esto puede triplicar la exposición real. El bot v2 sí tiene max_positions; este script necesita la misma lógica para simular condiciones reales de operación.</div>
         <div class="rec-response">
           <div class="rec-response-label">🟢 Respuesta del trader</div>
           <div class="rec-response-text">—</div>
@@ -526,6 +793,79 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
           <div class="obs-meta">
             <span class="obs-tag obs-accion-si">Requiere acción</span>
             <span class="obs-context">obv_macd_adx_bot_final_v2.py · línea 205</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FILE-002 · Canal Fibonacci · 2026-04-30 ── -->
+      <div class="file-section-header fsh-fib">
+        <div class="fsh-icon ftype-csv">📈</div>
+        <span class="fsh-name">Canal Fibonacci</span>
+        <span class="fsh-badge">FILE-002</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">4 observaciones · 3 CSV + 1 PY</span>
+      </div>
+
+      <!-- FIB-OBS-001 · 2026-04-30 · CSV -->
+      <div class="obs-card" style="--obs-color:var(--gate)" data-origin="csv" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-30<br>21:00</div>
+          <div class="obs-source-badge src-csv">CSV</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">XAUUSD — lot_max 100.0 alcanzado en Abr 2026 — pérdidas de $30k+ por trade</div>
+          <div class="obs-text">Los CSVs de XAUUSD muestran que el lotaje llegó a 100.0 desde aproximadamente Abril 2026. En ese tramo las pérdidas individuales superan los $30.000 USD por trade — no corresponden al 2% de riesgo configurado sino a un riesgo ilimitado respecto al capital teórico. El capital compuesto sin tope de equity es el origen del problema.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">canal_fib_XAUUSD.csv · columna lot_size · tramo Abr 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIB-OBS-002 · 2026-04-30 · CSV -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="csv" data-accion="no">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-30<br>21:00</div>
+          <div class="obs-source-badge src-csv">CSV</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">Los tres símbolos operaron en tendencia fuerte alcista — sesgo de régimen de mercado</div>
+          <div class="obs-text">El período Nov 2025 – Abr 2026 fue de rally sostenido en XAUUSD, XAGUSD y BTCUSD. La mayoría de trades en los tres CSV son LONG y ganadores. El canal Fibonacci en tendencia funciona bien por diseño — el sistema no ha sido probado en mercado lateral o bajista. Los retornos (+7.000% a +17.000%) reflejan el régimen favorable, no la robustez del sistema.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-no">Solo observación</span>
+            <span class="obs-context">canal_fib_XAUUSD.csv + canal_fib_XAGUSD.csv + canal_fib_BTCUSD.csv</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIB-OBS-003 · 2026-04-30 · CSV -->
+      <div class="obs-card" style="--obs-color:var(--muted)" data-origin="csv" data-accion="no">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-30<br>21:00</div>
+          <div class="obs-source-badge src-csv">CSV</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">BTCUSD muestra mayor frecuencia de pérdidas consecutivas que los metales</div>
+          <div class="obs-text">El CSV de BTCUSD (224 trades) tiene clusters de pérdidas más frecuentes que XAUUSD y XAGUSD. Esto es consistente con la mayor volatilidad de BTC en M3 — los niveles Fibonacci del canal de 20 barras son más frecuentemente quebrados por el ruido del precio. Considerar canal más largo (30–40 barras) o timeframe superior para BTC.</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-no">Solo observación</span>
+            <span class="obs-context">canal_fib_BTCUSD.csv · comparación vs. XAUUSD / XAGUSD</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIB-OBS-004 · 2026-04-30 · PY -->
+      <div class="obs-card" style="--obs-color:var(--shared)" data-origin="py" data-accion="si">
+        <div class="obs-date-col">
+          <div class="obs-timestamp">2026-04-30<br>21:00</div>
+          <div class="obs-source-badge src-py">PY</div>
+        </div>
+        <div class="obs-body">
+          <div class="obs-title">Canal de 20 barras M3 = ventana de 60 minutos — muy corta para señales Fibonacci robustas</div>
+          <div class="obs-text">CANAL_LENGTH=20 en M3 significa que el máximo y mínimo del canal se calculan sobre los últimos 60 minutos. Los niveles Fibonacci derivados de una ventana tan corta son altamente sensibles al ruido intradiario. En señales clásicas de Fibonacci, el canal debería representar al menos una sesión completa o un swing de mayor orden (H1/H4).</div>
+          <div class="obs-meta">
+            <span class="obs-tag obs-accion-si">Requiere acción</span>
+            <span class="obs-context">backtest_canal_fib.py · CANAL_LENGTH=20 · TIMEFRAME=M3</span>
           </div>
         </div>
       </div>
@@ -749,6 +1089,116 @@ if n_pos >= CONFIG["max_positions"]:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=max_pos")<br>
 if sym in syms_en_pos:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;log.info(f"SIGNAL_REJECTED {sym} reason=already_open")
+        </div>
+      </div>
+
+      <!-- ── FILE-002 · backtest_canal_fib.py · 2026-04-30 ── -->
+      <div class="file-section-header fsh-fib">
+        <div class="fsh-icon ftype-csv">📈</div>
+        <span class="fsh-name">backtest_canal_fib.py</span>
+        <span class="fsh-badge">FILE-002</span>
+        <div class="fsh-line"></div>
+        <span class="fsh-count">6 hallazgos · 2 bugs · 2 riesgos · 1 ausencia · 1 mejora</span>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · Template HTML</span>
+          <span class="arch-title">Template muestra "Riesgo 2.5% compuesto" pero RISK_PCT=0.02 (2%)</span>
+        </div>
+        <div class="arch-desc">El string del template HTML generado por el script imprime "2.5%" pero <code>RISK_PCT = 0.02</code> en la configuración. El reporte generado muestra datos falsos desde la primera línea del resumen.</div>
+        <div class="arch-code">
+# En la sección de template HTML del script:<br>
+"Riesgo 2.5% compuesto"  # ← incorrecto ❌<br>
+<br>
+# Fix:<br>
+f"Riesgo {RISK_PCT*100:.1f}% compuesto"  # ← dinámico ✓
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🔴 Bug real · backtest()</span>
+          <span class="arch-title">Trades OPEN al final del período no se registran — capital final subestimado</span>
+        </div>
+        <div class="arch-desc">Cuando una posición no cierra dentro de las 200 barras de simulación, el script la descarta silenciosamente con <code>resultado = "OPEN"</code> sin registrar el trade ni ajustar el capital. El capital final y el número total de trades están subestimados en una cantidad desconocida.</div>
+        <div class="arch-code">
+# Actual — trades OPEN simplemente saltados:<br>
+resultado = "OPEN"<br>
+# … no se agregan al CSV ni se cierra la posición<br>
+<br>
+# Fix: cerrar al precio de la última barra<br>
+precio_cierre = bars['close'].iloc[-1]<br>
+pnl = calcular_pnl(entrada, precio_cierre, direccion, lots)<br>
+registrar_trade(resultado="OPEN_CLOSE", pnl=pnl, ...)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · calc_lot()</span>
+          <span class="arch-title">Capital compuesto sin tope — lot_max alcanzado = riesgo ilimitado respecto al 2%</span>
+        </div>
+        <div class="arch-desc">El lot sizing crece con el capital compuesto hasta <code>volume_max</code>. Una vez en el cap (100.0 para metales, 10.0 para BTC), las pérdidas por trade superan el 2% prometido — en XAUUSD Abril 2026 llegan a $30k+. El sistema pierde su garantía de riesgo controlado.</div>
+        <div class="arch-code">
+# Fix: fijar capital_base al inicio o por período<br>
+CAPITAL_BASE = capital_ini  # no crece con las ganancias<br>
+# Alternativamente: tope de equity<br>
+capital_efectivo = min(capital_actual, CAPITAL_BASE * 3)<br>
+lots = calc_lot(capital_efectivo, risk_pct, ...)
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-riesgo">🟠 Riesgo · backtest()</span>
+          <span class="arch-title">Sin max_positions — tres símbolos pueden abrir simultáneamente triplicando la exposición</span>
+        </div>
+        <div class="arch-desc">El backtest no limita el número de posiciones simultáneas. Si XAUUSD, XAGUSD y BTCUSD dan señal en la misma barra M3, los tres trades se abren en paralelo. En vivo esto multiplica la exposición real por 3, superando cualquier límite de riesgo diario.</div>
+        <div class="arch-code">
+# Fix: agregar contador de posiciones abiertas<br>
+pos_abiertas = 0<br>
+MAX_POS = 2  # máximo 2 símbolos simultáneos<br>
+<br>
+for sym in SYMBOLS:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if pos_abiertas >= MAX_POS:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break<br>
+&nbsp;&nbsp;&nbsp;&nbsp;# … abrir trade y pos_abiertas += 1
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-deuda">🟡 Ausencia · Metodología</span>
+          <span class="arch-title">Sin validación out-of-sample — todo el período (180 días) es in-sample</span>
+        </div>
+        <div class="arch-desc">Los parámetros del sistema (CANAL_LENGTH=20, niveles Fibonacci, RISK_PCT, TPs) se evalúan sobre el mismo período de 180 días sin ningún dato reservado para validación. Imposible estimar la robustez real del sistema fuera del período conocido.</div>
+        <div class="arch-code">
+# Estructura mínima de validación:<br>
+PERIODO_TOTAL = 180  # días<br>
+PERIODO_IS = 120     # in-sample (entrenamiento)<br>
+PERIODO_OOS = 60     # out-of-sample (validación)<br>
+<br>
+# Correr backtest en IS, validar en OOS<br>
+# Sin ajustar parámetros al ver el OOS
+        </div>
+      </div>
+
+      <div class="arch-card" data-file="FILE-002">
+        <div class="arch-header">
+          <span class="arch-category arch-cat-mejora">🔵 Mejora · configuración</span>
+          <span class="arch-title">Session hours hardcodeado por símbolo — inflexible para cambios de timezone del broker</span>
+        </div>
+        <div class="arch-desc">Las horas de sesión de BTCUSD (14:00–22:00 UTC) están hardcodeadas en un dict dentro del script. Si IC Markets cambia el horario de verano/invierno o el servidor, hay que editar el código. La configuración de sesión debería estar en CONFIG o en un archivo externo.</div>
+        <div class="arch-code">
+# Actual — hardcodeado:<br>
+SESSION_HOURS = {"BTCUSD": (14, 22)}<br>
+<br>
+# Mejor: en CONFIG<br>
+CONFIG = {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"session_hours": {"BTCUSD": (14, 22)},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;# fácil de ajustar sin tocar la lógica<br>
+}
         </div>
       </div>
 
@@ -1039,7 +1489,7 @@ function guardarComentario(btn) {
 function _initResponseBlock(block, key) {
   const el = block.querySelector('.rec-response-text');
   if (!el) return;
-  el.dataset.commentKey = key;
+  if (!el.dataset.commentKey) el.dataset.commentKey = key;
   el.setAttribute('contenteditable', 'true');
   const saved = localStorage.getItem('trader_comment_' + key);
   if (saved !== null && saved !== '') el.textContent = saved;
@@ -1064,8 +1514,8 @@ function _makeResponseBlock(key) {
 // Trader comments — M1 a M4
 window.addEventListener('DOMContentLoaded', function() {
   // M1: bloque estático de notas generales
-  document.querySelectorAll('#tab-backtest .rec-response').forEach(block => {
-    _initResponseBlock(block, 'M1-notas');
+  document.querySelectorAll('#tab-backtest .rec-response').forEach((block, i) => {
+    _initResponseBlock(block, i === 0 ? 'M1-notas' : 'M1-notas-fib');
   });
   // M2: rec-cards (bloques ya en HTML)
   document.querySelectorAll('#rec-list .rec-card').forEach(card => {
