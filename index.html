@@ -399,6 +399,17 @@ body.uploading { padding-top: 42px; }
   white-space: nowrap;
 }
 .btn-view-link:hover { background: rgba(37,99,235,0.14); }
+.btn-view-pending {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(180,140,0,0.25);
+  background: rgba(217,119,6,0.07);
+  color: #92400e;
+  white-space: nowrap;
+  cursor: default;
+}
 
 /* File type icon backgrounds */
 .ftype-py   { background:rgba(215,119,6,0.1);  border:1px solid rgba(215,119,6,0.3); }
@@ -788,7 +799,9 @@ function renderFileList(data) {
         '</div>' +
         '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(g.date) + '</div>' +
         '<div class="file-row-actions">' +
-          '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>' +
+          (g.status === 'pending'
+            ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
+            : '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>') +
           '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\', \'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
         '</div>' +
       '</div>';
