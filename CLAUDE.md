@@ -140,6 +140,16 @@ Array de arch-cards:
 `categoria`: `"bug"` | `"riesgo"` | `"ausencia"` | `"mejora"`  
 `code` y `fix`: strings con `\n` para saltos de línea (NO `<br>`, se renderiza con `white-space:pre-wrap`)
 
+### Campos descriptivos del grupo (nivel raíz, generar al crear el draft)
+
+```json
+"category": "Bot en vivo · 21 instrumentos · IC Markets MT5 · OBV+MACD+ADX",
+"summary": "Una o dos oraciones densas: qué hace el archivo, tecnología clave, métricas principales, estado actual."
+```
+
+- `category`: línea corta separada por `·` — tipo de archivo, instrumentos, plataforma, estrategia
+- `summary`: 2-3 oraciones, sin repetir el nombre del archivo, orientado al trader
+
 ---
 
 ## Cómo escribir a data.json
