@@ -735,8 +735,9 @@ function deleteGroup(badge, name) {
     if (res.ok) {
       var row = document.getElementById('row-' + badge);
       if (row) row.remove();
-      // Refresh the whole list after short delay (GitHub Pages cache)
-      setTimeout(loadFileList, 1200);
+      // Update active-group counter
+      var statEl = document.getElementById('stat-grupos');
+      if (statEl) statEl.textContent = Math.max(0, parseInt(statEl.textContent, 10) - 1);
     } else {
       alert('Error al eliminar: ' + (res.error || 'desconocido'));
       if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
