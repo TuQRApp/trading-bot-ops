@@ -24,7 +24,7 @@ Al iniciar cualquier sesión en este directorio, leer `data.json` y actuar segú
 3. Generar borrador **completo** de m1–m4 sin pedir confirmación (ver esquema abajo)
 4. Agregar al grupo: `trader_notes: ""`, `revision_submitted: false`, `rereview_requested: false`
 5. Escribir el grupo con `status: "en_revision"` a data.json via `PUT https://trading-upload.nestragues.workers.dev/data`
-6. Enviar email al trader via curl a Resend API:
+6. Enviar email al trader (`nestragues@icloud.com`) via curl a Resend API:
    - Subject: `[Trading Bot] Borrador listo para revisar — {badge}`
    - Body: link a `https://tuqrapp.github.io/trading-bot-ops/feedback.html`
 
@@ -38,9 +38,9 @@ El trader revisó el borrador. Los campos `correction` en las cards y `trader_no
 2. Incorporar todas las correcciones del trader en el análisis final
 3. Limpiar campos de revisión en el grupo: vaciar `correction` en cada card, `trader_notes: ""`, `revision_submitted: false`, `rereview_requested: false`, `rereview_notes: ""`
 4. Escribir el grupo con `status: "activo"` a data.json via `PUT /data`
-5. Enviar email al trader:
+5. Enviar email al trader (`nestragues@icloud.com`) via curl a Resend API:
    - Subject: `[Trading Bot] Análisis finalizado — {badge}`
-   - Body: link a feedback.html
+   - Body: link a `https://tuqrapp.github.io/trading-bot-ops/feedback.html`
 
 ---
 

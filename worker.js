@@ -227,7 +227,7 @@ async function sendUploadEmail(group, env) {
     headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: 'Trading Bot <onboarding@resend.dev>',
-      to: ['nestragues@gmail.com'],
+      to: ['nestragues@icloud.com'],
       subject: '[Trading Bot] ' + group.badge + ' — ' + group.name,
       html,
     }),
