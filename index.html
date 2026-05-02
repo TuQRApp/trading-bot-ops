@@ -627,6 +627,12 @@ footer {
           placeholder="ej: Canal Fibonacci v2, OBV Bot v3…">
       </div>
       <div class="upload-field">
+        <label>Carpeta (opcional)</label>
+        <select id="upload-folder-select" class="upload-input" style="min-width:180px;">
+          <option value="">Sin carpeta (raíz)</option>
+        </select>
+      </div>
+      <div class="upload-field">
         <label>Archivos</label>
         <label class="upload-file-label" id="upload-file-label" for="upload-files-input">
           📂 Seleccionar archivos
@@ -931,10 +937,33 @@ function renderFileList(data) {
   container.innerHTML = html;
 }
 
+function _populateFolderSelect(folders) {
+  var sel = document.getElementById('upload-folder-select');
+  if (!sel) return;
+  var current = sel.value;
+  sel.innerHTML = '<option value="">Sin carpeta (raíz)</option>';
+  function addOptions(list, prefix) {
+    (list || []).forEach(function(f) {
+      var opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = prefix + f.name;
+      sel.appendChild(opt);
+      var children = (folders || []).filter(function(c) { return c.parent_id === f.id; });
+      addOptions(children, prefix + '  ');
+    });
+  }
+  var roots = (folders || []).filter(function(f) { return !f.parent_id; });
+  addOptions(roots, '📁 ');
+  if (current) sel.value = current;
+}
+
 function loadFileList() {
   fetch(DATA_URL)
     .then(function(r) { return r.json(); })
-    .then(function(data) { renderFileList(data); })
+    .then(function(data) {
+      renderFileList(data);
+      _populateFolderSelect(data.folders || []);
+    })
     .catch(function() {
       document.getElementById('files-list-container').innerHTML =
         '<div class="files-empty">' +
@@ -1046,10 +1075,11 @@ async function startUpload() {
     // Register group
     var regStep = files.length;
     _setStep(regStep, 'active', null);
+    var selectedFolderId = document.getElementById('upload-folder-select').value || null;
     var rg = await fetch(WORKER + '/group', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: groupName, folder: folder, files: uploadedFiles })
+      body: JSON.stringify({ name: groupName, folder: folder, files: uploadedFiles, folder_id: selectedFolderId })
     });
     var rgRes;
     try { rgRes = await rg.json(); } catch(_) { throw new Error('HTTP ' + rg.status + ' — respuesta no válida del Worker'); }
@@ -1060,6 +1090,7 @@ async function startUpload() {
 
     // Reset form
     document.getElementById('upload-group-name').value = '';
+    document.getElementById('upload-folder-select').value = '';
     filesInput.value = '';
     var lbl = document.getElementById('upload-file-label');
     lbl.textContent = '📂 Seleccionar archivos';

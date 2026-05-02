@@ -244,7 +244,7 @@ async function sendUploadEmail(group, env) {
 async function handleRegisterGroup(request, env) {
   try {
     const body = await request.json();
-    const { name, folder, files = [] } = body;
+    const { name, folder, files = [], folder_id = null } = body;
     if (!name || !folder) return json({ error: 'name and folder are required' }, 400);
 
     const { data, sha } = await readData(env);
@@ -270,6 +270,7 @@ async function handleRegisterGroup(request, env) {
       icon,
       ftype,
       folder,
+      folder_id: folder_id || null,
       date: new Date().toISOString(),
       files: files.map(f => ({ name: f.name, type: (f.name || '').split('.').pop() })),
       status: 'pending',
