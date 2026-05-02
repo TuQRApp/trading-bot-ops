@@ -245,7 +245,7 @@ async function sendUploadEmail(group, env) {
 async function handleRegisterGroup(request, env) {
   try {
     const body = await request.json();
-    const { name, folder, files = [], folder_id = null } = body;
+    const { name, folder, files = [], folder_id = null, version_of = null } = body;
     if (!name || !folder) return json({ error: 'name and folder are required' }, 400);
 
     const { data, sha } = await readData(env);
@@ -275,6 +275,7 @@ async function handleRegisterGroup(request, env) {
       date: new Date().toISOString(),
       files: files.map(f => ({ name: f.name, type: (f.name || '').split('.').pop() })),
       status: 'pending',
+      version_of: version_of || null,
       m1: {
         type: 'empty',
         last_updated: null,
@@ -286,8 +287,18 @@ async function handleRegisterGroup(request, env) {
       m3: [],
       m4: [],
     };
+    if (!version_of) newGroup.versions = [badge];
 
     data.groups.push(newGroup);
+
+    if (version_of) {
+      const parentIdx = data.groups.findIndex(g => g.badge === version_of);
+      if (parentIdx !== -1) {
+        if (!data.groups[parentIdx].versions) data.groups[parentIdx].versions = [version_of];
+        data.groups[parentIdx].versions.push(badge);
+      }
+    }
+
     await writeData(data, sha, env);
     sendUploadEmail(newGroup, env).catch(() => {}); // fire-and-forget
     return json({ ok: true, badge, group: newGroup });

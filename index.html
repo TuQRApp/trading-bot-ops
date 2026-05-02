@@ -410,6 +410,128 @@ body.uploading { padding-top: 42px; }
   white-space: nowrap;
   cursor: default;
 }
+.btn-versions {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(124,58,237,0.3);
+  background: rgba(124,58,237,0.07);
+  color: var(--bot);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-versions:hover { background: rgba(124,58,237,0.14); }
+.btn-new-version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(5,150,105,0.3);
+  background: rgba(5,150,105,0.07);
+  color: var(--trader);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-new-version:hover { background: rgba(5,150,105,0.14); }
+.versions-wrap { position: relative; }
+.versions-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(30,45,110,0.14);
+  min-width: 300px;
+  z-index: 100;
+  overflow: hidden;
+}
+.versions-dropdown.open { display: block; }
+.versions-dropdown-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.version-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.version-item:last-child { border-bottom: none; }
+.version-item:hover { background: rgba(30,45,110,0.03); }
+.version-item-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--bot);
+  background: rgba(124,58,237,0.08);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.version-item-name {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.version-item-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+.version-item-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--nico);
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(37,99,235,0.25);
+  background: rgba(37,99,235,0.06);
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.version-item-link:hover { background: rgba(37,99,235,0.14); }
+/* Version upload modal */
+.vmodal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,15,40,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.vmodal-overlay.open { display: flex; }
+.vmodal {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 28px 28px 22px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 24px 60px rgba(10,15,40,0.25);
+  border: 1px solid var(--border);
+}
+.vmodal-title { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.vmodal-parent { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 6px 10px; margin-bottom: 18px; }
+.vmodal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-vcancel { font-family: var(--font-mono); font-size: 10px; padding: 7px 16px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+.btn-vupload { font-family: var(--font-mono); font-size: 10px; padding: 7px 16px; border-radius: 7px; border: 1px solid rgba(5,150,105,0.4); background: rgba(5,150,105,0.08); color: var(--trader); cursor: pointer; }
+.btn-vupload:hover { background: rgba(5,150,105,0.16); }
+.btn-vupload:disabled { opacity: 0.4; cursor: default; }
+.vmodal-progress { margin-top: 14px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); min-height: 16px; }
 
 /* File type icon backgrounds */
 .ftype-py   { background:rgba(215,119,6,0.1);  border:1px solid rgba(215,119,6,0.3); }
@@ -800,14 +922,24 @@ function _claudeTimerClear(badge) {
 }
 
 function _renderFileRow(g, folders) {
-  var icon = _ftypeIcon(g.ftype);
+  // Resolve display data from latest version
+  var allGroups = window._allGroups || [];
+  var dg = g; // display group
+  var vCount = (g.versions && g.versions.length) || 1;
+  if (g.versions && g.versions.length > 1) {
+    var latestBadge = g.versions[g.versions.length - 1];
+    var latest = allGroups.find(function(x) { return x.badge === latestBadge; });
+    if (latest) dg = latest;
+  }
+
+  var icon = _ftypeIcon(dg.ftype || g.ftype);
   var statusTag, dateLabel, revisionAlert = '';
-  if (g.status === 'pending') {
-    var elapsed = _claudeElapsed(g.badge);
+  if (dg.status === 'pending') {
+    var elapsed = _claudeElapsed(dg.badge);
     var timerStr = elapsed ? ' <span class="claude-timer">⏱ ' + elapsed + '</span>' : '';
     statusTag = '<span class="tag tag-pending">⏳ Pendiente primer análisis Claude</span>' + timerStr;
     dateLabel = 'Subido';
-  } else if (g.status === 'en_revision') {
+  } else if (dg.status === 'en_revision') {
     statusTag = '<span class="tag tag-revision">⚠ Pendiente primera revisión Trader</span>';
     dateLabel = 'Analizado';
     revisionAlert =
@@ -815,8 +947,8 @@ function _renderFileRow(g, folders) {
       '<span>El borrador está listo. <strong>Revisa cada módulo, escribe tus correcciones y envíalas.</strong> El ciclo no cierra sin tu validación.</span>' +
       '<a href="feedback.html">Ir al análisis →</a>' +
       '</div>';
-  } else if (g.status === 'pendiente_final') {
-    var elapsed2 = _claudeElapsed(g.badge);
+  } else if (dg.status === 'pendiente_final') {
+    var elapsed2 = _claudeElapsed(dg.badge);
     var timerStr2 = elapsed2 ? ' <span class="claude-timer">⏱ ' + elapsed2 + '</span>' : '';
     statusTag = '<span class="tag tag-final">🔄 Pendiente de feedback final Claude</span>' + timerStr2;
     dateLabel = 'Analizado';
@@ -824,12 +956,13 @@ function _renderFileRow(g, folders) {
     statusTag = '<span class="tag tag-trader">✓ Ciclo completo</span>';
     dateLabel = 'Analizado';
   }
-  var filesBadge = g.files && g.files.length > 1
-    ? '<span class="tag tag-muted">' + g.files.length + ' archivos</span>' : '';
-  var m4Tags = (g.status === 'pending') ? '' : _m4Tags(g);
+  var filesBadge = dg.files && dg.files.length > 1
+    ? '<span class="tag tag-muted">' + dg.files.length + ' archivos</span>' : '';
+  var m4Tags = (dg.status === 'pending') ? '' : _m4Tags(dg);
   var badgeTag = '<span class="tag tag-muted">' + g.badge + '</span>';
-  var categoryHtml = g.category ? '<div class="file-row-category">' + g.category + '</div>' : '';
-  var summaryHtml = g.summary ? '<div class="file-row-summary">' + g.summary + '</div>' : '';
+  var vTag = vCount > 1 ? '<span class="tag tag-muted">V' + vCount + '</span>' : '';
+  var categoryHtml = dg.category ? '<div class="file-row-category">' + dg.category + '</div>' : '';
+  var summaryHtml = dg.summary ? '<div class="file-row-summary">' + dg.summary + '</div>' : '';
 
   var moveOptions = '<option value="">Mover a…</option><option value="root">Raíz (sin carpeta)</option>';
   (folders || []).forEach(function(f) {
@@ -837,19 +970,55 @@ function _renderFileRow(g, folders) {
   });
   var moveSelect = '<select class="move-select" onchange="moveGroup(\'' + g.badge + '\',this.value,this)">' + moveOptions + '</select>';
 
+  // Versions dropdown HTML
+  var versionsHtml = '';
+  if (vCount > 1) {
+    var vItems = '';
+    for (var vi = g.versions.length - 1; vi >= 0; vi--) {
+      var vbadge = g.versions[vi];
+      var vg = allGroups.find(function(x) { return x.badge === vbadge; });
+      var vName = vg ? vg.name : vbadge;
+      var vDate = vg ? _fmtDate(vg.date) : '';
+      var vNum = vi + 1;
+      var vLink = vg ? ('<a class="version-item-link" href="feedback.html?badge=' + vbadge + '">Ver →</a>') : '';
+      var isCurrent = (vi === g.versions.length - 1) ? ' · <em style="font-size:9px;color:var(--trader);">actual</em>' : '';
+      vItems += '<div class="version-item">' +
+        '<span class="version-item-num">V' + vNum + '</span>' +
+        '<span class="version-item-name">' + vName + '</span>' +
+        '<span class="version-item-meta">' + vDate + isCurrent + '</span>' +
+        vLink +
+        '</div>';
+    }
+    versionsHtml = '<div class="versions-dropdown" id="vdrop-' + g.badge + '">' +
+      '<div class="versions-dropdown-title">Versiones — ' + g.badge + '</div>' +
+      vItems +
+    '</div>';
+  }
+
+  var versionsBtn = vCount > 1
+    ? ('<div class="versions-wrap">' +
+        '<button class="btn-versions" onclick="toggleVersionsDropdown(\'' + g.badge + '\',event)">Versiones (' + vCount + ')</button>' +
+        versionsHtml +
+       '</div>')
+    : '';
+
+  var newVersionBtn = '<button class="btn-new-version" onclick="openNewVersionModal(\'' + g.badge + '\',\'' + (g.folder || '').replace(/'/g, "\\'") + '\',\'' + (g.folder_id || '') + '\',\'' + dg.name.replace(/'/g, "\\'") + '\')">+ Nueva versión</button>';
+
   return '<div class="file-row ' + (g.fsh_class || '') + '" id="row-' + g.badge + '">' +
-    '<div class="file-row-icon ftype-' + (g.ftype || 'txt') + '">' + icon + '</div>' +
+    '<div class="file-row-icon ftype-' + (dg.ftype || g.ftype || 'txt') + '">' + icon + '</div>' +
     '<div class="file-row-main">' +
-      '<div class="file-row-name">' + g.name + ' ' + statusTag + '</div>' +
-      '<div class="file-row-meta">' + badgeTag + filesBadge + m4Tags + '</div>' +
+      '<div class="file-row-name">' + dg.name + ' ' + statusTag + '</div>' +
+      '<div class="file-row-meta">' + badgeTag + vTag + filesBadge + m4Tags + '</div>' +
       categoryHtml + summaryHtml + revisionAlert +
     '</div>' +
-    '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(g.date) + '</div>' +
+    '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(dg.date) + '</div>' +
     '<div class="file-row-actions">' +
       moveSelect +
-      (g.status === 'pending'
+      versionsBtn +
+      newVersionBtn +
+      (dg.status === 'pending'
         ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
-        : '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>') +
+        : '<a class="btn-view-link" href="feedback.html?badge=' + dg.badge + '">Ver análisis →</a>') +
       '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\',\'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
     '</div>' +
   '</div>';
@@ -891,7 +1060,10 @@ function _renderFolderSection(folder, groups, folderChildren, allFolders, depth)
 
 function renderFileList(data) {
   var container = document.getElementById('files-list-container');
-  var groups = (data.groups || []).slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+  var allGroups = (data.groups || []).slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+  window._allGroups = allGroups;
+  // Only show top-level groups (no version_of) in the main list
+  var groups = allGroups.filter(function(g) { return !g.version_of; });
   var folders = data.folders || [];
 
   document.getElementById('stat-grupos').textContent =
@@ -1241,6 +1413,97 @@ function deleteFolder(folderId) {
   .catch(function(e) { alert('Error de red: ' + e.message); });
 }
 
+// ── Versioning ────────────────────────────────────────────────────────────────
+function toggleVersionsDropdown(badge, evt) {
+  if (evt) evt.stopPropagation();
+  var el = document.getElementById('vdrop-' + badge);
+  if (!el) return;
+  var isOpen = el.classList.contains('open');
+  // Close all open dropdowns
+  document.querySelectorAll('.versions-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+  if (!isOpen) el.classList.add('open');
+}
+// Close dropdown when clicking outside
+document.addEventListener('click', function() {
+  document.querySelectorAll('.versions-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+});
+
+var _vModalParentBadge = null;
+var _vModalFolder = null;
+var _vModalFolderId = null;
+
+function openNewVersionModal(parentBadge, folder, folderId, latestName) {
+  _vModalParentBadge = parentBadge;
+  _vModalFolder = folder;
+  _vModalFolderId = folderId || null;
+  var overlay = document.getElementById('vmodal-overlay');
+  document.getElementById('vmodal-parent-label').textContent = latestName + ' · ' + parentBadge;
+  document.getElementById('vmodal-file-input').value = '';
+  document.getElementById('vmodal-file-label').textContent = '📂 Seleccionar archivo(s)';
+  document.getElementById('vmodal-file-label').classList.remove('has-files');
+  document.getElementById('vmodal-progress').textContent = '';
+  document.getElementById('btn-vupload').disabled = false;
+  document.getElementById('btn-vupload').textContent = 'Subir versión →';
+  overlay.classList.add('open');
+}
+
+function closeNewVersionModal() {
+  document.getElementById('vmodal-overlay').classList.remove('open');
+}
+
+async function startVersionUpload() {
+  var filesInput = document.getElementById('vmodal-file-input');
+  var files = filesInput.files;
+  if (!files || files.length === 0) { alert('Selecciona al menos un archivo.'); return; }
+  if (!_vModalParentBadge) return;
+
+  var groupName = files[0].name.replace(/\.[^.]+$/, '');
+  var btn = document.getElementById('btn-vupload');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo…';
+  var prog = document.getElementById('vmodal-progress');
+  prog.textContent = 'Subiendo archivo(s)…';
+
+  var folder = _vModalFolder || groupName;
+  var uploadedFiles = [];
+  try {
+    for (var j = 0; j < files.length; j++) {
+      prog.textContent = 'Subiendo ' + files[j].name + '…';
+      var form = new FormData();
+      form.append('file', files[j]);
+      form.append('folder', folder);
+      var r = await fetch(WORKER + '/upload', { method: 'POST', body: form });
+      var res = await r.json();
+      if (!res.ok) throw new Error(res.error || 'HTTP ' + r.status);
+      uploadedFiles.push({ name: files[j].name, type: files[j].name.split('.').pop() });
+    }
+    prog.textContent = 'Registrando versión…';
+    var rg = await fetch(WORKER + '/group', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: groupName,
+        folder: folder,
+        files: uploadedFiles,
+        folder_id: _vModalFolderId,
+        version_of: _vModalParentBadge
+      })
+    });
+    var rgRes = await rg.json();
+    if (!rgRes.ok) throw new Error(rgRes.error || 'HTTP ' + rg.status);
+    prog.textContent = '✓ V' + '— ' + rgRes.badge + ' registrada. Análisis pendiente.';
+    btn.textContent = '✓ Listo';
+    setTimeout(function() {
+      closeNewVersionModal();
+      loadFileList();
+    }, 1800);
+  } catch(e) {
+    prog.textContent = '✗ Error: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Reintentar';
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 loadFileList();
 
@@ -1256,5 +1519,26 @@ loadFileList();
   }
 })();
 </script>
+
+<!-- ══ VERSION UPLOAD MODAL ══════════════════════════════════════════════ -->
+<div class="vmodal-overlay" id="vmodal-overlay" onclick="if(event.target===this)closeNewVersionModal()">
+  <div class="vmodal">
+    <div class="vmodal-title">Subir nueva versión</div>
+    <div class="vmodal-parent" id="vmodal-parent-label"></div>
+    <div class="upload-field">
+      <label>Archivo(s)</label>
+      <label class="upload-file-label" id="vmodal-file-label" for="vmodal-file-input">
+        📂 Seleccionar archivo(s)
+      </label>
+      <input type="file" id="vmodal-file-input" multiple accept=".py,.csv,.json,.log,.html,.txt,.png"
+        onchange="this.files.length&&(document.getElementById('vmodal-file-label').textContent='📎 '+Array.from(this.files).map(function(f){return f.name}).join(', ');document.getElementById('vmodal-file-label').classList.add('has-files'))">
+    </div>
+    <div class="vmodal-progress" id="vmodal-progress"></div>
+    <div class="vmodal-actions">
+      <button class="btn-vcancel" onclick="closeNewVersionModal()">Cancelar</button>
+      <button class="btn-vupload" id="btn-vupload" onclick="startVersionUpload()">Subir versión →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

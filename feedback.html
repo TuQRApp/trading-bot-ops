@@ -205,6 +205,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .file-filter-folder-btn:hover{background:rgba(37,99,235,0.14);border-color:rgba(37,99,235,0.45);}
 .file-filter-nav-btn{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
 .file-filter-nav-btn:hover{border-color:var(--nico);color:var(--nico);}
+.version-select{font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(124,58,237,0.3);background:rgba(124,58,237,0.06);color:var(--bot);cursor:pointer;transition:all 0.2s;max-width:180px;}
 .file-filter-breadcrumb{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;align-self:center;padding:0 2px;}
 
 /* ── EXPORT BAR ── */
@@ -1274,20 +1275,37 @@ function _buildFileFilterBtns(skipAutoSelect) {
   var folderMap = {};
   folders.forEach(function(f) { folderMap[f.id] = f; });
 
+  var allGroups = (window._renderData && window._renderData.groups) || [];
+
   // Collect file items (deduplicated — each group appears in multiple tabs)
+  // Skip version groups (version_of set) — they are accessed via the version selector
   var seen = new Set();
   var items = [];
   document.querySelectorAll('.file-section-header').forEach(function(h) {
     var fileId = h.querySelector('.fsh-badge') && h.querySelector('.fsh-badge').textContent.trim();
     if (!fileId || seen.has(fileId)) return;
     seen.add(fileId);
+    var grp = allGroups.find(function(g) { return g.badge === fileId; });
+    if (grp && grp.version_of) return; // skip version groups from tab bar
     var name = (h.querySelector('.fsh-name') && h.querySelector('.fsh-name').textContent.trim()) || fileId;
     var icon = (h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim()) || '📄';
     var fshClass = Array.from(h.classList).find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
     fileRegistry[fileId] = fshClass;
-    var group = window._renderData && window._renderData.groups.find(function(g) { return g.badge === fileId; });
-    var folderId = (group && group.folder_id) || null;
-    items.push({ fileId: fileId, name: name, icon: icon, fshClass: fshClass, folderId: folderId });
+    var folderId = (grp && grp.folder_id) || null;
+    // Resolve to latest version for default display
+    var activeBadge = fileId;
+    var activeFshClass = fshClass;
+    if (grp && grp.versions && grp.versions.length > 1) {
+      var latestBadge = grp.versions[grp.versions.length - 1];
+      var latestGrp = allGroups.find(function(g) { return g.badge === latestBadge; });
+      if (latestGrp) {
+        activeBadge = latestBadge;
+        activeFshClass = latestGrp.fsh_class || fshClass;
+        name = latestGrp.name || name;
+      }
+    }
+    items.push({ fileId: fileId, name: name, icon: icon, fshClass: activeFshClass, folderId: folderId,
+                 activeBadge: activeBadge, parentGroup: grp || null });
   });
 
   var UNFILED_ID = '__unfiled__';
@@ -1312,7 +1330,12 @@ function _buildFileFilterBtns(skipAutoSelect) {
   var levelFolderId = (currentId === UNFILED_ID) ? null : currentId;
   if (_filterNav) {
     items.filter(function(it) { return it.folderId === levelFolderId; })
-         .forEach(function(it) { _appendFileBtn(filterBar, hint, it); });
+         .forEach(function(it) {
+           _appendFileBtn(filterBar, hint, it);
+           if (it.parentGroup && it.parentGroup.versions && it.parentGroup.versions.length > 1) {
+             _appendVersionSelect(filterBar, hint, it.parentGroup, allGroups);
+           }
+         });
   }
 
   // Subfolders at current real level (not inside unfiled virtual folder)
@@ -1354,10 +1377,42 @@ function _buildFileFilterBtns(skipAutoSelect) {
 function _appendFileBtn(filterBar, hint, it) {
   var fb = document.createElement('button');
   fb.className = 'file-filter-btn';
-  fb.dataset.badge = it.fileId;
+  fb.dataset.badge = it.activeBadge || it.fileId;
   fb.textContent = it.icon + ' ' + it.name;
-  fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(it.fshClass, it.fileId);
+  var cls = it.fshClass, id = it.activeBadge || it.fileId;
+  fb.onclick = (function(c, i) { return function() { toggleFileFilter(c, i, fb); }; })(cls, id);
   filterBar.insertBefore(fb, hint || null);
+}
+
+function _appendVersionSelect(filterBar, hint, parentGroup, allGroups) {
+  var sel = document.createElement('select');
+  sel.className = 'version-select';
+  sel.title = 'Seleccionar versión';
+  var versions = parentGroup.versions;
+  for (var vi = versions.length - 1; vi >= 0; vi--) {
+    var vbadge = versions[vi];
+    var vg = allGroups.find(function(g) { return g.badge === vbadge; });
+    var vNum = vi + 1;
+    var opt = document.createElement('option');
+    opt.value = vbadge;
+    opt.textContent = 'V' + vNum + (vi === versions.length - 1 ? ' ★' : '') + ' — ' + ((vg && vg.name) || vbadge);
+    sel.appendChild(opt);
+  }
+  sel.onchange = function() {
+    var selBadge = sel.value;
+    var selGrp = allGroups.find(function(g) { return g.badge === selBadge; });
+    if (!selGrp) return;
+    var cls = selGrp.fsh_class || '';
+    // Also update the tab button's active badge so it stays in sync
+    var tabBtn = filterBar.querySelector('.file-filter-btn[data-badge="' + (parentGroup.versions[parentGroup.versions.length-1]) + '"], .file-filter-btn[data-badge="' + parentGroup.badge + '"]');
+    activeFiles.clear();
+    document.querySelectorAll('.file-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (tabBtn) { tabBtn.dataset.badge = selBadge; tabBtn.classList.add('active'); }
+    activeFiles.add(cls);
+    _applyFileFilter();
+    _initM5();
+  };
+  filterBar.insertBefore(sel, hint || null);
 }
 
 function _countArchCards() {
@@ -1467,6 +1522,27 @@ function _initAll() {
   _initRevisionBar();
   _updateExportBar();
   _startPolling();
+  // Pre-select badge from URL param (e.g. ?badge=FILE-001v2)
+  var urlBadge = new URLSearchParams(window.location.search).get('badge');
+  if (urlBadge) {
+    var allGroups = (window._renderData && window._renderData.groups) || [];
+    var urlGrp = allGroups.find(function(g) { return g.badge === urlBadge; });
+    if (urlGrp) {
+      var cls = urlGrp.fsh_class || '';
+      activeFiles.clear();
+      document.querySelectorAll('.file-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      activeFiles.add(cls);
+      _applyFileFilter();
+      // Sync version selector if present
+      var vSel = document.querySelector('.version-select');
+      if (vSel) {
+        for (var i = 0; i < vSel.options.length; i++) {
+          if (vSel.options[i].value === urlBadge) { vSel.selectedIndex = i; break; }
+        }
+      }
+      _initM5();
+    }
+  }
 }
 
 // ── Live polling (20s) ───────────────────────────────────────────────────────
