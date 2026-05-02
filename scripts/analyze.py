@@ -2,6 +2,12 @@
 Trading Bot Analyzer — GitHub Actions script
 Runs automatically when data.json changes.
 Processes groups with status 'pending' or 'pendiente_final'.
+
+Analysis pipeline per group:
+  Pre-analysis (ast + pandas + sklearn)
+  → Pass 1: Claude Sonnet — initial analysis
+  → Pass 2: Claude critic — gap audit
+  → Pass 3: GPT-4o code review (optional, requires OPENAI_API_KEY secret)
 """
 
 import ast
@@ -91,23 +97,20 @@ def _ml_cluster_trades(df, pnl_col):
 
     features = {}
 
-    # P&L sign as feature
     pnl = pd.to_numeric(df[pnl_col], errors="coerce")
     features["pnl_norm"] = pnl.fillna(0)
 
-    # Hour of day (from any datetime column)
     date_col = next(
         (c for c in df.columns if "date" in c.lower() or "time" in c.lower()), None
     )
     if date_col:
         try:
             dt = pd.to_datetime(df[date_col], errors="coerce")
-            features["hour"]       = dt.dt.hour.fillna(12)
+            features["hour"]        = dt.dt.hour.fillna(12)
             features["day_of_week"] = dt.dt.dayofweek.fillna(2)
         except Exception:
             pass
 
-    # Trade direction: Buy=1 Sell=0
     dir_col = next(
         (c for c in df.columns if c.lower() in {"type", "direction", "side", "order_type"}), None
     )
@@ -151,7 +154,6 @@ def _ml_cluster_trades(df, pnl_col):
 
     clusters.sort(key=lambda c: c.get("win_rate_pct") or 0, reverse=True)
 
-    # Generate plain-text insight for Claude
     best  = clusters[0]
     worst = clusters[-1]
     insight_parts = []
@@ -160,7 +162,7 @@ def _ml_cluster_trades(df, pnl_col):
         if diff >= 15:
             desc = f"Best cluster (n={best['size']}): {best['win_rate_pct']}% WR"
             if "dominant_hour" in best:
-                desc += f", hour ~{best['dominant_hour']}h"
+                desc += f", ~{best['dominant_hour']}h"
             if "dominant_day" in best:
                 desc += f", {best['dominant_day']}"
             desc += f". Worst cluster (n={worst['size']}): {worst['win_rate_pct']}% WR."
@@ -234,7 +236,6 @@ def preprocess_csv(filename, content):
             stats["max_win_streak"]  = max_win_streak
             stats["max_loss_streak"] = max_loss_streak
 
-            # quantstats extended metrics
             try:
                 import quantstats as qs
                 balance_col = next(
@@ -260,7 +261,6 @@ def preprocess_csv(filename, content):
             except Exception:
                 pass
 
-            # ML clustering (Fase 3) — only when enough trades
             if total >= 50:
                 try:
                     cluster_result = _ml_cluster_trades(df, pnl_col)
@@ -398,6 +398,18 @@ CRITIC_SYSTEM = [
     }
 ]
 
+GPT4O_SYSTEM = (
+    "You are a senior Python engineer specializing in algorithmic trading systems. "
+    "Review the Python code provided and return ONLY findings not already covered in the existing analysis. "
+    "Focus on Python-specific issues: threading/concurrency bugs, exception handling gaps in order "
+    "execution paths, race conditions, memory leaks, hardcoded values that break under live conditions, "
+    "logic errors in signal generation, missing input validation, and MT5/broker API misuse patterns. "
+    "IDs: m2 starts at R-30, m4 starts at H-30. "
+    "Limit: 0-3 cards per module. Return empty arrays if nothing new found. "
+    "Output valid JSON: {\"additional_m2\": [...], \"additional_m4\": [...]}. "
+    "ASCII only (no accented vowels, no em-dashes). All descriptions in Spanish."
+)
+
 FINALIZE_SYSTEM = [
     {
         "type": "text",
@@ -440,24 +452,33 @@ def build_analysis_user(files_text, date_str, preproc_facts=None):
 
 
 def build_critic_user(analysis, preproc_facts):
-    """Packages the initial analysis + compact preproc facts for the critic call."""
     parts = [
         "Initial analysis:\n" + json.dumps(
-            {"m1": analysis.get("m1"), "m2": analysis.get("m2"), "m3": analysis.get("m3"), "m4": analysis.get("m4")},
+            {"m1": analysis.get("m1"), "m2": analysis.get("m2"),
+             "m3": analysis.get("m3"), "m4": analysis.get("m4")},
             ensure_ascii=True, indent=2
         )
     ]
     if preproc_facts:
-        # Send only structural facts (no full file content) to keep the critic call cheap
         compact = [
-            {k: v for k, v in r.items() if k in ("filename", "lines", "functions", "complexity", "magic_numbers", "syntax_error", "pnl_stats", "rows")}
+            {k: v for k, v in r.items()
+             if k in ("filename", "lines", "functions", "complexity", "magic_numbers", "syntax_error", "pnl_stats", "rows")}
             for r in preproc_facts
         ]
         parts.append(
-            "Pre-analysis facts (file summary):\n"
-            + json.dumps(compact, ensure_ascii=True, indent=2)
+            "Pre-analysis facts:\n" + json.dumps(compact, ensure_ascii=True, indent=2)
         )
     return "\n\n".join(parts)
+
+
+def build_gpt4o_user(analysis, py_files_text):
+    existing_titles = [
+        c["title"] for c in analysis.get("m2", []) + analysis.get("m4", [])
+    ]
+    return (
+        f"Already covered — do NOT repeat these:\n{json.dumps(existing_titles, ensure_ascii=True)}\n\n"
+        f"Code to review (JSON output required):\n{py_files_text}"
+    )
 
 
 def build_finalize_user(group):
@@ -514,17 +535,30 @@ def call_claude(system_blocks, user_content):
     return json.loads(text)
 
 
-def run_critic_pass(analysis, preproc_facts):
-    """Second Claude call: audits the initial analysis and returns additional findings."""
-    critic_out = call_claude(CRITIC_SYSTEM, build_critic_user(analysis, preproc_facts))
-    return critic_out
+# ── GPT-4o API ────────────────────────────────────────────────────────────────
+
+def call_gpt4o(system_text, user_content):
+    from openai import OpenAI
+    oa = OpenAI()
+    resp = oa.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_text},
+            {"role": "user",   "content": user_content},
+        ],
+        response_format={"type": "json_object"},
+        max_tokens=4096,
+    )
+    return json.loads(resp.choices[0].message.content)
 
 
-def merge_critic_findings(analysis, critic_out):
-    """Appends critic cards to the analysis, skipping empty results."""
-    added = {"m2": 0, "m3": 0, "m4": 0}
-    for module, key in [("m2", "additional_m2"), ("m3", "additional_m3"), ("m4", "additional_m4")]:
-        cards = critic_out.get(key) or []
+# ── Merge helpers ─────────────────────────────────────────────────────────────
+
+def merge_additional(analysis, extra, modules=("m2", "m3", "m4")):
+    """Append additional_mX cards from extra dict into analysis."""
+    added = {m: 0 for m in modules}
+    for module in modules:
+        cards = extra.get(f"additional_{module}") or []
         if cards:
             analysis[module] = analysis.get(module, []) + cards
             added[module] = len(cards)
@@ -536,11 +570,15 @@ def merge_critic_findings(analysis, critic_out):
 def process_pending(group):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
 
-    parts = []
+    parts    = []
+    py_parts = []
     for f in group.get("files", []):
         content = read_file(group["folder"], f["name"])
         if content:
-            parts.append(f"=== {f['name']} ===\n{content}")
+            block = f"=== {f['name']} ===\n{content}"
+            parts.append(block)
+            if f["name"].endswith(".py"):
+                py_parts.append(block)
 
     if not parts:
         print("  No readable files found — skipping")
@@ -560,32 +598,47 @@ def process_pending(group):
                 print(f"    {r['filename']}: {r.get('lines', '?')} lines, "
                       f"{len(r.get('functions', []))} functions")
 
-    print("  Pass 1 — initial analysis...")
-    user_content = build_analysis_user(
-        "\n\n".join(parts), date.today().isoformat(), preproc
+    # Pass 1 — Claude initial analysis
+    print("  Pass 1 — Claude initial analysis...")
+    analysis = call_claude(
+        ANALYSIS_SYSTEM,
+        build_analysis_user("\n\n".join(parts), date.today().isoformat(), preproc),
     )
-    analysis = call_claude(ANALYSIS_SYSTEM, user_content)
     print(f"    -> {len(analysis.get('m2',[]))} recs | {len(analysis.get('m3',[]))} obs | {len(analysis.get('m4',[]))} findings")
 
-    print("  Pass 2 — critic review...")
+    # Pass 2 — Claude critic
+    print("  Pass 2 — Claude critic...")
     try:
-        critic_out = run_critic_pass(analysis, preproc)
-        added = merge_critic_findings(analysis, critic_out)
-        total_added = sum(added.values())
-        if total_added:
-            print(f"    -> critic added {added['m2']} recs, {added['m3']} obs, {added['m4']} findings")
-        else:
-            print("    -> critic: no gaps found")
+        critic_out = call_claude(CRITIC_SYSTEM, build_critic_user(analysis, preproc))
+        added = merge_additional(analysis, critic_out)
+        total = sum(added.values())
+        print(f"    -> critic added {added['m2']} recs, {added['m3']} obs, {added['m4']} findings"
+              if total else "    -> critic: no gaps found")
     except Exception as e:
         print(f"    [warn] Critic pass failed: {e}")
 
-    group["status"] = "en_revision"
-    group["category"] = analysis.get("category", "")
-    group["summary"]  = analysis.get("summary", "")
-    group["m1"] = analysis.get("m1", group.get("m1", {}))
-    group["m2"] = analysis.get("m2", [])
-    group["m3"] = analysis.get("m3", [])
-    group["m4"] = analysis.get("m4", [])
+    # Pass 3 — GPT-4o (optional)
+    if os.environ.get("OPENAI_API_KEY") and py_parts:
+        print("  Pass 3 — GPT-4o code review...")
+        try:
+            gpt_out = call_gpt4o(GPT4O_SYSTEM, build_gpt4o_user(analysis, "\n\n".join(py_parts)))
+            added_g = merge_additional(analysis, gpt_out, modules=("m2", "m4"))
+            total_g = sum(added_g.values())
+            print(f"    -> GPT-4o added {added_g['m2']} recs, {added_g['m4']} findings"
+                  if total_g else "    -> GPT-4o: no additional findings")
+        except Exception as e:
+            print(f"    [warn] GPT-4o pass failed: {e}")
+    else:
+        reason = "no Python files" if not py_parts else "OPENAI_API_KEY not set"
+        print(f"  Pass 3 — GPT-4o skipped ({reason})")
+
+    group["status"]             = "en_revision"
+    group["category"]           = analysis.get("category", "")
+    group["summary"]            = analysis.get("summary", "")
+    group["m1"]                 = analysis.get("m1", group.get("m1", {}))
+    group["m2"]                 = analysis.get("m2", [])
+    group["m3"]                 = analysis.get("m3", [])
+    group["m4"]                 = analysis.get("m4", [])
     group["trader_notes"]       = ""
     group["revision_submitted"] = False
     group["rereview_requested"] = False
@@ -602,7 +655,7 @@ def process_pending(group):
 def process_pendiente_final(group):
     print(f"  Finalizing {group['badge']} — {group['name']}")
 
-    trader_notes = (group.get("trader_notes") or "").strip()
+    trader_notes  = (group.get("trader_notes") or "").strip()
     m1_correction = (group.get("m1", {}).get("correction") or "").strip()
     has_corrections = m1_correction or any(
         (card.get("correction") or "").strip()
@@ -638,11 +691,11 @@ def process_pendiente_final(group):
 def main():
     print("=== Trading Bot Analyzer ===")
 
-    data = get_data()
+    data   = get_data()
     groups = data.get("groups", [])
 
-    pending          = [g for g in groups if g.get("status") == "pending"]
-    pendiente_final  = [g for g in groups if g.get("status") == "pendiente_final"]
+    pending         = [g for g in groups if g.get("status") == "pending"]
+    pendiente_final = [g for g in groups if g.get("status") == "pendiente_final"]
 
     if not pending and not pendiente_final:
         print("Nothing to process.")
@@ -656,7 +709,7 @@ def main():
         try:
             if process_pending(g):
                 changed = True
-                print(f"  -> en_revision")
+                print("  -> en_revision")
         except Exception as e:
             print(f"  ERROR: {e}", file=sys.stderr)
             had_error = True
@@ -666,7 +719,7 @@ def main():
         try:
             if process_pendiente_final(g):
                 changed = True
-                print(f"  -> activo")
+                print("  -> activo")
         except Exception as e:
             print(f"  ERROR: {e}", file=sys.stderr)
             had_error = True
