@@ -630,7 +630,7 @@ footer {
         <label>Carpeta (opcional)</label>
         <div style="display:flex;gap:6px;align-items:center;">
           <select id="upload-folder-select" class="upload-input" style="flex:1;min-width:160px;">
-            <option value="">Sin carpeta (raíz)</option>
+            <option value="">— Selecciona una carpeta —</option>
           </select>
           <button type="button" class="upload-btn" style="padding:9px 14px;" onclick="createFolderForUpload()">+ Nueva</button>
         </div>
@@ -946,7 +946,7 @@ function _populateFolderSelect(folders) {
   var sel = document.getElementById('upload-folder-select');
   if (!sel) return;
   var current = sel.value;
-  sel.innerHTML = '<option value="">Sin carpeta (raíz)</option>';
+  sel.innerHTML = '<option value="">— Selecciona una carpeta —</option>';
   function addOptions(list, prefix) {
     (list || []).forEach(function(f) {
       var opt = document.createElement('option');
@@ -1042,7 +1042,9 @@ async function startUpload() {
   var filesInput = document.getElementById('upload-files-input');
   var files = filesInput.files;
 
+  var selectedFolderCheck = document.getElementById('upload-folder-select').value;
   if (!groupName) { alert('Escribe un nombre para el grupo.'); return; }
+  if (!selectedFolderCheck) { alert('Selecciona una carpeta para el grupo. Si no hay carpetas todavía, crea una con el botón "+ Nueva".'); return; }
   if (!files || files.length === 0) { alert('Selecciona al menos un archivo.'); return; }
 
   var btn = document.getElementById('upload-btn');

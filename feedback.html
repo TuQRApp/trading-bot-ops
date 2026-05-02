@@ -1144,11 +1144,13 @@ function _buildFileFilterBtns(skipAutoSelect) {
   var folderMap = {};
   folders.forEach(function(f) { folderMap[f.id] = f; });
 
-  // Collect file items
+  // Collect file items (deduplicated — each group appears in multiple tabs)
+  var seen = new Set();
   var items = [];
   document.querySelectorAll('.file-section-header').forEach(function(h) {
     var fileId = h.querySelector('.fsh-badge') && h.querySelector('.fsh-badge').textContent.trim();
-    if (!fileId) return;
+    if (!fileId || seen.has(fileId)) return;
+    seen.add(fileId);
     var name = (h.querySelector('.fsh-name') && h.querySelector('.fsh-name').textContent.trim()) || fileId;
     var icon = (h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim()) || '📄';
     var fshClass = Array.from(h.classList).find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
