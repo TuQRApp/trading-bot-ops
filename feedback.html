@@ -308,8 +308,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .fsh-status-badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;flex-shrink:0;}
 .fsh-status-revision{background:rgba(245,158,11,0.12);color:#92400e;border:1px solid rgba(245,158,11,0.4);}
 .fsh-status-final{background:rgba(30,45,110,0.06);color:var(--muted);border:1px solid var(--border);}
-.btn-rereview{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(37,99,235,0.3);background:rgba(37,99,235,0.06);color:var(--nico);cursor:pointer;transition:all 0.2s;flex-shrink:0;}
-.btn-rereview:hover{background:rgba(37,99,235,0.14);}
+.fsh-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;padding-left:34px;}
+.fsh-file-chip{font-family:var(--font-mono);font-size:10px;color:var(--muted);background:rgba(30,45,110,0.05);border:1px solid var(--border);border-radius:4px;padding:1px 7px;}
 .correction-wrap{margin-top:14px;border:2px solid rgba(245,158,11,0.55);border-radius:10px;padding:12px 14px;background:rgba(245,158,11,0.07);}
 .correction-label{font-family:var(--font-mono);font-size:11px;font-weight:700;color:#f59e0b;display:block;margin-bottom:3px;letter-spacing:0.02em;}
 .correction-sublabel{font-family:var(--font-display);font-size:10px;color:var(--muted);display:block;margin-bottom:8px;font-style:italic;}
@@ -502,17 +502,22 @@ function _fshHtml(g, count) {
   var statusBadge = '';
   if (g.status === 'en_revision') statusBadge = '<span class="fsh-status-badge fsh-status-revision">⚠ PENDIENTE REVISIÓN TRADER</span>';
   else if (g.status === 'pendiente_final') statusBadge = '<span class="fsh-status-badge fsh-status-final">🔄 PENDIENTE FEEDBACK FINAL CLAUDE</span>';
-  var rereviBtn = (g.status === 'activo')
-    ? '<button class="btn-rereview" onclick="requestRereview(\'' + _esc(g.badge) + '\')">↩ Solicitar re-análisis</button>'
-    : '';
-  return '<div class="file-section-header ' + g.fsh_class + '">' +
-    '<div class="fsh-icon ftype-' + g.ftype + '">' + g.icon + '</div>' +
-    '<span class="fsh-name">' + _esc(g.name) + '</span>' +
-    '<span class="fsh-badge">' + _esc(g.badge) + '</span>' +
-    (statusBadge || '') +
-    '<div class="fsh-line"></div>' +
-    '<span class="fsh-count">' + _esc(count) + '</span>' +
-    (rereviBtn || '') +
+  var filesRow = '';
+  if (g.files && g.files.length) {
+    filesRow = '<div class="fsh-files">' +
+      g.files.map(function(f) { return '<span class="fsh-file-chip">📄 ' + _esc(f.name) + '</span>'; }).join('') +
+      '</div>';
+  }
+  return '<div class="file-section-header ' + g.fsh_class + '" style="flex-wrap:wrap;">' +
+    '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
+      '<div class="fsh-icon ftype-' + g.ftype + '">' + g.icon + '</div>' +
+      '<span class="fsh-name">' + _esc(g.name) + '</span>' +
+      '<span class="fsh-badge">' + _esc(g.badge) + '</span>' +
+      (statusBadge || '') +
+      '<div class="fsh-line"></div>' +
+      '<span class="fsh-count">' + _esc(count) + '</span>' +
+    '</div>' +
+    filesRow +
     '</div>';
 }
 
@@ -686,7 +691,7 @@ function _renderM3Group(g) {
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
         '<div class="obs-timestamp">' + datePart + '<br>' + timePart + '</div>' +
-        '<div class="obs-source-badge src-' + (o.origin||'chat') + '">' + (o.origin||'?').toUpperCase() + '</div>' +
+        (o.origin ? '<div class="obs-source-badge" style="font-size:10px;word-break:break-all;">📄 ' + _esc(o.origin) + '</div>' : '') +
       '</div>' +
       '<div class="obs-body">' +
         '<div class="obs-title">' + _esc(o.title) + '</div>' +
@@ -950,18 +955,8 @@ function submitReview(badge) {
 }
 
 function requestRereview(badge) {
-  var notes = prompt('¿Qué querés que se revise o corrija en el nuevo análisis?\n(Podés dejarlo vacío para un re-análisis completo)');
-  if (notes === null) return;
-  fetch(WORKER_URL + '/group', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ badge: badge, action: 'request_rereview', rereview_notes: notes })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
-    if (res.ok) { location.reload(); }
-    else alert('Error: ' + (res.error || 'desconocido'));
-  });
+  // Removed — re-analysis no longer supported from UI
+  return;
 }
 
 // ── M5 — Contexto de Mercado ─────────────────────────────────────────────────
@@ -1298,13 +1293,18 @@ function _initTraderComments() {
 }
 
 function _injectFileSrcBadges() {
+  function _groupFiles(badge) {
+    var g = badge && window._renderData && window._renderData.groups.find(function(g) { return g.badge === badge; });
+    return g && g.files && g.files.length ? g.files.map(function(f) { return f.name; }).join(' · ') : null;
+  }
   function addFileSrc(listSel, cardSel, insertFn) {
     var list = document.querySelector(listSel);
     if (!list) return;
     var fname = null;
     Array.from(list.children).forEach(function(el) {
       if (el.classList.contains('file-section-header')) {
-        fname = el.querySelector('.fsh-name') && el.querySelector('.fsh-name').textContent.trim() || null;
+        var badge = el.querySelector('.fsh-badge') && el.querySelector('.fsh-badge').textContent.trim();
+        fname = _groupFiles(badge) || (el.querySelector('.fsh-name') && el.querySelector('.fsh-name').textContent.trim()) || null;
       } else if (el.matches && el.matches(cardSel) && fname && !el.querySelector('.file-src-badge')) {
         insertFn(el, fname);
       }
@@ -1315,7 +1315,7 @@ function _injectFileSrcBadges() {
     if (!hdr) return;
     var d = document.createElement('div');
     d.className = 'file-src-badge obs-context';
-    d.style.padding = '2px 0 6px';
+    d.style.cssText = 'padding:2px 0 6px;font-family:var(--font-mono);font-size:10px;color:var(--muted);';
     d.textContent = '📄 ' + fname;
     hdr.insertAdjacentElement('afterend', d);
   });
@@ -1324,7 +1324,7 @@ function _injectFileSrcBadges() {
     if (!hdr || hdr.querySelector('.file-src-badge')) return;
     var d = document.createElement('div');
     d.className = 'file-src-badge obs-context';
-    d.style.marginTop = '3px';
+    d.style.cssText = 'margin-top:3px;font-family:var(--font-mono);font-size:10px;color:var(--muted);width:100%;';
     d.textContent = '📄 ' + fname;
     hdr.appendChild(d);
   });
