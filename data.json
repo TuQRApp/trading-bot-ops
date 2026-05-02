@@ -1518,17 +1518,325 @@
           "type": "py"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "m1": {
         "type": "empty",
-        "last_updated": null,
-        "empty_title": "backtest_canal_fib - copia V2 02-may — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
+        "last_updated": "2026-05-02 | backtest_canal_fib - copia V2 02-may.py",
+        "empty_title": "Sin resultados de backtest disponibles",
+        "empty_desc": "Solo se proporcionó el archivo .py fuente. El script genera CSVs (canal_fib_XAUUSD.csv, canal_fib_XAGUSD.csv, canal_fib_BTCUSD.csv) y un HTML en tiempo de ejecucion, pero ninguno de esos archivos de salida fue incluido en el analisis. Sin datos numericos verificados no es posible presentar metricas de calidad.",
         "empty_trigger": "backtest_canal_fib - copia V2 02-may.py"
       },
-      "m2": [],
-      "m3": [],
-      "m4": []
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Capital compuesto independiente por simbolo — riesgo total no controlado",
+          "desc": "Cada simbolo arranca con CAPITAL_INI = 10,000 USD independiente. En produccion con 3 simbolos operando en paralelo el riesgo real por barra puede ser 3 x RISK_PCT = 6% del capital real. Se debe implementar un capital global compartido o un modulo de correlacion que limite el riesgo agregado diario (p.ej. max 4% del capital total entre todos los simbolos activos).",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Posible lookahead bias: señal y entrada en la misma barra",
+          "desc": "La señal se genera con c_high/c_low de la barra i y la ejecucion se verifica inmediatamente con esos mismos valores (filled). En mercados reales la barra no esta cerrada cuando se evalua la condicion. El backtest deberia marcar la señal en la barra i y comenzar la simulacion a partir de la barra i+1, o al menos verificar que el precio de entrada se alcanza DESPUES del cierre de la barra de señal. El comentario en el codigo menciona esto pero la condicion 'filled' sigue usando los valores de la barra actual.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Inconsistencia: RISK_PCT = 2% en codigo pero el HTML dice '2.5%'",
+          "desc": "El codigo define RISK_PCT = 0.02 (2%) y el comentario adyacente dice 'corregido desde 2.5%', pero la funcion build_html hardcodea la cadena 'Riesgo/trade: 2.5% compuesto' en la tabla de costos. Esta discrepancia puede llevar a conclusiones erroneas al leer el reporte. Corregir la cadena en build_html para usar f'{RISK_PCT*100:.1f}%' al igual que en el encabezado del reporte.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "SL aplicado con signo incorrecto para operacion LONG",
+          "desc": "Para entradas LONG el SL se calcula como fib_price(canal_top, canal_bot, LONG_SL) + spread, sumando el spread en lugar de restarlo. En una posicion larga el stop deberia estar por debajo del precio de entrada, por lo que el spread se debe restar (o no aplicarse al SL). El efecto es que el SL real en LONG es ligeramente mas alto de lo esperado, reduciendo la distancia SL efectiva y sobreestimando el tamano del lote.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Ventana de simulacion limitada a 200 barras (~10 horas M3)",
+          "desc": "El bucle de simulacion recorre como maximo 200 barras (i+200). Para BTCUSD en sesion 14-22h y movimientos lentos, muchos trades podrian quedar abiertos (result='OPEN') y ser descartados. Esto introduce sesgo de supervivencia al excluir sistematicamente los trades que tardaron mas en resolverse. Considerar aumentar el limite a 500-600 barras o introducir un cierre forzado a precio de mercado al final de la ventana.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "i avanza CANAL_LENGTH tras cada trade, saltando barras sin señal",
+          "desc": "Al final del bucle principal se ejecuta i += CANAL_LENGTH (20 barras) despues de registrar un trade. Esto implica que se omiten hasta 20 barras de datos despues de cada operacion, perdiendo potenciales señales validas y subestimando el numero real de trades. El avance deberia ser i += 1 o al menos i += barra_de_cierre_del_trade para reflejar el comportamiento real del bot.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "PERIOD_DAYS = 180 insuficiente para validacion estadistica robusta",
+          "desc": "Con 180 dias de M3 y 3 simbolos con horarios restringidos, el numero de trades por simbolo puede ser menor de 30, lo que hace que las metricas de win rate y profit factor sean estadisticamente poco fiables (alta varianza muestral). Se recomienda extender a 365-730 dias o realizar walk-forward con ventanas de 90 dias para obtener IC del 95% en las metricas clave.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Comision obtenida de historial de deals con posible sesgo de muestra",
+          "desc": "get_costos_reales() promedia comisiones de los ultimos 30 dias filtrando por porcentaje (0.001% < pct < 0.1%). Si en ese periodo el volumen operado fue bajo o la cuenta es demo, el historial puede estar vacio y se usa el fallback. El script imprime 'default IC Markets' vs 'historial MT5' pero no advierte al usuario si la comision real difiere del default en mas de un 20%. Agregar una advertencia explicita cuando se use el fallback.",
+          "comment": ""
+        },
+        {
+          "id": "R-09",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "estado": "pendiente",
+          "title": "El nombre del archivo incluye 'copia' — riesgo de confusion de versiones",
+          "desc": "El archivo se llama 'backtest_canal_fib - copia V2 02-may.py'. El nombre sugiere que es una copia de trabajo con gestion de versiones manual. Esto aumenta el riesgo de ejecutar la version incorrecta. Se recomienda usar control de versiones (git) y renombrar el archivo a un nombre canonico como 'backtest_canal_fib_v2.py'.",
+          "comment": ""
+        },
+        {
+          "id": "R-10",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "baja",
+          "estado": "pendiente",
+          "title": "MIN_TRADES = 5 es un umbral demasiado bajo para rechazar resultados",
+          "desc": "La funcion calc_metricas descarta simbolos con menos de 5 trades, pero con 5 trades cualquier metrica (win rate, profit factor, max DD) no tiene significancia estadistica. Se recomienda aumentar MIN_TRADES a 20-30 y emitir una advertencia cuando el numero de trades sea bajo (< 50) incluso si supera el minimo.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Slippage, spread dinamico y comision por lote no modelados en el backtest",
+          "desc": "El backtest usa un spread fijo obtenido de get_costos_reales() y una comision promedio de los ultimos 30 dias, pero no modela slippage de ejecucion ni spread variable en momentos de alta volatilidad. Para XAUUSD y BTCUSD el spread puede triplicarse en noticias macro. Sin estos costos el profit factor simulado estara sistematicamente sobreestimado. Se recomienda agregar un parametro SLIPPAGE_TICKS y usar el percentil 90 del spread historico en lugar del promedio.",
+          "comment": ""
+        },
+        {
+          "id": "R-21",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "Score M1 ausente impide validar la calibracion de severidad de los hallazgos",
+          "desc": "El modulo M1 fue emitido como 'empty' porque no se proporcionaron los CSVs de salida. Sin embargo, los hallazgos de M4 incluyen bugs de alta severidad (lookahead bias H-05, SL invertido H-02, capital no controlado H-07). Si existieran resultados numericos, el score de calidad del backtest deberia ser bajo (< 40/100). Se recomienda documentar explicitamente que cualquier metrica positiva obtenida con este codigo es invalida hasta que se corrijan H-02, H-05 y H-06.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "Solo 1 try/except en 751 lineas — 42 bloques if sin manejo de errores",
+          "desc": "El analisis estatico detecta 42 bloques if y 8 bucles pero solo 1 bloque try/except (en get_costos_reales). Las llamadas a mt5.copy_rates_range, mt5.order_calc_profit, mt5.symbol_info_tick y todo el bucle de simulacion carecen de manejo de excepciones. Un error de conexion MT5 o un valor None inesperado puede crashear el proceso silenciosamente o producir resultados parciales sin advertencia.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "20 numeros magicos dispersos sin constantes nombradas",
+          "desc": "El analisis detecta 20 numeros magicos distintos (0.191, 1.191, 1.382, 3.5, 5.0, etc.). Algunos estan definidos como constantes globales (SHORT_ENTRY, LONG_SL, etc.) pero otros como 1e-10, 0.001, 0.1, 200 (ventana de simulacion), 30 (dias de historial) y 130 (dpi del PNG) aparecen directamente en el codigo sin contexto. Deben ser constantes nombradas en la seccion CONFIGURACION para facilitar ajustes futuros.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "TP_SPLIT = 1/3 acumula error de punto flotante en 'remaining'",
+          "desc": "La variable remaining se inicializa en 1.0 y se resta TP_SPLIT (0.3333...) tres veces. Tras tres restas el resultado no es exactamente 0.0 sino ~2.2e-16, lo que puede causar que el bucle no termine con 'remaining <= 0' y procese una cuarta iteracion incorrecta. Usar una lista de fracciones enteras [1, 1, 1] y un contador de indices es mas seguro.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "error",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "plot_mensual convierte time con pd.to_datetime(d['time'].astype(str)) — doble conversion innecesaria y fragil",
+          "desc": "La columna 'time' del DataFrame de trades ya es un objeto datetime con timezone (UTC). El codigo hace d['time'].astype(str) seguido de pd.to_datetime(...) para obtener el periodo mensual. Esta conversion doble puede fallar si el formato de str(datetime_utc) no es el esperado por to_datetime. La forma correcta es d['time'].dt.to_period('M') directamente.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "SESSION_HOURS filtra por hora UTC pero la sesion de BTCUSD 14-22 puede ser hora local",
+          "desc": "Los datos de MT5 se descargan en UTC (pytz.UTC). SESSION_HOURS define BTCUSD como range(14, 22) que corresponderia a 14:00-22:00 UTC (sesion NY/tarde europea). Si la intencion era hora local del servidor o del mercado, el filtro es incorrecto. Documentar explicitamente que los rangos son UTC y verificar contra la liquidez real del instrumento.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "pnl_usd usa tick_value de MT5 en lugar de order_calc_profit para calcular PnL intermedio",
+          "desc": "calc_lot usa order_calc_profit para dimensionar el lote correctamente, pero pnl_usd usa info.trade_tick_value * ticks manualmente. Para XAUUSD y BTCUSD donde el tick_value puede variar con el precio, esta inconsistencia puede producir un PnL ligeramente distinto del que calcularia el broker. Se recomienda usar order_calc_profit tambien en pnl_usd o documentar explicitamente la aproximacion.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "info",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "Reporte HTML embebe imagenes base64 de alta resolucion (dpi=130) — archivos potencialmente grandes",
+          "desc": "Cada simbolo genera 4 graficos PNG a 130 dpi embebidos en base64 dentro del HTML. Para 3 simbolos esto puede producir un archivo HTML de 5-15 MB que es lento de abrir en el navegador. Considerar reducir dpi a 96 o guardar los PNG como archivos separados y referenciarlos con rutas relativas.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-008",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "mt5.shutdown() se llama antes de verificar si todos los simbolos fallaron",
+          "desc": "En run(), mt5.shutdown() se ejecuta siempre al final del bucle de simbolos. Si todos los simbolos fallan (sin datos o pocos trades), el codigo imprime '❌ Sin resultados' y retorna, pero mt5.shutdown() ya fue llamado correctamente. Sin embargo, si conectar() retorna False y se sale antes, mt5.shutdown() nunca se llama, dejando potencialmente la conexion abierta. Usar un bloque try/finally para garantizar el cierre.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "error",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "4 numeros magicos del pre-analisis (0.12, 3.5, 4, 1.5) no aparecen en constantes nombradas ni en hallazgos existentes",
+          "desc": "El pre-analisis lista 20 numeros magicos. OBS-002 menciona algunos pero no cubre 0.12, 3.5, 4 y 1.5. Revisando el contexto: 3.5 y 4 podrian ser multiplicadores de TP no documentados, 0.12 podria ser un umbral de comision y 1.5 un nivel de extension de Fibonacci adicional. Ninguno de estos valores aparece en la seccion CONFIGURACION como constante nombrada. Su uso directo en el codigo impide entender su proposito sin leer el contexto completo y los hace invisibles a cambios de parametros.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib - copia V2 02-may.py",
+          "title": "conectar() no verifica la version de MetaTrader5 ni la disponibilidad del simbolo antes de descargar datos",
+          "desc": "La funcion conectar() llama a mt5.initialize() pero no verifica mt5.version() ni ejecuta mt5.symbol_select(sym, True) antes de copy_rates_range. Si el simbolo no esta activado en el Market Watch de MT5, copy_rates_range devuelve None silenciosamente y get_data retorna None sin mensaje de error informativo. Agregar mt5.symbol_select(sym, True) en get_data y verificar el retorno antes de llamar a copy_rates_range.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "Texto hardcodeado '2.5%' en HTML cuando RISK_PCT = 0.02 (2%)",
+          "desc": "La funcion build_html tiene una cadena estatica '2.5% compuesto' en la fila de costos del reporte. El codigo usa RISK_PCT = 0.02 (2%). El reporte es factualmente incorrecto para cualquier valor de RISK_PCT distinto de 0.025.",
+          "code": "# En build_html:\n<span>🎯 Riesgo/trade: <b>2.5% compuesto</b></span>",
+          "fix": "# Usar la variable global:\n<span>🎯 Riesgo/trade: <b>{RISK_PCT*100:.1f}% compuesto</b></span>",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "SL de LONG sumado con spread en lugar de restado",
+          "desc": "Para la entrada LONG el stop loss debe estar POR DEBAJO del precio de entrada. Al sumar el spread al nivel SL se eleva el stop loss, reduciendo la distancia efectiva entry-SL y sobredimensionando el lote calculado por calc_lot.",
+          "code": "# Linea actual:\nsl_px = fib_price(canal_top, canal_bot, LONG_SL) + spread",
+          "fix": "# Correccion: restar spread al SL de LONG\nsl_px = fib_price(canal_top, canal_bot, LONG_SL) - spread",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "bug",
+          "title": "double conversion en plot_mensual puede fallar con datetime UTC",
+          "desc": "d['time'].astype(str) convierte un Timestamp UTC a cadena con timezone info (p.ej. '2025-11-01 08:00:00+00:00') y pd.to_datetime() puede parsearla incorrectamente o lanzar ParserError en algunas versiones de pandas.",
+          "code": "d['mes'] = pd.to_datetime(\n    d['time'].astype(str)).dt.to_period('M')",
+          "fix": "# Si 'time' ya es DatetimeTZDtype:\nd['mes'] = d['time'].dt.tz_convert(None).dt.to_period('M')",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "remaining no llega exactamente a 0.0 por error de punto flotante",
+          "desc": "TP_SPLIT = 1/3 es una fraccion periodica en IEEE 754. Tras restar TP_SPLIT tres veces, remaining ~= 2.2e-16, no 0.0. La condicion 'remaining <= 0' usa <= por lo que funciona, pero si se cambia a '== 0' o se usa en una division posterior el bug se activa.",
+          "code": "remaining = 1.0\n# ...\nremaining -= TP_SPLIT  # x3 => ~2.2e-16, no exactamente 0",
+          "fix": "# Usar contador entero:\nremaining_parts = 3\n# ...\nremaining_parts -= 1\nif remaining_parts == 0:\n    break",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "riesgo",
+          "title": "Señal evaluada con datos de barra no cerrada — lookahead bias",
+          "desc": "La condicion de disparo usa c_high y c_low de la barra i (barra actual), y la verificacion 'filled' tambien usa esos mismos valores. En un backtest de barras ya cerradas esto introduce sesgo porque se asume que en la misma barra se observa el high/low Y se ejecuta la orden a un precio derivado de ese high/low.",
+          "code": "# Misma barra i para señal y para 'filled':\nc_high = float(bar['high'])\nentry_short = fib_price(canal_top, canal_bot, SHORT_ENTRY)\nif c_high >= entry_short and c_close < lvl_top:\n    direction = 'SHORT'\n# ...\nfilled = (direction == 'SHORT' and c_high >= entry_px)",
+          "fix": "# Detectar señal en barra i, verificar ejecucion desde barra i+1:\nif direction is not None:\n    for j in range(i+1, min(i+5, n)):  # buscar fill en barras siguientes\n        fbar = df.iloc[j]\n        filled = (direction == 'SHORT' and fbar['high'] >= entry_px) or \\\n                 (direction == 'LONG' and fbar['low'] <= entry_px)\n        if filled:\n            sim_start = j + 1\n            break",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "riesgo",
+          "title": "i += CANAL_LENGTH tras cada trade omite hasta 20 barras sin señal",
+          "desc": "Despues de registrar un trade el indice avanza 20 barras incondicionalmente. Esto significa que potenciales trades en las barras intermedias se pierden, subestimando la frecuencia real de señales y posiblemente sesgando los resultados hacia periodos de menor actividad.",
+          "code": "# Al final del bucle:\ni += CANAL_LENGTH   # salta 20 barras",
+          "fix": "# Avanzar a la barra de cierre del trade + 1:\ni = j + 1  # donde j es el indice de la ultima barra del trade simulado",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "ausencia",
+          "title": "Sin control de riesgo agregado multi-simbolo",
+          "desc": "Cada simbolo se ejecuta de forma completamente independiente con su propio capital de 10,000 USD. No existe ninguna logica que limite el riesgo total cuando los tres simbolos operan concurrentemente, lo que puede exponer el capital real a un riesgo 3x mayor que RISK_PCT.",
+          "code": "# En run():\nfor sym in SYMBOLS:\n    df_trades, cap_fin = backtest(df, sym, spread_price, comm_usd, CAPITAL_INI)\n    # CAPITAL_INI siempre es 10_000, sin capital global compartido",
+          "fix": "# Implementar capital compartido:\ncapital_global = CAPITAL_INI\nfor sym in SYMBOLS:\n    df_trades, cap_fin = backtest(df, sym, spread_price, comm_usd, capital_global)\n    capital_global = cap_fin  # capital compuesto entre simbolos\n# O bien limitar riesgo total: RISK_PCT / len(SYMBOLS)",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "ausencia",
+          "title": "Sin manejo de excepciones en el bucle principal de backtest y en run()",
+          "desc": "Las funciones get_data, backtest y calc_metricas no tienen try/except. Un error de MT5 (None devuelto por copy_rates_range), una division por cero en pnl_usd o un KeyError en el DataFrame terminaria el proceso sin guardar resultados parciales.",
+          "code": "# Sin proteccion:\ndf = get_data(sym)\ndf_trades, cap_fin = backtest(df, sym, spread_price, comm_usd, CAPITAL_INI)",
+          "fix": "try:\n    df = get_data(sym)\n    if df is None:\n        continue\n    df_trades, cap_fin = backtest(df, sym, spread_price, comm_usd, CAPITAL_INI)\nexcept Exception as e:\n    print(f'  ERROR en {sym}: {e}')\n    continue",
+          "comment": ""
+        },
+        {
+          "id": "H-09",
+          "categoria": "ausencia",
+          "title": "Sin semilla aleatoria ni reproducibilidad garantizada para futuras extensiones",
+          "desc": "Actualmente el backtest es deterministico, pero cualquier extension que use np.random (p.ej. Monte Carlo de drawdown, ruido en slippage) no tendra semilla fija. Agregar np.random.seed() en run() como practica defensiva.",
+          "code": "# En run(), no existe:\nnp.random.seed(42)",
+          "fix": "def run():\n    np.random.seed(42)  # reproducibilidad\n    # ...",
+          "comment": ""
+        },
+        {
+          "id": "H-10",
+          "categoria": "mejora",
+          "title": "pnl_usd deberia usar order_calc_profit para consistencia con calc_lot",
+          "desc": "calc_lot usa mt5.order_calc_profit para obtener el PnL exacto del broker. pnl_usd calcula el PnL manualmente usando trade_tick_value / trade_tick_size. Para XAUUSD (contrato 100oz, precio variable) y BTCUSD la discrepancia puede ser significativa. Unificar ambas funciones para usar el mismo metodo de calculo.",
+          "code": "def pnl_usd(symbol, entry_px, exit_px, direction, lot):\n    info = mt5.symbol_info(symbol)\n    ticks = abs(exit_px - entry_px) / info.trade_tick_size\n    sign  = 1 if (...) else -1\n    return sign * ticks * info.trade_tick_value * lot",
+          "fix": "def pnl_usd(symbol, entry_px, exit_px, direction, lot):\n    order_type = mt5.ORDER_TYPE_BUY if direction == 'LONG' else mt5.ORDER_TYPE_SELL\n    result = mt5.order_calc_profit(order_type, symbol, lot, entry_px, exit_px)\n    if result is None:\n        # fallback al metodo anterior\n        info = mt5.symbol_info(symbol)\n        ticks = abs(exit_px - entry_px) / info.trade_tick_size\n        sign = 1 if ((direction=='LONG' and exit_px>entry_px) or\n                     (direction=='SHORT' and exit_px<entry_px)) else -1\n        return sign * ticks * info.trade_tick_value * lot\n    return result",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "Slippage no modelado: los precios de entrada y salida usan niveles Fibonacci exactos sin friccion de mercado",
+          "desc": "Los precios de entrada (entry_px), TP y SL se calculan como niveles Fibonacci exactos mediante fib_price(). En mercado real las ordenes limit y stop se ejecutan con slippage. El backtest asume ejecucion perfecta al precio exacto en todos los casos, lo que sobreestima el PnL neto de forma sistematica, especialmente en BTCUSD donde el spread y el slippage pueden ser varios dolares por contrato.",
+          "code": "entry_px = fib_price(canal_top, canal_bot, SHORT_ENTRY)\n# Sin ajuste de slippage:\nfilled = (direction == 'SHORT' and c_high >= entry_px)",
+          "fix": "# Agregar constante de slippage configurable:\nSLIPPAGE_PX = {\"XAUUSD\": 0.10, \"XAGUSD\": 0.005, \"BTCUSD\": 5.0}\n# Ajustar precio de fill:\nactual_entry = entry_px + SLIPPAGE_PX[symbol] if direction == 'SHORT' else entry_px - SLIPPAGE_PX[symbol]",
+          "comment": ""
+        }
+      ],
+      "category": "Backtest | 3 instrumentos (XAUUSD, XAGUSD, BTCUSD) | MT5 IC Markets | Canal Fibonacci M3",
+      "summary": "Script de backtest de 751 lineas que descarga barras M3 desde MT5, construye canales Fibonacci de 20 barras, genera senales SHORT/LONG en niveles de extension y simula 3 TPs parciales con breakeven en TP1. Los costos (spread real via tick y comision via historial de deals) se aplican directamente en los niveles de entrada/salida. El resultado final se exporta a un reporte HTML embebido con graficos base64 y un CSV por simbolo; no se proporcionaron archivos CSV de resultados, por lo que no hay metricas de backtest verificadas.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": ""
     }
   ],
   "folders": [
@@ -1540,11 +1848,6 @@
     {
       "id": "f1777693268170",
       "name": "MACD",
-      "parent_id": null
-    },
-    {
-      "id": "f1777756675306",
-      "name": "Test",
       "parent_id": null
     }
   ]
