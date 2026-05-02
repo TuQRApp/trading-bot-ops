@@ -627,10 +627,10 @@ footer {
           placeholder="ej: Canal Fibonacci v2, OBV Bot v3…">
       </div>
       <div class="upload-field">
-        <label>Carpeta (opcional)</label>
+        <label>Carpeta</label>
         <div style="display:flex;gap:6px;align-items:center;">
           <select id="upload-folder-select" class="upload-input" style="flex:1;min-width:160px;">
-            <option value="">— Selecciona una carpeta —</option>
+            <option value="" disabled selected>— Selecciona o crea una carpeta —</option>
           </select>
           <button type="button" class="upload-btn" style="padding:9px 14px;" onclick="createFolderForUpload()">+ Nueva</button>
         </div>
@@ -928,25 +928,41 @@ function renderFileList(data) {
 
   var html = '<div class="files-list">';
 
-  // Root-level groups (no folder)
-  groups.filter(function(g) { return !g.folder_id; }).forEach(function(g) {
-    html += _renderFileRow(g, folders);
-  });
-
   // Top-level folders
   (folderChildren['root'] || []).forEach(function(f) {
     html += _renderFolderSection(f, groups, folderChildren, folders, 0);
   });
 
+  // Groups without folder — shown in a warning section
+  var unfiledGroups = groups.filter(function(g) { return !g.folder_id; });
+  if (unfiledGroups.length) {
+    html += '<div class="folder-section" style="border-color:rgba(234,88,12,0.3);">';
+    html += '<div class="folder-header" style="background:rgba(234,88,12,0.04);">' +
+      '<span class="folder-toggle open" id="ftoggle-unfiled">▶</span>' +
+      '<span>⚠️</span>' +
+      '<span class="folder-name" style="color:#92400e;">Sin carpeta asignada</span>' +
+      '<span class="folder-count">' + unfiledGroups.length + ' archivo' + (unfiledGroups.length !== 1 ? 's' : '') + ' — mover a una carpeta</span>' +
+      '</div>';
+    html += '<div class="folder-contents" id="fcont-unfiled">';
+    unfiledGroups.forEach(function(g) { html += _renderFileRow(g, folders); });
+    html += '</div></div>';
+  }
+
   html += '</div>';
   container.innerHTML = html;
+
+  // Wire toggle for unfiled section
+  var unfiledHdr = container.querySelector('#ftoggle-unfiled');
+  if (unfiledHdr) {
+    unfiledHdr.closest('.folder-header').onclick = function() { toggleFolder('unfiled'); };
+  }
 }
 
 function _populateFolderSelect(folders) {
   var sel = document.getElementById('upload-folder-select');
   if (!sel) return;
   var current = sel.value;
-  sel.innerHTML = '<option value="">— Selecciona una carpeta —</option>';
+  sel.innerHTML = '<option value="" disabled selected>— Selecciona o crea una carpeta —</option>';
   function addOptions(list, prefix) {
     (list || []).forEach(function(f) {
       var opt = document.createElement('option');

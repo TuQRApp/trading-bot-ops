@@ -1160,6 +1160,7 @@ function _buildFileFilterBtns(skipAutoSelect) {
     items.push({ fileId: fileId, name: name, icon: icon, fshClass: fshClass, folderId: folderId });
   });
 
+  var UNFILED_ID = '__unfiled__';
   var currentId = _filterNav ? _filterNav.id : null;
 
   // Back / breadcrumb when inside a folder
@@ -1173,26 +1174,46 @@ function _buildFileFilterBtns(skipAutoSelect) {
 
     var bc = document.createElement('span');
     bc.className = 'file-filter-breadcrumb';
-    bc.textContent = '📁 ' + _filterNav.name + ' ›';
+    bc.textContent = (currentId === UNFILED_ID ? '⚠️' : '📁') + ' ' + _filterNav.name + ' ›';
     filterBar.insertBefore(bc, hint || null);
   }
 
-  // Files at current level
-  items.filter(function(it) { return it.folderId === currentId; })
-       .forEach(function(it) { _appendFileBtn(filterBar, hint, it); });
+  // Files at current level (unfiled virtual folder or real folder)
+  var levelFolderId = (currentId === UNFILED_ID) ? null : currentId;
+  if (_filterNav) {
+    items.filter(function(it) { return it.folderId === levelFolderId; })
+         .forEach(function(it) { _appendFileBtn(filterBar, hint, it); });
+  }
 
-  // Subfolders at current level
-  folders.filter(function(f) { return (f.parent_id || null) === currentId; })
-         .forEach(function(f) {
-    var fb = document.createElement('button');
-    fb.className = 'file-filter-folder-btn';
-    fb.textContent = '📁 ' + f.name;
-    fb.onclick = function() {
-      _filterNav = f;
-      _buildFileFilterBtns();
-    };
-    filterBar.insertBefore(fb, hint || null);
-  });
+  // Subfolders at current real level (not inside unfiled virtual folder)
+  if (currentId !== UNFILED_ID) {
+    folders.filter(function(f) { return (f.parent_id || null) === currentId; })
+           .forEach(function(f) {
+      var fb = document.createElement('button');
+      fb.className = 'file-filter-folder-btn';
+      fb.textContent = '📁 ' + f.name;
+      fb.onclick = function() { _filterNav = f; _buildFileFilterBtns(); };
+      filterBar.insertBefore(fb, hint || null);
+    });
+
+    // Virtual "(Sin carpeta)" entry if there are unfiled items and we're at root
+    if (!currentId) {
+      var unfiledItems = items.filter(function(it) { return !it.folderId; });
+      if (unfiledItems.length) {
+        var ufBtn = document.createElement('button');
+        ufBtn.className = 'file-filter-folder-btn';
+        ufBtn.style.borderColor = 'rgba(234,88,12,0.35)';
+        ufBtn.style.color = '#92400e';
+        ufBtn.style.background = 'rgba(234,88,12,0.05)';
+        ufBtn.textContent = '⚠️ Sin carpeta (' + unfiledItems.length + ')';
+        ufBtn.onclick = function() {
+          _filterNav = { id: UNFILED_ID, name: 'Sin carpeta', parent_id: null };
+          _buildFileFilterBtns();
+        };
+        filterBar.insertBefore(ufBtn, hint || null);
+      }
+    }
+  }
 
   if (!skipAutoSelect) {
     var firstBtn = filterBar.querySelector('.file-filter-btn');
