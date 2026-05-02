@@ -37,6 +37,8 @@ export default {
     if (pathname === '/group'   && method === 'POST')   return handleRegisterGroup(request, env);
     if (pathname === '/group'   && method === 'PATCH')  return handlePatchGroup(request, env);
     if (pathname === '/group'   && method === 'DELETE') return handleDeleteGroup(request, env);
+    if (pathname === '/folder'  && method === 'POST')   return handleCreateFolder(request, env);
+    if (pathname === '/folder'  && method === 'DELETE') return handleDeleteFolder(request, env);
     if (pathname === '/dispatch-m5' && method === 'POST') return handleDispatchM5(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
@@ -308,6 +310,19 @@ async function handlePatchGroup(request, env) {
     if (idx === -1) return json({ error: 'group not found' }, 404);
     const group = data.groups[idx];
 
+    if (action === 'move') {
+      group.folder_id = body.folder_id || null;
+      await writeData(data, sha, env);
+      return json({ ok: true });
+    }
+
+    if (action === 'save_m5_notes') {
+      if (!group.m5) group.m5 = {};
+      group.m5.trader_notes = body.notes || '';
+      await writeData(data, sha, env);
+      return json({ ok: true });
+    }
+
     if (action === 'submit_review') {
       const corrections = body.corrections || {};
       for (const mod of ['m2', 'm3', 'm4']) {
@@ -403,6 +418,46 @@ async function handleDeleteGroup(request, env) {
     await writeData(data, sha, env);
 
     return json({ ok: true, deleted, removedBadge: badge });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── /folder  POST ─────────────────────────────────────────────────────────────
+
+async function handleCreateFolder(request, env) {
+  try {
+    const body = await request.json();
+    const name = (body.name || '').trim();
+    if (!name) return json({ error: 'name is required' }, 400);
+    const { data, sha } = await readData(env);
+    if (!Array.isArray(data.folders)) data.folders = [];
+    const id = 'f' + Date.now();
+    data.folders.push({ id, name, parent_id: body.parent_id || null });
+    await writeData(data, sha, env);
+    return json({ ok: true, id });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── /folder  DELETE ───────────────────────────────────────────────────────────
+
+async function handleDeleteFolder(request, env) {
+  try {
+    const body = await request.json();
+    const { id } = body;
+    if (!id) return json({ error: 'id is required' }, 400);
+    const { data, sha } = await readData(env);
+    if (!Array.isArray(data.folders)) data.folders = [];
+    const folder = data.folders.find(f => f.id === id);
+    const parentId = folder ? folder.parent_id : null;
+    // Re-parent children and orphaned groups to this folder's parent
+    data.folders.forEach(f => { if (f.parent_id === id) f.parent_id = parentId; });
+    (data.groups || []).forEach(g => { if (g.folder_id === id) g.folder_id = parentId; });
+    data.folders = data.folders.filter(f => f.id !== id);
+    await writeData(data, sha, env);
+    return json({ ok: true });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

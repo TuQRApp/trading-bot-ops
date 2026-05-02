@@ -200,6 +200,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .file-filter-btn{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all 0.2s;}
 .file-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
 .file-filter-hint{font-family:var(--font-mono);font-size:9px;color:var(--muted);opacity:0.6;margin-left:4px;white-space:nowrap;}
+.file-filter-folder-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);opacity:0.55;margin-left:6px;margin-right:2px;white-space:nowrap;align-self:center;}
 
 /* ── EXPORT BAR ── */
 .export-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
@@ -365,7 +366,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
     <button class="tab-btn" onclick="showTab('recomendaciones',this)">2 · Recomendaciones</button>
     <button class="tab-btn" onclick="showTab('live',this)">3 · Observaciones</button>
     <button class="tab-btn" onclick="showTab('arquitectura',this)">4 · Feedback de código</button>
-    <button class="tab-btn" onclick="showTab('negocio',this)">5 · Negocio</button>
+    <button class="tab-btn" onclick="showTab('negocio',this)" style="display:none">5 · Negocio</button>
     <button class="tab-btn" onclick="showTab('mercado',this)">6 · Contexto de Mercado</button>
   </div>
 
@@ -1020,6 +1021,7 @@ function _renderM5(group) {
       }).join('') + '</div>'
     : '';
 
+  var savedNotes = m5.trader_notes || '';
   container.innerHTML =
     '<div class="m5-update-bar">' +
       '<span class="m5-updated-label">Actualizado: ' + updatedStr + '</span>' +
@@ -1028,7 +1030,13 @@ function _renderM5(group) {
     '<div class="m5-macro-bar">' + vixPill + fgPill + eventCountPill + '</div>' +
     (m5.resumen ? '<div class="m5-resumen">' + _esc(m5.resumen) + '</div>' : '') +
     '<div class="m5-cards">' + cardsHtml + '</div>' +
-    eventsHtml;
+    eventsHtml +
+    '<div class="correction-wrap" style="margin-top:28px;">' +
+      '<label class="correction-label">💬 Comentarios del Trader — Contexto de Mercado</label>' +
+      '<span class="correction-sublabel">Notas sobre el contexto actual, acciones tomadas o decisiones basadas en este análisis.</span>' +
+      '<textarea class="correction-field" id="m5-notes-field" placeholder="Escribe tus notas aquí…" style="min-height:80px;">' + _esc(savedNotes) + '</textarea>' +
+      '<button class="btn-save-comment" onclick="saveM5Notes(\'' + _esc(group.badge) + '\', this)" style="margin-top:8px;">Guardar nota</button>' +
+    '</div>';
 }
 
 function triggerM5Refresh(btn) {
@@ -1051,6 +1059,31 @@ function triggerM5Refresh(btn) {
       btn.disabled = false;
       btn.textContent = '↻ Actualizar ahora';
     });
+}
+
+function saveM5Notes(badge, btn) {
+  var notes = (document.getElementById('m5-notes-field') || {}).value || '';
+  btn.textContent = 'Guardando…';
+  btn.disabled = true;
+  fetch(WORKER_URL + '/group', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: badge, action: 'save_m5_notes', notes: notes })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      btn.textContent = '✓ Guardado';
+      setTimeout(function() { btn.textContent = 'Guardar nota'; btn.disabled = false; }, 2000);
+    } else {
+      alert('Error: ' + (res.error || 'desconocido'));
+      btn.textContent = 'Guardar nota'; btn.disabled = false;
+    }
+  })
+  .catch(function(e) {
+    alert('Error: ' + e.message);
+    btn.textContent = 'Guardar nota'; btn.disabled = false;
+  });
 }
 
 function _initM5() {
@@ -1097,7 +1130,15 @@ function _buildFileFilterBtns() {
   var seen = new Set();
   var hint = document.querySelector('.file-filter-hint');
   var filterBar = document.getElementById('file-filter-bar');
-  filterBar.querySelectorAll('.file-filter-btn:not(#ff-all)').forEach(function(b) { b.remove(); });
+  filterBar.querySelectorAll('.file-filter-btn, .file-filter-folder-label').forEach(function(b) { b.remove(); });
+
+  // Build folder map from renderData
+  var folders = (window._renderData && window._renderData.folders) || [];
+  var folderMap = {};
+  folders.forEach(function(f) { folderMap[f.id] = f; });
+
+  // Collect all file sections with their group folder_id
+  var items = []; // [{fileId, name, icon, fshClass, folderId, folderName}]
   document.querySelectorAll('.file-section-header').forEach(function(h) {
     var fileId = h.querySelector('.fsh-badge') && h.querySelector('.fsh-badge').textContent.trim();
     if (!fileId || seen.has(fileId)) return;
@@ -1106,16 +1147,43 @@ function _buildFileFilterBtns() {
     var icon = h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim() || '📄';
     var fshClass = [...h.classList].find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
     fileRegistry[fileId] = fshClass;
-    var fb = document.createElement('button');
-    fb.className = 'file-filter-btn';
-    fb.dataset.badge = fileId;
-    fb.textContent = icon + ' ' + name;
-    fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(fshClass, fileId);
-    filterBar.insertBefore(fb, hint || null);
+    var group = window._renderData && window._renderData.groups.find(function(g) { return g.badge === fileId; });
+    var folderId = group && group.folder_id || null;
+    var folderName = folderId && folderMap[folderId] ? folderMap[folderId].name : null;
+    items.push({ fileId: fileId, name: name, icon: icon, fshClass: fshClass, folderId: folderId, folderName: folderName });
+  });
+
+  // Group by folder, inserting folder label separators
+  var rendered = new Set();
+  // Root items first
+  items.filter(function(it) { return !it.folderId; }).forEach(function(it) {
+    _appendFileBtn(filterBar, hint, it);
+    rendered.add(it.fileId);
+  });
+  // Folders
+  var folderIds = [...new Set(items.filter(function(it) { return it.folderId; }).map(function(it) { return it.folderId; }))];
+  folderIds.forEach(function(fid) {
+    var folderItems = items.filter(function(it) { return it.folderId === fid; });
+    if (!folderItems.length) return;
+    // Folder label
+    var lbl = document.createElement('span');
+    lbl.className = 'file-filter-folder-label';
+    lbl.textContent = '📁 ' + (folderMap[fid] ? folderMap[fid].name : fid);
+    filterBar.insertBefore(lbl, hint || null);
+    folderItems.forEach(function(it) { _appendFileBtn(filterBar, hint, it); rendered.add(it.fileId); });
   });
   // Auto-select first file
   var firstBtn = filterBar.querySelector('.file-filter-btn');
   if (firstBtn) firstBtn.click();
+}
+
+function _appendFileBtn(filterBar, hint, it) {
+  var fb = document.createElement('button');
+  fb.className = 'file-filter-btn';
+  fb.dataset.badge = it.fileId;
+  fb.textContent = it.icon + ' ' + it.name;
+  fb.onclick = (function(cls, id) { return function() { toggleFileFilter(cls, id, fb); }; })(it.fshClass, it.fileId);
+  filterBar.insertBefore(fb, hint || null);
 }
 
 function _countArchCards() {

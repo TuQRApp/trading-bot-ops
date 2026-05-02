@@ -155,7 +155,7 @@ Rules:
 {M5_SCHEMA}
 """
 
-def generate_m5(group, macro):
+def _call_claude_m5(group, macro):
     prompt = build_m5_prompt(group, macro)
     msg = client.messages.create(
         model="claude-sonnet-4-6",
@@ -170,6 +170,13 @@ def generate_m5(group, macro):
     result = json.loads(text)
     result["last_updated"] = macro["fetched_at"]
     result["macro_snapshot"] = macro
+    return result
+
+def generate_m5(group, macro):
+    existing_notes = (group.get("m5") or {}).get("trader_notes", "")
+    result = _call_claude_m5(group, macro)
+    if existing_notes:
+        result["trader_notes"] = existing_notes
     return result
 
 # ── Main ──────────────────────────────────────────────────────────────────────

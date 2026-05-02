@@ -443,6 +443,35 @@ a.tag:hover { opacity: 0.75; }
 .tag-final    { color: var(--nico);   border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.08); }
 .claude-timer { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 8px; }
 
+/* ── FOLDER STRUCTURE ── */
+.btn-new-folder{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.btn-new-folder:hover{border-color:var(--nico);color:var(--nico);}
+.section-title-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.section-title-row .stl{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:3px;color:var(--muted);white-space:nowrap;}
+.section-title-row .stl-line{flex:1;height:1px;background:var(--border);}
+.folder-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.folder-header{display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;background:rgba(30,45,110,0.02);user-select:none;}
+.folder-header:hover{background:rgba(30,45,110,0.04);}
+.folder-toggle{font-size:11px;color:var(--muted);transition:transform 0.2s;display:inline-block;width:12px;text-align:center;}
+.folder-toggle.open{transform:rotate(90deg);}
+.folder-name{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+.folder-count{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.folder-header-actions{display:flex;gap:6px;margin-left:8px;}
+.btn-subfolder{font-family:var(--font-mono);font-size:9px;padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;}
+.btn-subfolder:hover{border-color:var(--nico);color:var(--nico);}
+.btn-del-folder{font-family:var(--font-mono);font-size:9px;padding:3px 9px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;opacity:0.7;}
+.btn-del-folder:hover{border-color:rgba(220,38,38,0.4);color:var(--gate);opacity:1;}
+.folder-contents{padding:14px;display:flex;flex-direction:column;gap:12px;}
+.folder-contents.collapsed{display:none;}
+.folder-sub-section{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.folder-sub-header{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;background:rgba(30,45,110,0.01);user-select:none;}
+.folder-sub-header:hover{background:rgba(30,45,110,0.03);}
+.folder-sub-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.folder-sub-contents{padding:12px;display:flex;flex-direction:column;gap:10px;}
+.folder-sub-contents.collapsed{display:none;}
+.folder-empty-note{font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:10px 6px;opacity:0.65;}
+.move-select{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;max-width:160px;}
+
 .revision-alert-row {
   margin-top: 10px;
   padding: 12px 16px;
@@ -617,7 +646,11 @@ footer {
   </div>
 
   <!-- ══ FILES LIST ══════════════════════════════════════════════════════ -->
-  <div class="section-title">Archivos del sistema</div>
+  <div class="section-title-row">
+    <span class="stl">Archivos del sistema</span>
+    <div class="stl-line"></div>
+    <button class="btn-new-folder" onclick="createFolder(null)">+ Nueva carpeta</button>
+  </div>
   <div id="files-list-container">
     <div class="files-empty">
       <div class="files-empty-icon">⏳</div>
@@ -757,24 +790,106 @@ function _claudeTimerClear(badge) {
   localStorage.removeItem('tb_cw_' + badge);
 }
 
+function _renderFileRow(g, folders) {
+  var icon = _ftypeIcon(g.ftype);
+  var statusTag, dateLabel, revisionAlert = '';
+  if (g.status === 'pending') {
+    var elapsed = _claudeElapsed(g.badge);
+    var timerStr = elapsed ? ' <span class="claude-timer">⏱ ' + elapsed + '</span>' : '';
+    statusTag = '<span class="tag tag-pending">⏳ Pendiente primer análisis Claude</span>' + timerStr;
+    dateLabel = 'Subido';
+  } else if (g.status === 'en_revision') {
+    statusTag = '<span class="tag tag-revision">⚠ Pendiente primera revisión Trader</span>';
+    dateLabel = 'Analizado';
+    revisionAlert =
+      '<div class="revision-alert-row">' +
+      '<span>El borrador está listo. <strong>Revisá cada módulo, escribí tus correcciones y envialas.</strong> El ciclo no cierra sin tu validación.</span>' +
+      '<a href="feedback.html">Ir al análisis →</a>' +
+      '</div>';
+  } else if (g.status === 'pendiente_final') {
+    var elapsed2 = _claudeElapsed(g.badge);
+    var timerStr2 = elapsed2 ? ' <span class="claude-timer">⏱ ' + elapsed2 + '</span>' : '';
+    statusTag = '<span class="tag tag-final">🔄 Pendiente de feedback final Claude</span>' + timerStr2;
+    dateLabel = 'Analizado';
+  } else {
+    statusTag = '<span class="tag tag-trader">✓ Ciclo completo</span>';
+    dateLabel = 'Analizado';
+  }
+  var filesBadge = g.files && g.files.length > 1
+    ? '<span class="tag tag-muted">' + g.files.length + ' archivos</span>' : '';
+  var m4Tags = (g.status === 'pending') ? '' : _m4Tags(g);
+  var badgeTag = '<span class="tag tag-muted">' + g.badge + '</span>';
+  var categoryHtml = g.category ? '<div class="file-row-category">' + g.category + '</div>' : '';
+  var summaryHtml = g.summary ? '<div class="file-row-summary">' + g.summary + '</div>' : '';
+
+  var moveOptions = '<option value="">Mover a…</option><option value="root">Raíz (sin carpeta)</option>';
+  (folders || []).forEach(function(f) {
+    moveOptions += '<option value="' + f.id + '">' + f.name + '</option>';
+  });
+  var moveSelect = '<select class="move-select" onchange="moveGroup(\'' + g.badge + '\',this.value,this)">' + moveOptions + '</select>';
+
+  return '<div class="file-row ' + (g.fsh_class || '') + '" id="row-' + g.badge + '">' +
+    '<div class="file-row-icon ftype-' + (g.ftype || 'txt') + '">' + icon + '</div>' +
+    '<div class="file-row-main">' +
+      '<div class="file-row-name">' + g.name + ' ' + statusTag + '</div>' +
+      '<div class="file-row-meta">' + badgeTag + filesBadge + m4Tags + '</div>' +
+      categoryHtml + summaryHtml + revisionAlert +
+    '</div>' +
+    '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(g.date) + '</div>' +
+    '<div class="file-row-actions">' +
+      moveSelect +
+      (g.status === 'pending'
+        ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
+        : '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>') +
+      '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\',\'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function _renderFolderSection(folder, groups, folderChildren, allFolders, depth) {
+  var fGroups = groups.filter(function(g) { return g.folder_id === folder.id; });
+  var subFolders = folderChildren[folder.id] || [];
+  var totalItems = fGroups.length + subFolders.length;
+  var isTop = depth === 0;
+  var toggleId = 'ftoggle-' + folder.id;
+  var contId = 'fcont-' + folder.id;
+  var subBtn = depth < 2
+    ? '<button class="btn-subfolder" onclick="event.stopPropagation();createFolder(\'' + folder.id + '\')">+ subcarpeta</button>' : '';
+  var delBtn = '<button class="btn-del-folder" onclick="event.stopPropagation();deleteFolder(\'' + folder.id + '\')">Eliminar</button>';
+
+  var html = '<div class="' + (isTop ? 'folder-section' : 'folder-sub-section') + '">';
+  html += '<div class="' + (isTop ? 'folder-header' : 'folder-sub-header') + '" onclick="toggleFolder(\'' + folder.id + '\')">' +
+    '<span class="folder-toggle open" id="' + toggleId + '">▶</span>' +
+    '<span>' + (isTop ? '📁' : '📂') + '</span>' +
+    (isTop ? '<span class="folder-name">' : '<span class="folder-sub-name">') + folder.name + '</span>' +
+    '<span class="folder-count">' + totalItems + ' elemento' + (totalItems !== 1 ? 's' : '') + '</span>' +
+    '<div class="folder-header-actions">' + subBtn + delBtn + '</div>' +
+  '</div>';
+
+  html += '<div class="' + (isTop ? 'folder-contents' : 'folder-sub-contents') + '" id="' + contId + '">';
+  subFolders.forEach(function(sf) {
+    html += _renderFolderSection(sf, groups, folderChildren, allFolders, depth + 1);
+  });
+  fGroups.forEach(function(g) { html += _renderFileRow(g, allFolders); });
+  if (totalItems === 0) {
+    html += '<div class="folder-empty-note">Carpeta vacía — mueve grupos aquí usando el selector "Mover a…"</div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
 function renderFileList(data) {
   var container = document.getElementById('files-list-container');
-  var groups = (data.groups || []).slice().sort(function(a, b) {
-    return new Date(b.date) - new Date(a.date);
-  });
+  var groups = (data.groups || []).slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+  var folders = data.folders || [];
 
-  // Update stat chip
-  var active = groups.filter(function(g) { return g.status === 'activo'; }).length;
-  document.getElementById('stat-grupos').textContent = active;
+  document.getElementById('stat-grupos').textContent =
+    groups.filter(function(g) { return g.status === 'activo'; }).length;
 
-  // Manage timers and auto-refresh
   var waitingStatuses = ['pending', 'pendiente_final'];
   groups.forEach(function(g) {
-    if (waitingStatuses.indexOf(g.status) !== -1) {
-      _claudeTimerStart(g.badge);
-    } else {
-      _claudeTimerClear(g.badge);
-    }
+    if (waitingStatuses.indexOf(g.status) !== -1) _claudeTimerStart(g.badge);
+    else _claudeTimerClear(g.badge);
   });
   var anyWaiting = groups.some(function(g) { return waitingStatuses.indexOf(g.status) !== -1; });
   if (anyWaiting && !_autoRefreshInterval) {
@@ -784,73 +899,34 @@ function renderFileList(data) {
     _autoRefreshInterval = null;
   }
 
-  if (groups.length === 0) {
+  if (groups.length === 0 && folders.length === 0) {
     container.innerHTML =
-      '<div class="files-empty">' +
-      '<div class="files-empty-icon">📭</div>' +
+      '<div class="files-empty"><div class="files-empty-icon">📭</div>' +
       '<div class="files-empty-title">No hay archivos cargados</div>' +
-      '<div class="files-empty-sub">Sube archivos usando la sección de arriba para comenzar el análisis.</div>' +
-      '</div>';
+      '<div class="files-empty-sub">Sube archivos usando la sección de arriba para comenzar el análisis.</div></div>';
     return;
   }
 
-  var html = '<div class="files-list">';
-  groups.forEach(function(g) {
-    var icon = _ftypeIcon(g.ftype);
-    var statusTag, dateLabel, revisionAlert = '';
-    if (g.status === 'pending') {
-      var elapsed = _claudeElapsed(g.badge);
-      var timerStr = elapsed ? ' <span class="claude-timer">⏱ ' + elapsed + '</span>' : '';
-      statusTag  = '<span class="tag tag-pending">⏳ Pendiente primer análisis Claude</span>' + timerStr;
-      dateLabel  = 'Subido';
-    } else if (g.status === 'en_revision') {
-      statusTag  = '<span class="tag tag-revision">⚠ Pendiente primera revisión Trader</span>';
-      dateLabel  = 'Analizado';
-      revisionAlert =
-        '<div class="revision-alert-row">' +
-        '<span>El borrador está listo. <strong>Revisá cada módulo, escribí tus correcciones y envialas.</strong> El ciclo no cierra sin tu validación.</span>' +
-        '<a href="feedback.html">Ir al análisis →</a>' +
-        '</div>';
-    } else if (g.status === 'pendiente_final') {
-      var elapsed2 = _claudeElapsed(g.badge);
-      var timerStr2 = elapsed2 ? ' <span class="claude-timer">⏱ ' + elapsed2 + '</span>' : '';
-      statusTag  = '<span class="tag tag-final">🔄 Pendiente de feedback final Claude</span>' + timerStr2;
-      dateLabel  = 'Analizado';
-    } else {
-      statusTag  = '<span class="tag tag-trader">✓ Ciclo completo</span>';
-      dateLabel  = 'Analizado';
-    }
-    var filesBadge = g.files && g.files.length > 1
-      ? '<span class="tag tag-muted">' + g.files.length + ' archivos</span>'
-      : '';
-    var m4Tags = (g.status === 'pending') ? '' : _m4Tags(g);
-    var badgeTag = '<span class="tag tag-muted">' + g.badge + '</span>';
-
-    var categoryHtml = g.category
-      ? '<div class="file-row-category">' + g.category + '</div>' : '';
-    var summaryHtml = g.summary
-      ? '<div class="file-row-summary">' + g.summary + '</div>' : '';
-
-    html +=
-      '<div class="file-row ' + (g.fsh_class || '') + '" id="row-' + g.badge + '">' +
-        '<div class="file-row-icon ftype-' + g.ftype + '">' + icon + '</div>' +
-        '<div class="file-row-main">' +
-          '<div class="file-row-name">' + g.name + ' ' + statusTag + '</div>' +
-          '<div class="file-row-meta">' +
-            badgeTag + filesBadge + m4Tags +
-          '</div>' +
-          categoryHtml + summaryHtml +
-          revisionAlert +
-        '</div>' +
-        '<div class="file-row-date">' + dateLabel + '<br>' + _fmtDate(g.date) + '</div>' +
-        '<div class="file-row-actions">' +
-          (g.status === 'pending'
-            ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
-            : '<a class="btn-view-link" href="feedback.html">Ver análisis →</a>') +
-          '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\', \'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
-        '</div>' +
-      '</div>';
+  // Build folder children map
+  var folderChildren = {};
+  folders.forEach(function(f) {
+    var pid = f.parent_id || 'root';
+    if (!folderChildren[pid]) folderChildren[pid] = [];
+    folderChildren[pid].push(f);
   });
+
+  var html = '<div class="files-list">';
+
+  // Root-level groups (no folder)
+  groups.filter(function(g) { return !g.folder_id; }).forEach(function(g) {
+    html += _renderFileRow(g, folders);
+  });
+
+  // Top-level folders
+  (folderChildren['root'] || []).forEach(function(f) {
+    html += _renderFolderSection(f, groups, folderChildren, folders, 0);
+  });
+
   html += '</div>';
   container.innerHTML = html;
 }
@@ -1029,6 +1105,64 @@ function _hideUploadBanner() {
   bar.className = '';
   document.body.classList.remove('uploading');
   localStorage.removeItem('tb_upload');
+}
+
+// ── Folders ────────────────────────────────────────────────────────────────────
+function toggleFolder(folderId) {
+  var cont = document.getElementById('fcont-' + folderId);
+  var toggle = document.getElementById('ftoggle-' + folderId);
+  if (!cont) return;
+  var isCollapsed = cont.classList.toggle('collapsed');
+  if (toggle) {
+    toggle.classList.toggle('open', !isCollapsed);
+  }
+}
+
+function createFolder(parentId) {
+  var name = prompt('Nombre de la nueva carpeta:');
+  if (!name || !name.trim()) return;
+  fetch(WORKER + '/folder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim(), parent_id: parentId || null })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) loadFileList();
+    else alert('Error al crear carpeta: ' + (res.error || 'desconocido'));
+  })
+  .catch(function(e) { alert('Error de red: ' + e.message); });
+}
+
+function moveGroup(badge, folderId, selectEl) {
+  if (!folderId) return;
+  var targetFolder = folderId === 'root' ? null : folderId;
+  fetch(WORKER + '/group', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: badge, action: 'move', folder_id: targetFolder })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) loadFileList();
+    else { alert('Error al mover: ' + (res.error || 'desconocido')); if (selectEl) selectEl.value = ''; }
+  })
+  .catch(function(e) { alert('Error de red: ' + e.message); if (selectEl) selectEl.value = ''; });
+}
+
+function deleteFolder(folderId) {
+  if (!confirm('¿Eliminar esta carpeta?\n\nLos archivos y subcarpetas dentro pasarán al nivel superior.')) return;
+  fetch(WORKER + '/folder', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: folderId })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) loadFileList();
+    else alert('Error al eliminar carpeta: ' + (res.error || 'desconocido'));
+  })
+  .catch(function(e) { alert('Error de red: ' + e.message); });
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
