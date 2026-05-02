@@ -57,7 +57,7 @@ def preprocess_python(filename, content):
                 imports += [a.name for a in n.names]
             elif isinstance(n, ast.ImportFrom) and n.module:
                 imports.append(n.module)
-        facts["imports"] = list(dict.fromkeys(imports))  # deduplicate, preserve order
+        facts["imports"] = list(dict.fromkeys(imports))
 
         facts["complexity"] = {
             "if_blocks":  sum(1 for n in ast.walk(tree) if isinstance(n, ast.If)),
@@ -76,6 +76,106 @@ def preprocess_python(filename, content):
         facts["syntax_error"] = str(e)
 
     return facts
+
+
+def _ml_cluster_trades(df, pnl_col):
+    """
+    KMeans clustering on trade features to detect regime/time dependencies.
+    Returns a dict with cluster profiles and a plain-text insight.
+    Only called when len(df) >= 50.
+    """
+    import numpy as np
+    import pandas as pd
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.cluster import KMeans
+
+    features = {}
+
+    # P&L sign as feature
+    pnl = pd.to_numeric(df[pnl_col], errors="coerce")
+    features["pnl_norm"] = pnl.fillna(0)
+
+    # Hour of day (from any datetime column)
+    date_col = next(
+        (c for c in df.columns if "date" in c.lower() or "time" in c.lower()), None
+    )
+    if date_col:
+        try:
+            dt = pd.to_datetime(df[date_col], errors="coerce")
+            features["hour"]       = dt.dt.hour.fillna(12)
+            features["day_of_week"] = dt.dt.dayofweek.fillna(2)
+        except Exception:
+            pass
+
+    # Trade direction: Buy=1 Sell=0
+    dir_col = next(
+        (c for c in df.columns if c.lower() in {"type", "direction", "side", "order_type"}), None
+    )
+    if dir_col:
+        features["direction"] = df[dir_col].astype(str).str.lower().map(
+            lambda x: 1 if any(k in x for k in ("buy", "long", "1")) else 0
+        ).fillna(0.5)
+
+    if len(features) < 2:
+        return None
+
+    X = pd.DataFrame(features).dropna()
+    if len(X) < 50:
+        return None
+
+    X_scaled = StandardScaler().fit_transform(X)
+    n_clusters = min(3, len(X) // 15)
+    km = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    labels = km.fit_predict(X_scaled)
+
+    pnl_aligned = pnl.iloc[X.index].values
+    clusters = []
+    for cid in range(n_clusters):
+        mask = labels == cid
+        c_pnl = pnl_aligned[mask]
+        c_wins = (c_pnl > 0).sum()
+        c_total = len(c_pnl)
+        profile = {
+            "id": cid,
+            "size": int(c_total),
+            "win_rate_pct": round(c_wins / c_total * 100, 1) if c_total else None,
+            "avg_pnl": round(float(c_pnl.mean()), 4) if c_total else None,
+        }
+        if "hour" in features:
+            profile["dominant_hour"] = int(X["hour"].iloc[mask.nonzero()[0]].mode().iloc[0])
+        if "day_of_week" in features:
+            days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            dom_day = int(X["day_of_week"].iloc[mask.nonzero()[0]].mode().iloc[0])
+            profile["dominant_day"] = days[dom_day] if dom_day < 7 else str(dom_day)
+        clusters.append(profile)
+
+    clusters.sort(key=lambda c: c.get("win_rate_pct") or 0, reverse=True)
+
+    # Generate plain-text insight for Claude
+    best  = clusters[0]
+    worst = clusters[-1]
+    insight_parts = []
+    if best["win_rate_pct"] and worst["win_rate_pct"]:
+        diff = best["win_rate_pct"] - worst["win_rate_pct"]
+        if diff >= 15:
+            desc = f"Best cluster (n={best['size']}): {best['win_rate_pct']}% WR"
+            if "dominant_hour" in best:
+                desc += f", hour ~{best['dominant_hour']}h"
+            if "dominant_day" in best:
+                desc += f", {best['dominant_day']}"
+            desc += f". Worst cluster (n={worst['size']}): {worst['win_rate_pct']}% WR."
+            desc += f" {round(diff, 1)}pp gap — strategy may be time/regime dependent."
+            insight_parts.append(desc)
+        else:
+            insight_parts.append(
+                f"Clusters show similar performance ({worst['win_rate_pct']}–{best['win_rate_pct']}% WR) — no strong time dependency detected."
+            )
+
+    return {
+        "n_clusters": n_clusters,
+        "clusters": clusters,
+        "insight": " ".join(insight_parts) if insight_parts else "No significant pattern differences between clusters.",
+    }
 
 
 def preprocess_csv(filename, content):
@@ -101,29 +201,26 @@ def preprocess_csv(filename, content):
             losses = pnl[pnl < 0]
             total  = len(pnl)
 
-            gross_profit = float(wins.sum())   if len(wins)   > 0 else 0.0
+            gross_profit = float(wins.sum())        if len(wins)   > 0 else 0.0
             gross_loss   = float(abs(losses.sum())) if len(losses) > 0 else 0.0
 
             stats = {
-                "total_trades":   total,
-                "win_rate_pct":   round(len(wins) / total * 100, 2) if total else None,
-                "profit_factor":  round(gross_profit / gross_loss, 3) if gross_loss > 0 else None,
-                "avg_win":        round(float(wins.mean()), 4)   if len(wins)   > 0 else None,
-                "avg_loss":       round(float(losses.mean()), 4) if len(losses) > 0 else None,
-                "gross_profit":   round(gross_profit, 4),
-                "gross_loss":     round(gross_loss,   4),
-                "net_pnl":        round(gross_profit - gross_loss, 4),
+                "total_trades":  total,
+                "win_rate_pct":  round(len(wins) / total * 100, 2) if total else None,
+                "profit_factor": round(gross_profit / gross_loss, 3) if gross_loss > 0 else None,
+                "avg_win":       round(float(wins.mean()),   4) if len(wins)   > 0 else None,
+                "avg_loss":      round(float(losses.mean()), 4) if len(losses) > 0 else None,
+                "gross_profit":  round(gross_profit, 4),
+                "gross_loss":    round(gross_loss,   4),
+                "net_pnl":       round(gross_profit - gross_loss, 4),
             }
 
-            # Max drawdown on cumulative P&L curve
             cumul = pnl.cumsum()
             stats["max_drawdown"] = round(float((cumul - cumul.cummax()).min()), 4)
 
-            # Approximate Sharpe (assumes uniform trade intervals)
             if pnl.std() > 0:
                 stats["sharpe_approx"] = round(float(pnl.mean() / pnl.std() * (252 ** 0.5)), 3)
 
-            # Max consecutive win/loss streaks
             max_win_streak = max_loss_streak = streak = 0
             prev = None
             for v in pnl:
@@ -137,16 +234,14 @@ def preprocess_csv(filename, content):
             stats["max_win_streak"]  = max_win_streak
             stats["max_loss_streak"] = max_loss_streak
 
-            # quantstats extended metrics (requires balance/equity column with dates)
+            # quantstats extended metrics
             try:
                 import quantstats as qs
                 balance_col = next(
-                    (c for c in df.columns if c.lower() in {"balance", "equity", "account"}),
-                    None,
+                    (c for c in df.columns if c.lower() in {"balance", "equity", "account"}), None
                 )
                 date_col = next(
-                    (c for c in df.columns if "date" in c.lower() or "time" in c.lower()),
-                    None,
+                    (c for c in df.columns if "date" in c.lower() or "time" in c.lower()), None
                 )
                 if balance_col and len(df) > 5:
                     balance = pd.to_numeric(df[balance_col], errors="coerce").dropna()
@@ -157,13 +252,23 @@ def preprocess_csv(filename, content):
                         except Exception:
                             pass
                     stats["quantstats"] = {
-                        "sharpe":          round(float(qs.stats.sharpe(ret)),       3),
-                        "sortino":         round(float(qs.stats.sortino(ret)),      3),
-                        "calmar":          round(float(qs.stats.calmar(ret)),       3),
+                        "sharpe":           round(float(qs.stats.sharpe(ret)),        3),
+                        "sortino":          round(float(qs.stats.sortino(ret)),       3),
+                        "calmar":           round(float(qs.stats.calmar(ret)),        3),
                         "max_drawdown_pct": round(float(qs.stats.max_drawdown(ret)) * 100, 2),
                     }
             except Exception:
                 pass
+
+            # ML clustering (Fase 3) — only when enough trades
+            if total >= 50:
+                try:
+                    cluster_result = _ml_cluster_trades(df, pnl_col)
+                    if cluster_result:
+                        stats["trade_clusters"] = cluster_result
+                        print(f"    ML clustering: {cluster_result['n_clusters']} clusters — {cluster_result['insight'][:80]}")
+                except Exception as e:
+                    print(f"    [warn] ML clustering failed: {e}")
 
             facts["pnl_stats"] = stats
 
@@ -240,9 +345,6 @@ SCHEMA = """
 }
 """
 
-# Static system blocks — marked ephemeral so the API caches them for the run duration.
-# Only the dynamic user message (files content, date, pre-analysis facts) is sent uncached.
-
 ANALYSIS_SYSTEM = [
     {
         "type": "text",
@@ -254,8 +356,9 @@ ANALYSIS_SYSTEM = [
             "All descriptive text must be in Spanish.\n\n"
             f"Schema:\n{SCHEMA}\n\n"
             "Rules:\n"
-            "- If PRE-ANALYSIS FACTS are present in the user message: treat them as verified ground truth. "
+            "- If PRE-ANALYSIS FACTS are present: treat them as verified ground truth. "
             "Use pnl_stats directly as the basis for m1 metrics — do not recalculate or contradict them. "
+            "If trade_clusters is present, use the insight to generate or strengthen m2/m3 recommendations about regime dependency. "
             "Use complexity and magic_numbers from Python facts to strengthen m4 findings.\n"
             "- m1: Only CSV/backtest results justify type \"quality\". If only .py files are present, use type \"empty\".\n"
             "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always \"pendiente\". comment always \"\".\n"
@@ -263,6 +366,33 @@ ANALYSIS_SYSTEM = [
             "- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always \"\".\n"
             "- Recommendations in m2 ordered alta -> media -> baja.\n"
             "- m4 bugs and riesgos first, then ausencias, then mejoras."
+        ),
+        "cache_control": {"type": "ephemeral"},
+    }
+]
+
+CRITIC_SYSTEM = [
+    {
+        "type": "text",
+        "text": (
+            "You are a QA auditor reviewing a completed trading bot analysis for gaps and errors.\n\n"
+            "Your task: identify findings NOT already covered. Focus on:\n"
+            "1. Look-ahead bias: does the code use future data to make past decisions?\n"
+            "2. Survivorship/overfitting: is sample size too small, or backtest period too short?\n"
+            "3. Missing risk controls: slippage, spread, commission not accounted for?\n"
+            "4. Internal inconsistency: do m2 recommendations logically address the m3/m4 findings?\n"
+            "5. Score calibration: is m1 score too generous given the severity of bugs found?\n"
+            "6. Python facts: are magic_numbers or high complexity scores not reflected in findings?\n\n"
+            "Return ONLY genuinely new findings not already in the analysis. "
+            "If the analysis is complete, return empty arrays.\n"
+            "Limit: 0-3 cards per module.\n\n"
+            "OUTPUT ONLY VALID JSON. ASCII only. All text in Spanish.\n\n"
+            "Schema:\n"
+            "{\n"
+            "  \"additional_m2\": [same schema as m2 cards, IDs start at R-20],\n"
+            "  \"additional_m3\": [same schema as m3 cards, IDs start at OBS-20],\n"
+            "  \"additional_m4\": [same schema as m4 cards, IDs start at H-20]\n"
+            "}"
         ),
         "cache_control": {"type": "ephemeral"},
     }
@@ -306,6 +436,27 @@ def build_analysis_user(files_text, date_str, preproc_facts=None):
             + json.dumps(preproc_facts, ensure_ascii=True, indent=2)
         )
     parts.append(f"Files:\n{files_text}")
+    return "\n\n".join(parts)
+
+
+def build_critic_user(analysis, preproc_facts):
+    """Packages the initial analysis + compact preproc facts for the critic call."""
+    parts = [
+        "Initial analysis:\n" + json.dumps(
+            {"m1": analysis.get("m1"), "m2": analysis.get("m2"), "m3": analysis.get("m3"), "m4": analysis.get("m4")},
+            ensure_ascii=True, indent=2
+        )
+    ]
+    if preproc_facts:
+        # Send only structural facts (no full file content) to keep the critic call cheap
+        compact = [
+            {k: v for k, v in r.items() if k in ("filename", "lines", "functions", "complexity", "magic_numbers", "syntax_error", "pnl_stats", "rows")}
+            for r in preproc_facts
+        ]
+        parts.append(
+            "Pre-analysis facts (file summary):\n"
+            + json.dumps(compact, ensure_ascii=True, indent=2)
+        )
     return "\n\n".join(parts)
 
 
@@ -363,6 +514,23 @@ def call_claude(system_blocks, user_content):
     return json.loads(text)
 
 
+def run_critic_pass(analysis, preproc_facts):
+    """Second Claude call: audits the initial analysis and returns additional findings."""
+    critic_out = call_claude(CRITIC_SYSTEM, build_critic_user(analysis, preproc_facts))
+    return critic_out
+
+
+def merge_critic_findings(analysis, critic_out):
+    """Appends critic cards to the analysis, skipping empty results."""
+    added = {"m2": 0, "m3": 0, "m4": 0}
+    for module, key in [("m2", "additional_m2"), ("m3", "additional_m3"), ("m4", "additional_m4")]:
+        cards = critic_out.get(key) or []
+        if cards:
+            analysis[module] = analysis.get(module, []) + cards
+            added[module] = len(cards)
+    return added
+
+
 # ── Processing ────────────────────────────────────────────────────────────────
 
 def process_pending(group):
@@ -392,28 +560,42 @@ def process_pending(group):
                 print(f"    {r['filename']}: {r.get('lines', '?')} lines, "
                       f"{len(r.get('functions', []))} functions")
 
+    print("  Pass 1 — initial analysis...")
     user_content = build_analysis_user(
         "\n\n".join(parts), date.today().isoformat(), preproc
     )
     analysis = call_claude(ANALYSIS_SYSTEM, user_content)
+    print(f"    -> {len(analysis.get('m2',[]))} recs | {len(analysis.get('m3',[]))} obs | {len(analysis.get('m4',[]))} findings")
+
+    print("  Pass 2 — critic review...")
+    try:
+        critic_out = run_critic_pass(analysis, preproc)
+        added = merge_critic_findings(analysis, critic_out)
+        total_added = sum(added.values())
+        if total_added:
+            print(f"    -> critic added {added['m2']} recs, {added['m3']} obs, {added['m4']} findings")
+        else:
+            print("    -> critic: no gaps found")
+    except Exception as e:
+        print(f"    [warn] Critic pass failed: {e}")
 
     group["status"] = "en_revision"
     group["category"] = analysis.get("category", "")
-    group["summary"] = analysis.get("summary", "")
+    group["summary"]  = analysis.get("summary", "")
     group["m1"] = analysis.get("m1", group.get("m1", {}))
     group["m2"] = analysis.get("m2", [])
     group["m3"] = analysis.get("m3", [])
     group["m4"] = analysis.get("m4", [])
-    group["trader_notes"] = ""
+    group["trader_notes"]       = ""
     group["revision_submitted"] = False
     group["rereview_requested"] = False
-    group["rereview_notes"] = ""
+    group["rereview_notes"]     = ""
 
     for card in group["m2"]:
         if not card.get("tipo_label"):
             card["tipo_label"] = TIPO_MAP.get(card.get("tipo", ""), card.get("tipo", ""))
 
-    print(f"  -> {len(group['m2'])} recs | {len(group['m3'])} obs | {len(group['m4'])} findings")
+    print(f"  -> FINAL: {len(group['m2'])} recs | {len(group['m3'])} obs | {len(group['m4'])} findings")
     return True
 
 
@@ -437,11 +619,11 @@ def process_pendiente_final(group):
     else:
         print("  No corrections — approving as-is")
 
-    group["status"] = "activo"
-    group["trader_notes"] = ""
+    group["status"]             = "activo"
+    group["trader_notes"]       = ""
     group["revision_submitted"] = False
     group["rereview_requested"] = False
-    group["rereview_notes"] = ""
+    group["rereview_notes"]     = ""
 
     for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", []):
         card.pop("correction", None)
@@ -459,14 +641,14 @@ def main():
     data = get_data()
     groups = data.get("groups", [])
 
-    pending = [g for g in groups if g.get("status") == "pending"]
-    pendiente_final = [g for g in groups if g.get("status") == "pendiente_final"]
+    pending          = [g for g in groups if g.get("status") == "pending"]
+    pendiente_final  = [g for g in groups if g.get("status") == "pendiente_final"]
 
     if not pending and not pendiente_final:
         print("Nothing to process.")
         return
 
-    changed = False
+    changed   = False
     had_error = False
 
     for g in pending:
