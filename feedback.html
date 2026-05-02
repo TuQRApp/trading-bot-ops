@@ -201,6 +201,11 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .file-filter-btn.active{border-color:var(--nico);color:var(--nico);background:rgba(37,99,235,0.08);}
 .file-filter-hint{font-family:var(--font-mono);font-size:9px;color:var(--muted);opacity:0.6;margin-left:4px;white-space:nowrap;}
 .file-filter-folder-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);opacity:0.55;margin-left:6px;margin-right:2px;white-space:nowrap;align-self:center;}
+.file-filter-folder-btn{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(37,99,235,0.25);background:rgba(37,99,235,0.06);color:var(--nico);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.file-filter-folder-btn:hover{background:rgba(37,99,235,0.14);border-color:rgba(37,99,235,0.45);}
+.file-filter-nav-btn{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.file-filter-nav-btn:hover{border-color:var(--nico);color:var(--nico);}
+.file-filter-breadcrumb{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;align-self:center;padding:0 2px;}
 
 /* ── EXPORT BAR ── */
 .export-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
@@ -1126,55 +1131,71 @@ function _initRevisionBar() {
 }
 
 // ── Post-render init ─────────────────────────────────────────────────────────
-function _buildFileFilterBtns() {
-  var seen = new Set();
+var _filterNav = null; // null = root; folder object = inside that folder
+
+function _buildFileFilterBtns(skipAutoSelect) {
   var hint = document.querySelector('.file-filter-hint');
   var filterBar = document.getElementById('file-filter-bar');
-  filterBar.querySelectorAll('.file-filter-btn, .file-filter-folder-label').forEach(function(b) { b.remove(); });
+  filterBar.querySelectorAll(
+    '.file-filter-btn,.file-filter-folder-label,.file-filter-folder-btn,.file-filter-nav-btn,.file-filter-breadcrumb'
+  ).forEach(function(b) { b.remove(); });
 
-  // Build folder map from renderData
   var folders = (window._renderData && window._renderData.folders) || [];
   var folderMap = {};
   folders.forEach(function(f) { folderMap[f.id] = f; });
 
-  // Collect all file sections with their group folder_id
-  var items = []; // [{fileId, name, icon, fshClass, folderId, folderName}]
+  // Collect file items
+  var items = [];
   document.querySelectorAll('.file-section-header').forEach(function(h) {
     var fileId = h.querySelector('.fsh-badge') && h.querySelector('.fsh-badge').textContent.trim();
-    if (!fileId || seen.has(fileId)) return;
-    seen.add(fileId);
-    var name = h.querySelector('.fsh-name') && h.querySelector('.fsh-name').textContent.trim() || fileId;
-    var icon = h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim() || '📄';
-    var fshClass = [...h.classList].find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
+    if (!fileId) return;
+    var name = (h.querySelector('.fsh-name') && h.querySelector('.fsh-name').textContent.trim()) || fileId;
+    var icon = (h.querySelector('.fsh-icon') && h.querySelector('.fsh-icon').textContent.trim()) || '📄';
+    var fshClass = Array.from(h.classList).find(function(c) { return c.startsWith('fsh-') && c !== 'fsh-icon'; });
     fileRegistry[fileId] = fshClass;
     var group = window._renderData && window._renderData.groups.find(function(g) { return g.badge === fileId; });
-    var folderId = group && group.folder_id || null;
-    var folderName = folderId && folderMap[folderId] ? folderMap[folderId].name : null;
-    items.push({ fileId: fileId, name: name, icon: icon, fshClass: fshClass, folderId: folderId, folderName: folderName });
+    var folderId = (group && group.folder_id) || null;
+    items.push({ fileId: fileId, name: name, icon: icon, fshClass: fshClass, folderId: folderId });
   });
 
-  // Group by folder, inserting folder label separators
-  var rendered = new Set();
-  // Root items first
-  items.filter(function(it) { return !it.folderId; }).forEach(function(it) {
-    _appendFileBtn(filterBar, hint, it);
-    rendered.add(it.fileId);
+  var currentId = _filterNav ? _filterNav.id : null;
+
+  // Back / breadcrumb when inside a folder
+  if (_filterNav) {
+    var parentFolder = _filterNav.parent_id ? (folderMap[_filterNav.parent_id] || null) : null;
+    var backBtn = document.createElement('button');
+    backBtn.className = 'file-filter-nav-btn';
+    backBtn.textContent = '← ' + (parentFolder ? parentFolder.name : 'Inicio');
+    backBtn.onclick = function() { _filterNav = parentFolder; _buildFileFilterBtns(); };
+    filterBar.insertBefore(backBtn, hint || null);
+
+    var bc = document.createElement('span');
+    bc.className = 'file-filter-breadcrumb';
+    bc.textContent = '📁 ' + _filterNav.name + ' ›';
+    filterBar.insertBefore(bc, hint || null);
+  }
+
+  // Files at current level
+  items.filter(function(it) { return it.folderId === currentId; })
+       .forEach(function(it) { _appendFileBtn(filterBar, hint, it); });
+
+  // Subfolders at current level
+  folders.filter(function(f) { return (f.parent_id || null) === currentId; })
+         .forEach(function(f) {
+    var fb = document.createElement('button');
+    fb.className = 'file-filter-folder-btn';
+    fb.textContent = '📁 ' + f.name;
+    fb.onclick = function() {
+      _filterNav = f;
+      _buildFileFilterBtns();
+    };
+    filterBar.insertBefore(fb, hint || null);
   });
-  // Folders
-  var folderIds = [...new Set(items.filter(function(it) { return it.folderId; }).map(function(it) { return it.folderId; }))];
-  folderIds.forEach(function(fid) {
-    var folderItems = items.filter(function(it) { return it.folderId === fid; });
-    if (!folderItems.length) return;
-    // Folder label
-    var lbl = document.createElement('span');
-    lbl.className = 'file-filter-folder-label';
-    lbl.textContent = '📁 ' + (folderMap[fid] ? folderMap[fid].name : fid);
-    filterBar.insertBefore(lbl, hint || null);
-    folderItems.forEach(function(it) { _appendFileBtn(filterBar, hint, it); rendered.add(it.fileId); });
-  });
-  // Auto-select first file
-  var firstBtn = filterBar.querySelector('.file-filter-btn');
-  if (firstBtn) firstBtn.click();
+
+  if (!skipAutoSelect) {
+    var firstBtn = filterBar.querySelector('.file-filter-btn');
+    if (firstBtn) firstBtn.click();
+  }
 }
 
 function _appendFileBtn(filterBar, hint, it) {
