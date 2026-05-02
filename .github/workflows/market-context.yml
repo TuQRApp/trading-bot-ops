@@ -1,0 +1,32 @@
+name: Update market context (M5)
+
+on:
+  schedule:
+    - cron: '0 11 * * 1-5'  # Weekdays at 11:00 UTC (before US open)
+  workflow_dispatch:          # Manual trigger from UI
+
+concurrency:
+  group: market-context
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install anthropic requests yfinance pandas
+
+      - name: Run market context generator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WORKER_URL: https://trading-upload.nestragues.workers.dev
+        run: python scripts/market_context.py

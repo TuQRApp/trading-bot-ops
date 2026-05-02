@@ -37,6 +37,7 @@ export default {
     if (pathname === '/group'   && method === 'POST')   return handleRegisterGroup(request, env);
     if (pathname === '/group'   && method === 'PATCH')  return handlePatchGroup(request, env);
     if (pathname === '/group'   && method === 'DELETE') return handleDeleteGroup(request, env);
+    if (pathname === '/dispatch-m5' && method === 'POST') return handleDispatchM5(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -402,6 +403,27 @@ async function handleDeleteGroup(request, env) {
     await writeData(data, sha, env);
 
     return json({ ok: true, deleted, removedBadge: badge });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── /dispatch-m5  POST ────────────────────────────────────────────────────────
+// Triggers the market-context GitHub Actions workflow manually.
+
+async function handleDispatchM5(request, env) {
+  try {
+    const r = await fetch(
+      'https://api.github.com/repos/' + REPO + '/actions/workflows/market-context.yml/dispatches',
+      {
+        method: 'POST',
+        headers: { ...ghHeaders(env), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: BRANCH }),
+      }
+    );
+    if (r.ok || r.status === 204) return json({ ok: true });
+    const err = await r.text();
+    return json({ error: err }, 500);
   } catch (e) {
     return json({ error: e.message }, 500);
   }
