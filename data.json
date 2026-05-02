@@ -292,52 +292,52 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno de volatilidad moderada con VIX en 16.99 y sentimiento cripto en miedo leve; semana cargada de eventos macro ya procesados pero con riesgo residual en JPY y USD que exige cautela en los 21 instrumentos del bot.",
+        "resumen": "Entorno de volatilidad baja-normal (VIX 16.99) con eventos macro clave ya ejecutados esta semana; el bot puede operar con configuracion estandar pero debe monitorear posibles gaps de apertura del lunes.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Fed Rate Decision: pausar bot en USD",
-            "desc": "El evento Federal Funds Rate (USD, 2026-04-29 14:00 ET) ya ocurrio esta semana. Verifica si el bot genero trades en indices o energia durante la ventana de anuncio. Revisa el log de operaciones abiertas en ese periodo y cierra manualmente cualquier posicion que haya sobrevivido con SL amplio por ATR inflado post-evento. Para el proximo anuncio Fed, configura pausa automatica 30 min antes y 30 min despues.",
+            "title": "Fed Rate ya publicado: revisar gaps USD",
+            "desc": "El evento Federal Funds Rate (USD, 29 abr 14:00 ET) ya ocurrio con tasa en 3.75% sin cambio. Verificar si el bot tiene posiciones abiertas en instrumentos USD-dependientes (indices US, energia, metales) que puedan haber absorbido movimiento residual. Revisar historial de trades del 29 abr en el reporte HTML y confirmar que el sizing por ATR no genero lotes anomalos post-evento.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "BOJ ejecutado: revisar JPY e indices Asia",
-            "desc": "BOJ Policy Rate y Press Conference se ejecutaron el 2026-04-27/28. Si el bot opera instrumentos con correlacion JPY (indices asiaticos, oro) revisa si las divergencias OBV+MACD generadas en ese periodo son validas o son ruido de evento. Descarta senales M5/M15 generadas entre 23:00-03:30 ET del 27-28 abril. Considera elevar filtro ADX minimo temporalmente a 30 para esos instrumentos.",
+            "title": "Apertura Asia lunes: riesgo gap sin sesion",
+            "desc": "El bot carece de validacion de sesiones de mercado segun su descripcion. Con la apertura de Asia del lunes (aprox 00:00 UTC), instrumentos como indices y cripto pueden presentar gaps. Antes de las 23:00 UTC del domingo, revisar posiciones abiertas y considerar reducir exposicion manual en instrumentos con spread elevado en apertura. El modulo de cierre por timeout debe estar activo.",
             "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "AUD CPI alto: riesgo en commodities agrarios",
-            "desc": "CPI AUD y/y reportado con forecast 4.8% vs previo 3.7%, dato muy alcista para AUD. Si el bot opera agricolas con correlacion AUD (trigo, algodon, azucar en broker australiano/AUD margin), el sizing por ATR puede estar distorsionado por spreads post-dato. Verifica que los fallbacks de sizing no hayan calculado lotes incorrectos en la sesion asiatica del 29 abril. Revisa equity curve en esa ventana.",
-            "horizonte": "24h"
+            "title": "Sizing fragil: validar lotes antes de lunes",
+            "desc": "La logica de sizing con fallbacks fragiles documentada en el bot puede generar riesgo incorrecto en cuenta live. Antes de la apertura del lunes, ejecutar el modulo de backtest interno con datos recientes y verificar que los 21 instrumentos calculan lotes correctamente. Priorizar revision en agricolas y cripto donde la volatilidad ATR puede ser mas extrema.",
+            "horizonte": "now"
           },
           {
             "id": "M5-04",
-            "tipo": "alerta",
-            "title": "Logica sizing fragil: validar en cuenta live",
-            "desc": "La estrategia tiene fallbacks fragiles en el modulo de sizing por ATR. Con VIX en 16.99 el riesgo calculado puede subestimarse si ATR cae en rangos nocturnos. Ejecuta ahora una revision manual de los ultimos 10 trades: compara lote calculado vs lote esperado segun riesgo fijo. Si hay discrepancia mayor al 15%, detener el bot y corregir la logica de fallback antes de continuar operando en cuenta live.",
-            "horizonte": "now"
+            "tipo": "oportunidad",
+            "title": "VIX bajo favorece divergencias OBV+MACD",
+            "desc": "VIX en 16.99 (regimen normal, subida leve de 0.10) indica volatilidad contenida, condicion historicamente favorable para estrategias de divergencia tecnica como OBV+MACD. El filtro ADX multi-TF deberia estar capturando tendencias limpias en M15/H1. Mantener parametros actuales sin reducir el universo de 21 instrumentos; condicion valida al menos hasta proximos 2-3 dias.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX 16.99: condiciones optimas para divergencias",
-            "desc": "VIX en regimen normal (16.99) es el entorno ideal para la estrategia OBV+MACD+ADX: suficiente volatilidad para generar divergencias validas sin ruido extremo. Aprovecha para aumentar la frecuencia de escaneo en instrumentos de indices (US30, NAS100, SP500) en la sesion NY de hoy. Confirma que ADX > 25 en H1 antes de entrar; el entorno actual favorece continuaciones de tendencia post-divergencia.",
+            "title": "Cripto Fear 39: posible rebote tecnico",
+            "desc": "El indice Fear & Greed de cripto subio de 26 (Miedo Extremo) a 39 (Miedo), indicando recuperacion parcial del sentimiento. Para los instrumentos cripto del bot (BTC, ETH u otros del universo), las divergencias alcistas OBV+MACD en M15/H1 tienen mayor probabilidad estadistica de completarse en entornos de miedo moderado con mejora de sentimiento. Monitorear senales largas en cripto durante sesion europea y americana del lunes.",
             "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Cripto Fear & Greed en 39: sesgo defensivo",
-            "desc": "El indice Fear & Greed cripto subio de 26 a 39 (Fear moderado). Si el bot opera BTC, ETH u otros cripto en IC Markets MT5, las senales largas tienen menor probabilidad de continuacion en este entorno. No desactivar el bot en cripto, pero prioriza senales cortas que confirmen divergencia bajista OBV+MACD con ADX creciente. Revisa el timeout de cierre: en mercados de miedo los movimientos son mas cortos.",
+            "title": "BOJ y BOC ya ejecutados sin sorpresas",
+            "desc": "BOJ mantuvo tasa sin cambio y BOC tambien sin modificacion en 2.25%. Sin divergencias significativas respecto a forecasts, el impacto sobre JPY y CAD fue limitado. Para el bot, esto significa que pares o instrumentos correlacionados con estas divisas (si aplica en el universo de 21) no tienen sesgo macro pendiente esta semana. Proximos eventos de alto impacto relevantes no aparecen en el calendario inmediato.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-02T01:14:28Z",
+        "last_updated": "2026-05-02T01:18:43Z",
         "macro_snapshot": {
           "vix": {
             "value": 16.99,
@@ -448,7 +448,7 @@
               "previous": "3.75%"
             }
           ],
-          "fetched_at": "2026-05-02T01:14:28Z"
+          "fetched_at": "2026-05-02T01:18:43Z"
         }
       }
     },
@@ -742,52 +742,52 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Semana de alta carga macro ya ejecutada (Fed, BOJ, BOC) con VIX normalizado en 17 y cripto en zona de miedo moderado; condiciones mixtas para Fib nuevo con volatilidad contenida pero riesgo de gaps residuales post-eventos.",
+        "resumen": "Semana de alta densidad macro ya casi cerrada pero con FOMC reciente y VIX normalizado; cripto en zona de miedo moderado que favorece rebotes tecnicos en BTCUSD.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Fed Rate ya publicado: revisar gaps en XAUUSD",
-            "desc": "El Federal Funds Rate del 29-Apr (3.75%, sin cambio) pudo generar gaps o velas M3 anormales en XAUUSD y XAGUSD. Revisa el historial de las ultimas 72 barras M3 en ambos instrumentos. Si el canal Fibonacci de 20 barras fue distorsionado por la vela del evento, recalcula manualmente o pausa el bot hasta que las 20 barras post-evento esten completas para evitar niveles TP/SL calculados sobre datos ruidosos.",
+            "title": "FOMC ya decidio: vigilar slippage post-evento",
+            "desc": "La Fed mantuvo tasas en 3.75% (29-abr). En las horas siguientes a decisiones FOMC el spread de XAUUSD en IC Markets puede duplicarse o triplicarse en M3. Revisa los fills de las ultimas ordenes limite abiertas post-evento y verifica que el cache de costos estatico del bot no haya subestimado el spread real. Si detectas fills con slippage > 2x spread normal, pausa el bot en XAUUSD hasta que el spread vuelva a niveles tipicos (< 30 puntos).",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Cache de costos estatico: riesgo en apertura de semana",
-            "desc": "El codigo tiene cache de costos estatico. En la apertura del domingo/lunes los spreads de XAUUSD y BTCUSD suelen duplicarse o triplicarse. El riesgo documentado de inconsistencia de spread en LONG puede provocar ordenes limite abiertas con costo real mayor al calculado. Accion: antes de las 00:00 UTC del lunes, fuerza un reinicio del bot para refrescar el cache, o pausa manualmente hasta que el spread se normalice (tipicamente 01:30-02:00 UTC lunes).",
+            "title": "AUD CPI muy alto: contagio en metales",
+            "desc": "El CPI AUD y/y reportado fue 4.8% vs 3.7% previo (28-abr). Datos de inflacion sorpresivos en economias commodity-linked generan volatilidad indirecta en XAGUSD y XAUUSD en las 24h siguientes. El canal Fibonacci de 20 barras en M3 puede invalidarse rapidamente si los rangos se expanden. Considera reducir el lote base al 50% en XAGUSD durante las proximas 12 horas o activar manualmente el circuit breaker si el drawdown supera el umbral configurado.",
             "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "BOJ y BOC ya ejecutados: volatilidad residual en metales",
-            "desc": "Las decisiones del BOJ (27-Apr, sin cambio <0.75%) y BOC (29-Apr, sin cambio 2.25%) pueden dejar volatilidad residual en pares JPY y CAD con efecto indirecto en XAUUSD via DXY. Monitorea que el drawdown del bot no haya activado el circuit breaker silenciosamente. Verifica en MT5 el historial de cierres de las ultimas 48h y confirma que ninguna orden fue cerrada por circuit breaker antes de habilitar nuevas entradas.",
-            "horizonte": "24h"
+            "title": "Logica breakeven con falso positivo activa",
+            "desc": "El codigo tiene riesgo documentado de falsos positivos en breakeven. Con volatilidad post-FOMC y spreads elevados, el bot puede mover el SL a breakeven prematuramente y ser stopped out antes de que el precio alcance TP1. Monitorea manualmente las posiciones abiertas en XAUUSD y BTCUSD cada 15 minutos durante las proximas 3 horas. Si observas cierres en breakeven sin movimiento real de precio adverso, desactiva la funcion de breakeven automatico hasta que el mercado se estabilice.",
+            "horizonte": "now"
           },
           {
             "id": "M5-04",
-            "tipo": "alerta",
-            "title": "CPI Australia publicado: impacto indirecto en metales",
-            "desc": "El CPI AUD del 28-Apr (forecast 4.8% y/y vs prev 3.7%) implica sorpresa inflacionaria al alza. Esto refuerza narrativa de inflacion global y puede impulsar XAUUSD al alza en proximas 24-48h. Sin embargo, velas M3 erraticas durante la publicacion pudieron desplazar niveles TP2/TP3 del canal Fibonacci. Revisa que las ordenes limite pendientes en XAUUSD sigan alineadas con el canal actual y no sean reliquias de un canal pre-evento.",
+            "tipo": "oportunidad",
+            "title": "Cripto Fear en 39: rebote tecnico probable",
+            "desc": "El indice Fear & Greed subio de 26 a 39 en una sesion, senalizando reduccion de panico vendedor en BTCUSD. Lecturas entre 35-45 historicamente preceden consolidaciones o rebotes tecnicos de corto plazo. El canal Fibonacci M3 en modo limite de compra esta bien posicionado para este escenario. Verifica que el sizing cap de 5x equity base no este limitando los lotes en BTCUSD y permite que el bot ejecute sus tres ordenes limite normalmente si el precio toca el canal inferior.",
             "horizonte": "24h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en 17: regimen favorable para canal Fibonacci",
-            "desc": "VIX en 16.99 (regimen normal, subida minima de 0.10) indica volatilidad implicita baja-moderada, ideal para estrategias de canal con ordenes limite. Los rangos M3 en XAUUSD y XAGUSD tienden a ser mas predecibles en este regimen. Aprovecha para verificar que el sizing con order_calc_profit este al maximo permitido (cap 5x capital base) y que los tres niveles TP esten activos. Es el contexto mas favorable de las ultimas semanas para esta estrategia.",
+            "title": "VIX en 16.99: regimen normal favorece canales Fib",
+            "desc": "VIX en 16.99 (regimen normal, ligero aumento de 0.10) indica volatilidad implicita moderada, condicion ideal para estrategias de canal con ordenes limite. Los canales Fibonacci de 20 barras en M3 funcionan mejor cuando VIX esta entre 14-20. Aprovecha esta ventana para revisar si los parametros de canal estan calibrados para el rango actual de XAUUSD y XAGUSD, y considera aumentar el lote base en un 10-15% si el equity lo permite dentro del cap configurado.",
             "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Cripto Fear & Greed en 39: mejora desde 26",
-            "desc": "El indice paso de 26 (miedo extremo) a 39 (miedo moderado), senalizando recuperacion gradual del sentimiento en BTCUSD. Esto no justifica aumentar exposicion aun, pero sugiere que el canal Fibonacci en BTCUSD puede empezar a generar setups mas limpios en las proximas 48h. Mantener sizing conservador hasta que el indice supere 50 (neutral). Observar si el circuit breaker de racha de perdidas se activo durante la fase de miedo extremo previo.",
-            "horizonte": "48h"
+            "title": "Semana macro densa: proxima semana mas calma",
+            "desc": "Todos los eventos de alto impacto de esta semana (BOJ, BOC, FOMC) ya ocurrieron. La proxima semana no muestra eventos de igual magnitud en el calendario disponible. Esto abre una ventana mas tranquila para ejecutar pruebas del bot en modo demo o para corregir los riesgos criticos documentados: inconsistencia de spread en LONG, cache estatico de costos y ausencia de tests. Planifica al menos 48 horas de ejecucion en demo antes del proximo ciclo de eventos macro.",
+            "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-02T01:14:28Z",
+        "last_updated": "2026-05-02T01:18:43Z",
         "macro_snapshot": {
           "vix": {
             "value": 16.99,
@@ -898,7 +898,7 @@
               "previous": "3.75%"
             }
           ],
-          "fetched_at": "2026-05-02T01:14:28Z"
+          "fetched_at": "2026-05-02T01:18:43Z"
         }
       }
     },
@@ -1192,52 +1192,52 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Volatilidad controlada (VIX 16.99) favorece el canal Fibonacci, pero eventos macro clave esta semana exigen pausas puntuales en XAUUSD, XAGUSD y BTCUSD.",
+        "resumen": "Volatilidad contenida (VIX 17) favorece la estrategia de canal, pero eventos macro clave de la semana pasada (Fed, BOC) pueden generar gaps residuales en XAUUSD y BTCUSD; sentimiento cripto en Fear modera el sesgo alcista en BTC.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "FOMC: pausar bot antes de las 14:00 ET",
-            "desc": "El 29 de abril a las 14:00 ET se publica la decision de tasas de la Fed (forecast 3.75%, sin cambio). Aunque no se espera sorpresa, el comunicado y la conferencia de prensa pueden generar spikes violentos en XAUUSD y XAGUSD que invalidan los canales Fibonacci en M3. Detener el bot al menos 30 minutos antes (13:30 ET) y no reactivarlo hasta que el spread vuelva a niveles normales, tipicamente 30-60 minutos despues del anuncio.",
-            "horizonte": "48h"
+            "title": "Verificar gaps post-Fed en XAUUSD y BTCUSD",
+            "desc": "El FOMC fijo tasas en 3.75% el 29-Abr. Si el bot estuvo activo durante o despues de la decision, revisar trades abiertos en XAUUSD y BTCUSD por gaps de spread ampliado. Pausar nuevas entradas en M3 hasta confirmar que el spread en IC Markets regreso a niveles normales (XAUUSD < 20 pts, BTCUSD < 50 pts). Accion: abrir MT5 ahora y auditar el historial de ordenes desde las 14:00 ET del 29-Abr.",
+            "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "BOC Rate Statement: riesgo indirecto en metales",
-            "desc": "El 29 de abril a las 09:45 ET el Banco de Canada publica su decision (forecast 2.25%). Un tono dovish inesperado puede mover el USD y afectar indirectamente XAUUSD y XAGUSD. Reducir el tamano de lote al 50% del calculo normal entre 09:30 y 11:00 ET ese dia para limitar exposicion durante la ventana de volatilidad cruzada.",
-            "horizonte": "48h"
+            "title": "Sentimiento cripto en Fear: reducir exposicion BTC",
+            "desc": "El indice Fear & Greed de cripto esta en 39 (Fear), aunque mejorado desde 26. En regimenes de Fear sostenido, los rebotes en BTCUSD dentro del canal Fibonacci suelen fallar en TP2 y TP3. Accion: reducir el riesgo por trade en BTCUSD del 2% al 1% hasta que el indice supere 50. Ajustar el parametro de lotes en el script antes del proximo ciclo de backtest en vivo.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Crypto Fear & Greed en 39: cautela en BTCUSD",
-            "desc": "El indicador de Fear & Greed para crypto marca 39 (Fear), subiendo desde 26. El rebote desde miedo extremo puede generar movimientos erraticos en BTCUSD en M3, con falsos breakouts de canal. Verificar manualmente que los canales Fibonacci esten bien anclados antes de permitir nuevas entradas en BTCUSD hoy. Si el valor cae de nuevo por debajo de 30, suspender entradas en BTCUSD hasta recuperar zona neutral (50+).",
+            "title": "Liquidez reducida: inicio de semana con feriados",
+            "desc": "El 2 de mayo puede coincidir con feriados laborales en mercados europeos y asiaticos, reduciendo la liquidez en XAGUSD y XAUUSD en sesion de apertura. Canales Fibonacci en M3 generan senales falsas con spread ampliado. Accion: no permitir entradas automaticas en las primeras 2 horas de la sesion de Londres (07:00-09:00 UTC) hoy.",
             "horizonte": "now"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "VIX 16.99: regimen normal favorece la estrategia",
-            "desc": "El VIX se mantiene en zona normal (16.99, +0.10), lo que indica volatilidad moderada y tendencias mas limpias en XAUUSD y XAGUSD. Este entorno es optimo para que los canales Fibonacci M3 generen rebotes tecnicos validos con buena relacion riesgo/beneficio. Mantener el bot activo en los tres instrumentos fuera de las ventanas de eventos macro, respetando el 2% de riesgo compuesto por operacion.",
+            "title": "VIX en zona normal: condicion optima para canal",
+            "desc": "VIX en 16.99 indica volatilidad baja-normal, regimen ideal para estrategias de canal como Fibonacci M3. Los activos tienden a respetar niveles de soporte y resistencia con menor ruido. Accion: mantener el bot activo en XAUUSD y XAGUSD con parametros estandar (riesgo 2%, 3 TPs parciales) durante la sesion de Londres y Nueva York de hoy.",
             "horizonte": "now"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "Ventana limpia: viernes 1 mayo post-datos",
-            "desc": "Tras los eventos macro concentrados el 29 de abril, el calendario queda despejado para el 1 de mayo (datos disponibles indican jornada sin eventos de alto impacto USD). Esta ventana es favorable para dejar correr el bot sin interrupciones en XAUUSD y XAGUSD, aprovechando la continuacion de tendencias post-FOMC con los TPs parciales configurados.",
-            "horizonte": "semana"
+            "title": "Rebote de sentimiento cripto favorece BTC largo",
+            "desc": "El Fear & Greed subio de 26 a 39 en una semana, senalando recuperacion del sentimiento. Si el canal Fibonacci M3 en BTCUSD muestra toque en soporte inferior con vela de confirmacion, la probabilidad de alcanzar TP1 aumenta. Accion: monitorear de cerca las senales de compra en BTCUSD durante la sesion asiatica del 2-May, pero mantener lotes reducidos hasta que el indice supere 45.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "AUD CPI el 28 de abril: impacto marginal",
-            "desc": "El CPI australiano del 28 de abril (forecast y/y 4.8% vs prev 3.7%) no afecta directamente XAUUSD, XAGUSD ni BTCUSD, pero un dato muy por encima de lo esperado podria fortalecer el AUD y presionar ligeramente el USD, moviendo los metales. Monitorear sin accion requerida; el bot puede operar con normalidad durante este evento.",
-            "horizonte": "24h"
+            "title": "Sin backtest verificable: operar con cautela",
+            "desc": "El script de backtest no tiene CSV de resultados adjunto, por lo que las metricas de rendimiento historico (winrate, drawdown maximo, expectativa) no estan verificadas. Accion: antes de aumentar el capital compuesto o el riesgo por operacion, ejecutar el script completo en MT5 con datos historicos de al menos 6 meses en los 3 instrumentos y revisar el reporte HTML generado.",
+            "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-02T01:14:28Z",
+        "last_updated": "2026-05-02T01:18:43Z",
         "macro_snapshot": {
           "vix": {
             "value": 16.99,
@@ -1348,7 +1348,7 @@
               "previous": "3.75%"
             }
           ],
-          "fetched_at": "2026-05-02T01:14:28Z"
+          "fetched_at": "2026-05-02T01:18:43Z"
         }
       }
     }
