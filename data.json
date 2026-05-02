@@ -290,7 +290,167 @@
       "trader_notes": "",
       "revision_submitted": false,
       "rereview_requested": false,
-      "rereview_notes": ""
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Entorno de volatilidad moderada con VIX en 16.99 y sentimiento cripto en miedo leve; semana cargada de eventos macro ya procesados pero con riesgo residual en JPY y USD que exige cautela en los 21 instrumentos del bot.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "Fed Rate Decision: pausar bot en USD",
+            "desc": "El evento Federal Funds Rate (USD, 2026-04-29 14:00 ET) ya ocurrio esta semana. Verifica si el bot genero trades en indices o energia durante la ventana de anuncio. Revisa el log de operaciones abiertas en ese periodo y cierra manualmente cualquier posicion que haya sobrevivido con SL amplio por ATR inflado post-evento. Para el proximo anuncio Fed, configura pausa automatica 30 min antes y 30 min despues.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "BOJ ejecutado: revisar JPY e indices Asia",
+            "desc": "BOJ Policy Rate y Press Conference se ejecutaron el 2026-04-27/28. Si el bot opera instrumentos con correlacion JPY (indices asiaticos, oro) revisa si las divergencias OBV+MACD generadas en ese periodo son validas o son ruido de evento. Descarta senales M5/M15 generadas entre 23:00-03:30 ET del 27-28 abril. Considera elevar filtro ADX minimo temporalmente a 30 para esos instrumentos.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "AUD CPI alto: riesgo en commodities agrarios",
+            "desc": "CPI AUD y/y reportado con forecast 4.8% vs previo 3.7%, dato muy alcista para AUD. Si el bot opera agricolas con correlacion AUD (trigo, algodon, azucar en broker australiano/AUD margin), el sizing por ATR puede estar distorsionado por spreads post-dato. Verifica que los fallbacks de sizing no hayan calculado lotes incorrectos en la sesion asiatica del 29 abril. Revisa equity curve en esa ventana.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "alerta",
+            "title": "Logica sizing fragil: validar en cuenta live",
+            "desc": "La estrategia tiene fallbacks fragiles en el modulo de sizing por ATR. Con VIX en 16.99 el riesgo calculado puede subestimarse si ATR cae en rangos nocturnos. Ejecuta ahora una revision manual de los ultimos 10 trades: compara lote calculado vs lote esperado segun riesgo fijo. Si hay discrepancia mayor al 15%, detener el bot y corregir la logica de fallback antes de continuar operando en cuenta live.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "VIX 16.99: condiciones optimas para divergencias",
+            "desc": "VIX en regimen normal (16.99) es el entorno ideal para la estrategia OBV+MACD+ADX: suficiente volatilidad para generar divergencias validas sin ruido extremo. Aprovecha para aumentar la frecuencia de escaneo en instrumentos de indices (US30, NAS100, SP500) en la sesion NY de hoy. Confirma que ADX > 25 en H1 antes de entrar; el entorno actual favorece continuaciones de tendencia post-divergencia.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "Cripto Fear & Greed en 39: sesgo defensivo",
+            "desc": "El indice Fear & Greed cripto subio de 26 a 39 (Fear moderado). Si el bot opera BTC, ETH u otros cripto en IC Markets MT5, las senales largas tienen menor probabilidad de continuacion en este entorno. No desactivar el bot en cripto, pero prioriza senales cortas que confirmen divergencia bajista OBV+MACD con ADX creciente. Revisa el timeout de cierre: en mercados de miedo los movimientos son mas cortos.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-02T01:14:28Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 16.99,
+            "prev": 16.89,
+            "change": 0.1,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 39,
+            "label": "Fear",
+            "prev": 26
+          },
+          "high_impact_events": [
+            {
+              "event": "BOJ Outlook Report",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Policy Rate",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "<0.75%",
+              "previous": "<0.75%"
+            },
+            {
+              "event": "Monetary Policy Statement",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Press Conference",
+              "currency": "JPY",
+              "date": "2026-04-28T02:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "1.3%",
+              "previous": "0.0%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "4.8%",
+              "previous": "3.7%"
+            },
+            {
+              "event": "Trimmed Mean CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
+              "previous": "2.25%"
+            },
+            {
+              "event": "BOC Press Conference",
+              "currency": "CAD",
+              "date": "2026-04-29T10:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Federal Funds Rate",
+              "currency": "USD",
+              "date": "2026-04-29T14:00:00-04:00",
+              "time": "",
+              "forecast": "3.75%",
+              "previous": "3.75%"
+            }
+          ],
+          "fetched_at": "2026-05-02T01:14:28Z"
+        }
+      }
     },
     {
       "id": "fsh-b",
@@ -580,7 +740,167 @@
       "trader_notes": "",
       "revision_submitted": false,
       "rereview_requested": false,
-      "rereview_notes": ""
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Semana de alta carga macro ya ejecutada (Fed, BOJ, BOC) con VIX normalizado en 17 y cripto en zona de miedo moderado; condiciones mixtas para Fib nuevo con volatilidad contenida pero riesgo de gaps residuales post-eventos.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "Fed Rate ya publicado: revisar gaps en XAUUSD",
+            "desc": "El Federal Funds Rate del 29-Apr (3.75%, sin cambio) pudo generar gaps o velas M3 anormales en XAUUSD y XAGUSD. Revisa el historial de las ultimas 72 barras M3 en ambos instrumentos. Si el canal Fibonacci de 20 barras fue distorsionado por la vela del evento, recalcula manualmente o pausa el bot hasta que las 20 barras post-evento esten completas para evitar niveles TP/SL calculados sobre datos ruidosos.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "Cache de costos estatico: riesgo en apertura de semana",
+            "desc": "El codigo tiene cache de costos estatico. En la apertura del domingo/lunes los spreads de XAUUSD y BTCUSD suelen duplicarse o triplicarse. El riesgo documentado de inconsistencia de spread en LONG puede provocar ordenes limite abiertas con costo real mayor al calculado. Accion: antes de las 00:00 UTC del lunes, fuerza un reinicio del bot para refrescar el cache, o pausa manualmente hasta que el spread se normalice (tipicamente 01:30-02:00 UTC lunes).",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "BOJ y BOC ya ejecutados: volatilidad residual en metales",
+            "desc": "Las decisiones del BOJ (27-Apr, sin cambio <0.75%) y BOC (29-Apr, sin cambio 2.25%) pueden dejar volatilidad residual en pares JPY y CAD con efecto indirecto en XAUUSD via DXY. Monitorea que el drawdown del bot no haya activado el circuit breaker silenciosamente. Verifica en MT5 el historial de cierres de las ultimas 48h y confirma que ninguna orden fue cerrada por circuit breaker antes de habilitar nuevas entradas.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "alerta",
+            "title": "CPI Australia publicado: impacto indirecto en metales",
+            "desc": "El CPI AUD del 28-Apr (forecast 4.8% y/y vs prev 3.7%) implica sorpresa inflacionaria al alza. Esto refuerza narrativa de inflacion global y puede impulsar XAUUSD al alza en proximas 24-48h. Sin embargo, velas M3 erraticas durante la publicacion pudieron desplazar niveles TP2/TP3 del canal Fibonacci. Revisa que las ordenes limite pendientes en XAUUSD sigan alineadas con el canal actual y no sean reliquias de un canal pre-evento.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "VIX en 17: regimen favorable para canal Fibonacci",
+            "desc": "VIX en 16.99 (regimen normal, subida minima de 0.10) indica volatilidad implicita baja-moderada, ideal para estrategias de canal con ordenes limite. Los rangos M3 en XAUUSD y XAGUSD tienden a ser mas predecibles en este regimen. Aprovecha para verificar que el sizing con order_calc_profit este al maximo permitido (cap 5x capital base) y que los tres niveles TP esten activos. Es el contexto mas favorable de las ultimas semanas para esta estrategia.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "Cripto Fear & Greed en 39: mejora desde 26",
+            "desc": "El indice paso de 26 (miedo extremo) a 39 (miedo moderado), senalizando recuperacion gradual del sentimiento en BTCUSD. Esto no justifica aumentar exposicion aun, pero sugiere que el canal Fibonacci en BTCUSD puede empezar a generar setups mas limpios en las proximas 48h. Mantener sizing conservador hasta que el indice supere 50 (neutral). Observar si el circuit breaker de racha de perdidas se activo durante la fase de miedo extremo previo.",
+            "horizonte": "48h"
+          }
+        ],
+        "last_updated": "2026-05-02T01:14:28Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 16.99,
+            "prev": 16.89,
+            "change": 0.1,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 39,
+            "label": "Fear",
+            "prev": 26
+          },
+          "high_impact_events": [
+            {
+              "event": "BOJ Outlook Report",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Policy Rate",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "<0.75%",
+              "previous": "<0.75%"
+            },
+            {
+              "event": "Monetary Policy Statement",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Press Conference",
+              "currency": "JPY",
+              "date": "2026-04-28T02:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "1.3%",
+              "previous": "0.0%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "4.8%",
+              "previous": "3.7%"
+            },
+            {
+              "event": "Trimmed Mean CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
+              "previous": "2.25%"
+            },
+            {
+              "event": "BOC Press Conference",
+              "currency": "CAD",
+              "date": "2026-04-29T10:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Federal Funds Rate",
+              "currency": "USD",
+              "date": "2026-04-29T14:00:00-04:00",
+              "time": "",
+              "forecast": "3.75%",
+              "previous": "3.75%"
+            }
+          ],
+          "fetched_at": "2026-05-02T01:14:28Z"
+        }
+      }
     },
     {
       "id": "fsh-c",
@@ -870,7 +1190,167 @@
       "trader_notes": "",
       "revision_submitted": false,
       "rereview_requested": false,
-      "rereview_notes": ""
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Volatilidad controlada (VIX 16.99) favorece el canal Fibonacci, pero eventos macro clave esta semana exigen pausas puntuales en XAUUSD, XAGUSD y BTCUSD.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "FOMC: pausar bot antes de las 14:00 ET",
+            "desc": "El 29 de abril a las 14:00 ET se publica la decision de tasas de la Fed (forecast 3.75%, sin cambio). Aunque no se espera sorpresa, el comunicado y la conferencia de prensa pueden generar spikes violentos en XAUUSD y XAGUSD que invalidan los canales Fibonacci en M3. Detener el bot al menos 30 minutos antes (13:30 ET) y no reactivarlo hasta que el spread vuelva a niveles normales, tipicamente 30-60 minutos despues del anuncio.",
+            "horizonte": "48h"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "BOC Rate Statement: riesgo indirecto en metales",
+            "desc": "El 29 de abril a las 09:45 ET el Banco de Canada publica su decision (forecast 2.25%). Un tono dovish inesperado puede mover el USD y afectar indirectamente XAUUSD y XAGUSD. Reducir el tamano de lote al 50% del calculo normal entre 09:30 y 11:00 ET ese dia para limitar exposicion durante la ventana de volatilidad cruzada.",
+            "horizonte": "48h"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "Crypto Fear & Greed en 39: cautela en BTCUSD",
+            "desc": "El indicador de Fear & Greed para crypto marca 39 (Fear), subiendo desde 26. El rebote desde miedo extremo puede generar movimientos erraticos en BTCUSD en M3, con falsos breakouts de canal. Verificar manualmente que los canales Fibonacci esten bien anclados antes de permitir nuevas entradas en BTCUSD hoy. Si el valor cae de nuevo por debajo de 30, suspender entradas en BTCUSD hasta recuperar zona neutral (50+).",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "VIX 16.99: regimen normal favorece la estrategia",
+            "desc": "El VIX se mantiene en zona normal (16.99, +0.10), lo que indica volatilidad moderada y tendencias mas limpias en XAUUSD y XAGUSD. Este entorno es optimo para que los canales Fibonacci M3 generen rebotes tecnicos validos con buena relacion riesgo/beneficio. Mantener el bot activo en los tres instrumentos fuera de las ventanas de eventos macro, respetando el 2% de riesgo compuesto por operacion.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "Ventana limpia: viernes 1 mayo post-datos",
+            "desc": "Tras los eventos macro concentrados el 29 de abril, el calendario queda despejado para el 1 de mayo (datos disponibles indican jornada sin eventos de alto impacto USD). Esta ventana es favorable para dejar correr el bot sin interrupciones en XAUUSD y XAGUSD, aprovechando la continuacion de tendencias post-FOMC con los TPs parciales configurados.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "AUD CPI el 28 de abril: impacto marginal",
+            "desc": "El CPI australiano del 28 de abril (forecast y/y 4.8% vs prev 3.7%) no afecta directamente XAUUSD, XAGUSD ni BTCUSD, pero un dato muy por encima de lo esperado podria fortalecer el AUD y presionar ligeramente el USD, moviendo los metales. Monitorear sin accion requerida; el bot puede operar con normalidad durante este evento.",
+            "horizonte": "24h"
+          }
+        ],
+        "last_updated": "2026-05-02T01:14:28Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 16.99,
+            "prev": 16.89,
+            "change": 0.1,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 39,
+            "label": "Fear",
+            "prev": 26
+          },
+          "high_impact_events": [
+            {
+              "event": "BOJ Outlook Report",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Policy Rate",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "<0.75%",
+              "previous": "<0.75%"
+            },
+            {
+              "event": "Monetary Policy Statement",
+              "currency": "JPY",
+              "date": "2026-04-27T23:04:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOJ Press Conference",
+              "currency": "JPY",
+              "date": "2026-04-28T02:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "1.3%",
+              "previous": "0.0%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "4.8%",
+              "previous": "3.7%"
+            },
+            {
+              "event": "Trimmed Mean CPI m/m",
+              "currency": "AUD",
+              "date": "2026-04-28T21:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-04-29T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
+              "previous": "2.25%"
+            },
+            {
+              "event": "BOC Press Conference",
+              "currency": "CAD",
+              "date": "2026-04-29T10:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Federal Funds Rate",
+              "currency": "USD",
+              "date": "2026-04-29T14:00:00-04:00",
+              "time": "",
+              "forecast": "3.75%",
+              "previous": "3.75%"
+            }
+          ],
+          "fetched_at": "2026-05-02T01:14:28Z"
+        }
+      }
     }
   ]
 }
