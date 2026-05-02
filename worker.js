@@ -40,6 +40,7 @@ export default {
     if (pathname === '/folder'  && method === 'POST')   return handleCreateFolder(request, env);
     if (pathname === '/folder'  && method === 'DELETE') return handleDeleteFolder(request, env);
     if (pathname === '/dispatch-m5' && method === 'POST') return handleDispatchM5(request, env);
+    if (pathname === '/status'      && method === 'GET')  return handleGetStatus(env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -459,6 +460,25 @@ async function handleDeleteFolder(request, env) {
     data.folders = data.folders.filter(f => f.id !== id);
     await writeData(data, sha, env);
     return json({ ok: true });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── /status  GET ─────────────────────────────────────────────────────────────
+// Returns lightweight group metadata — badge, name, status, date — without m1-m4 payload.
+// Claude Code sessions use this at startup to decide whether a full data.json read is needed.
+
+async function handleGetStatus(env) {
+  try {
+    const { data } = await readData(env);
+    const statuses = (data.groups || []).map(g => ({
+      badge: g.badge,
+      name: g.name,
+      status: g.status,
+      date: g.date,
+    }));
+    return json(statuses);
   } catch (e) {
     return json({ error: e.message }, 500);
   }

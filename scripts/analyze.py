@@ -8,6 +8,7 @@ import os
 import json
 import sys
 from pathlib import Path
+from datetime import date
 import requests
 from anthropic import Anthropic
 
@@ -87,6 +88,52 @@ SCHEMA = """
 }
 """
 
+# Static system blocks — marked ephemeral so the API caches them for the run duration.
+# Only the dynamic user message (files content, date) is sent uncached each call.
+
+ANALYSIS_SYSTEM = [
+    {
+        "type": "text",
+        "text": (
+            "You are a senior quantitative trading systems analyst reviewing a Python trading bot.\n\n"
+            "Analyze the file(s) provided and return a JSON object following this schema exactly.\n"
+            "OUTPUT ONLY VALID JSON. No markdown fences, no text before or after the JSON object.\n"
+            "Use only ASCII characters (no em-dashes, no special quotes, no accented vowels) — this is critical for JSON safety.\n"
+            "All descriptive text must be in Spanish.\n\n"
+            f"Schema:\n{SCHEMA}\n\n"
+            "Rules:\n"
+            "- m1: Only CSV/backtest results justify type \"quality\". If only .py files are present, use type \"empty\".\n"
+            "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always \"pendiente\". comment always \"\".\n"
+            "- m3: 5-8 observations. tipo must be one of: warn, error, info. comment always \"\".\n"
+            "- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always \"\".\n"
+            "- Recommendations in m2 ordered alta -> media -> baja.\n"
+            "- m4 bugs and riesgos first, then ausencias, then mejoras."
+        ),
+        "cache_control": {"type": "ephemeral"},
+    }
+]
+
+FINALIZE_SYSTEM = [
+    {
+        "type": "text",
+        "text": (
+            "You are finalizing a trading bot analysis after the trader reviewed the draft.\n\n"
+            "CRITICAL: Every correction listed in the user message is a MANDATORY change that MUST be reflected in the final analysis.\n"
+            "Do NOT ignore, soften, or partially apply corrections. Treat each one as a direct instruction from the trader.\n\n"
+            "Instructions:\n"
+            "- For EVERY card that received a correction: incorporate the feedback substantively — rewrite the title, desc, or fix as needed. "
+            "Set the card's \"comment\" field to a short note summarizing what the trader said and what was adjusted.\n"
+            "- If m1 received a correction, update the m1 block accordingly.\n"
+            "- For cards with no correction, keep \"comment\" as \"\".\n"
+            "- Do NOT change IDs or overall structure.\n"
+            "- Remove the \"correction\" key from all cards and from m1 if present.\n"
+            "- OUTPUT ONLY VALID JSON. No markdown fences.\n"
+            "- Use only ASCII characters. All text in Spanish."
+        ),
+        "cache_control": {"type": "ephemeral"},
+    }
+]
+
 TIPO_MAP = {
     "param": "Parametro",
     "logic": "Logica",
@@ -96,42 +143,19 @@ TIPO_MAP = {
 }
 
 
-def build_analysis_prompt(files_text, date_str):
-    return f"""You are a senior quantitative trading systems analyst reviewing a Python trading bot.
-
-Analyze the file(s) below and return a JSON object following this schema exactly.
-OUTPUT ONLY VALID JSON. No markdown fences, no text before or after the JSON object.
-Use only ASCII characters (no em-dashes, no special quotes, no accented vowels) — this is critical for JSON safety.
-All descriptive text must be in Spanish.
-
-Schema:
-{SCHEMA}
-
-Rules:
-- m1: Only CSV/backtest results justify type "quality". If only .py files are present, use type "empty".
-- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always "pendiente". comment always "".
-- m3: 5-8 observations. tipo must be one of: warn, error, info. comment always "".
-- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always "".
-- Recommendations in m2 ordered alta -> media -> baja.
-- m4 bugs and riesgos first, then ausencias, then mejoras.
-- today date: {date_str}
-
-Files:
-{files_text}
-"""
+def build_analysis_user(files_text, date_str):
+    return f"Today: {date_str}\n\nFiles:\n{files_text}"
 
 
-def build_finalize_prompt(group):
+def build_finalize_user(group):
     trader_notes = (group.get("trader_notes") or "").strip()
 
-    # Collect card-level corrections from m2/m3/m4
     corrections = {}
     for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", []):
         c = (card.get("correction") or "").strip()
         if c:
             corrections[card["id"]] = c
 
-    # M1 correction
     m1 = group.get("m1", {})
     m1_correction = (m1.get("correction") or "").strip()
     has_m1_correction = bool(m1_correction)
@@ -143,50 +167,41 @@ def build_finalize_prompt(group):
         "m4": group.get("m4", []),
     }
 
-    output_structure = '{"m1": {...}, "m2": [...], "m3": [...], "m4": [...]}' if has_m1_correction else '{"m2": [...], "m3": [...], "m4": [...]}'
+    output_structure = (
+        '{"m1": {...}, "m2": [...], "m3": [...], "m4": [...]}'
+        if has_m1_correction
+        else '{"m2": [...], "m3": [...], "m4": [...]}'
+    )
 
-    return f"""You are finalizing a trading bot analysis after the trader reviewed the draft.
-
-CRITICAL: Every correction listed below is a MANDATORY change that MUST be reflected in the final analysis.
-Do NOT ignore, soften, or partially apply corrections. Treat each one as a direct instruction from the trader.
-
-Current analysis:
-{json.dumps(current, ensure_ascii=True, indent=2)}
-
-Trader general notes: "{trader_notes}"
-
-M1 correction (applies to the m1 block): "{m1_correction if m1_correction else 'None'}"
-
-Card-level corrections (card_id -> trader correction):
-{json.dumps(corrections, ensure_ascii=True, indent=2) if corrections else "None"}
-
-Instructions:
-- For EVERY card that received a correction: you MUST incorporate the feedback substantively — rewrite the title, desc, or fix as needed. Set the card's "comment" field to a short note summarizing what the trader said and what was adjusted.
-- If m1 received a correction, update the m1 block accordingly (adjust score, metrics, bullets, or type as instructed).
-- For cards with no correction, keep "comment" as "".
-- Do NOT change IDs or overall structure.
-- Remove the "correction" key from all cards and from m1 if present.
-- OUTPUT ONLY VALID JSON with this exact structure: {output_structure}
-- Use only ASCII characters. All text in Spanish.
-"""
+    return (
+        f"Current analysis:\n{json.dumps(current, ensure_ascii=True, indent=2)}\n\n"
+        f"Trader general notes: \"{trader_notes}\"\n\n"
+        f"M1 correction: \"{m1_correction if m1_correction else 'None'}\"\n\n"
+        f"Card-level corrections (card_id -> trader correction):\n"
+        f"{json.dumps(corrections, ensure_ascii=True, indent=2) if corrections else 'None'}\n\n"
+        f"Output structure: {output_structure}"
+    )
 
 
-# ── Processing ────────────────────────────────────────────────────────────────
+# ── Claude API ────────────────────────────────────────────────────────────────
 
-def call_claude(prompt):
-    msg = client.messages.create(
+def call_claude(system_blocks, user_content):
+    msg = client.beta.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=8192,
-        messages=[{"role": "user", "content": prompt}],
+        system=system_blocks,
+        messages=[{"role": "user", "content": user_content}],
+        betas=["prompt-caching-2024-07-31"],
     )
     text = msg.content[0].text.strip()
-    # Strip markdown fences if model adds them despite instructions
     if text.startswith("```"):
         text = text.split("\n", 1)[1]
         if text.endswith("```"):
             text = text.rsplit("```", 1)[0]
     return json.loads(text)
 
+
+# ── Processing ────────────────────────────────────────────────────────────────
 
 def process_pending(group):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
@@ -201,10 +216,8 @@ def process_pending(group):
         print("  No readable files found — skipping")
         return False
 
-    from datetime import date
-    date_str = date.today().isoformat()
-
-    analysis = call_claude(build_analysis_prompt("\n\n".join(parts), date_str))
+    user_content = build_analysis_user("\n\n".join(parts), date.today().isoformat())
+    analysis = call_claude(ANALYSIS_SYSTEM, user_content)
 
     group["status"] = "en_revision"
     group["category"] = analysis.get("category", "")
@@ -218,7 +231,6 @@ def process_pending(group):
     group["rereview_requested"] = False
     group["rereview_notes"] = ""
 
-    # Ensure tipo_label exists on m2 cards
     for card in group["m2"]:
         if not card.get("tipo_label"):
             card["tipo_label"] = TIPO_MAP.get(card.get("tipo", ""), card.get("tipo", ""))
@@ -238,7 +250,7 @@ def process_pendiente_final(group):
     )
 
     if trader_notes or has_corrections:
-        updated = call_claude(build_finalize_prompt(group))
+        updated = call_claude(FINALIZE_SYSTEM, build_finalize_user(group))
         if "m1" in updated:
             group["m1"] = updated["m1"]
         group["m2"] = updated.get("m2", group["m2"])

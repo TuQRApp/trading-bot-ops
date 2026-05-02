@@ -12,7 +12,12 @@ Sistema de análisis de bots de trading. El trader sube archivos (Python, CSV) v
 
 ## INICIO DE SESIÓN — hacer siempre esto primero
 
-Al iniciar cualquier sesión en este directorio, leer `data.json` y actuar según los estados:
+Al iniciar cualquier sesión en este directorio, hacer GET a `https://trading-upload.nestragues.workers.dev/status`.
+La respuesta es un array ligero: `[{ badge, name, status, date }]`.
+Solo leer `data.json` completo si hay al menos un grupo con `status: "pending"` o `status: "pendiente_final"`.
+Si todos están en `"activo"` o `"en_revision"`, continuar directo con lo que el usuario pida.
+
+Actuar según los estados:
 
 ---
 
