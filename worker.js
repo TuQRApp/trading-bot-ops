@@ -106,7 +106,11 @@ async function readData(env) {
 
 async function writeData(data, sha, env) {
   const text = JSON.stringify(data, null, 2);
-  const base64 = btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+  const bytes = new TextEncoder().encode(text);
+  // Loop-based base64 avoids call stack overflow on large data.json files
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  const base64 = btoa(binary);
   const r = await ghPut(DATA_PATH, base64, sha, 'chore: update data.json', env);
   if (!r.ok) {
     const err = await r.text();
