@@ -335,6 +335,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .btn-submit-review:disabled{opacity:0.5;cursor:default;}
 
 /* ── PRINT ── */
+#print-header{display:none;}
 @media print {
   body::before,.nav-back,.tabs,.trigger-banner,.obs-filter-bar,.obs-stats,
   .obs-filter-btn,.file-filter-bar,.export-bar,.btn-save-comment,footer{display:none!important;}
@@ -342,6 +343,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   .wrapper{padding:16px;}
   .file-section-header.print-hidden,.rec-card.print-hidden,
   .obs-card.print-hidden,.arch-card.print-hidden{display:none!important;}
+  #print-header{display:block;font-size:11px;color:#334155;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:20px;line-height:1.6;}
   @page{margin:20mm;}
 }
 </style>
@@ -366,6 +368,7 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
   <div class="export-bar" id="export-bar">
     <button class="btn-export" onclick="exportReport()">⬇ Exportar informe</button>
   </div>
+  <div id="print-header"></div>
 
   <div class="file-filter-bar" id="file-filter-bar">
     <span class="file-filter-label">VER:</span>
@@ -810,6 +813,16 @@ function _updateExportBar() {
 }
 
 function exportReport() {
+  // Build print header with file names for the selected group
+  var selectedBtn = document.querySelector('.file-filter-btn.active');
+  var selectedBadge = selectedBtn ? selectedBtn.dataset.badge : null;
+  var selectedGroup = selectedBadge && window._renderData && window._renderData.groups.find(function(g) { return g.badge === selectedBadge; });
+  var printHeader = document.getElementById('print-header');
+  if (printHeader && selectedGroup) {
+    var fileNames = (selectedGroup.files || []).map(function(f) { return f.name; }).join(', ');
+    printHeader.textContent = 'Este informe corresponde a un análisis realizado a ' + fileNames + ' con feedback sobre Calidad del Backtest, Recomendaciones, Observaciones, Feedback de Código y Contexto de Mercado.';
+  }
+
   // Only export the currently selected file
   document.querySelectorAll('.file-section-header').forEach(function(h) {
     var match = activeFiles.size === 0 || [...activeFiles].some(function(cls) { return h.classList.contains(cls); });
@@ -821,7 +834,10 @@ function exportReport() {
     }
   });
   window.print();
-  setTimeout(function() { document.querySelectorAll('.print-hidden').forEach(function(el) { el.classList.remove('print-hidden'); }); }, 1500);
+  setTimeout(function() {
+    document.querySelectorAll('.print-hidden').forEach(function(el) { el.classList.remove('print-hidden'); });
+    if (printHeader) printHeader.textContent = '';
+  }, 1500);
 }
 
 function showTab(id, btn) {
