@@ -325,10 +325,28 @@ async function handlePatchGroup(request, env) {
       return json({ ok: true });
     }
 
-    if (action === 'save_module_comment') {
-      const { field, value } = body;
-      if (!field) return json({ error: 'field required' }, 400);
-      group[field] = value || '';
+    if (action === 'save_card_field') {
+      const { cardId, field, value } = body;
+      if (!cardId || !field) return json({ error: 'cardId and field required' }, 400);
+      let found = false;
+      for (const mod of ['m2', 'm3', 'm4']) {
+        if (!Array.isArray(group[mod])) continue;
+        const card = group[mod].find(c => c.id === cardId);
+        if (card) { card[field] = value || ''; found = true; break; }
+      }
+      if (!found && (cardId === 'M1-general' || cardId === 'M1-quality' || cardId === 'M1-readiness')) {
+        if (!group.m1) group.m1 = {};
+        group.m1[field] = value || '';
+        found = true;
+      }
+      if (!found && cardId.startsWith('m5-card-')) {
+        const idx = parseInt(cardId.replace('m5-card-', ''), 10);
+        if (group.m5 && Array.isArray(group.m5.cards) && group.m5.cards[idx]) {
+          group.m5.cards[idx][field] = value || '';
+          found = true;
+        }
+      }
+      if (!found) return json({ error: 'card not found' }, 404);
       await writeData(data, sha, env);
       return json({ ok: true });
     }

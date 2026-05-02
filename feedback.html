@@ -544,11 +544,11 @@ function _traderRevisionHtml(comment) {
 }
 
 function _correctionFieldHtml(cardId, badge) {
-  return '<div class="correction-wrap">' +
-    '<label class="correction-label">💬 Comentarios y correcciones para la version final</label>' +
-    '<span class="correction-sublabel">Este comentario sera tomado por Claude para generar el analisis definitivo.</span>' +
-    '<textarea class="correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Escribe tus comentarios aquí…"></textarea>' +
-    '</div>';
+  return '<div class="module-draft-block" style="margin-top:12px;">' +
+    '<label class="module-draft-label">🟠 Correcciones del trader</label>' +
+    '<textarea class="module-draft-field correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '" placeholder="Estos comentarios se aplicarán a la versión final de esta revisión"></textarea>' +
+    '<button class="btn-save-comment" style="margin-top:8px;" onclick="this.textContent=\'✓\';setTimeout(function(b){return function(){b.textContent=\'Guardar comentario\'}}(this),2000)">Guardar comentario</button>' +
+  '</div>';
 }
 
 function _qmCardHtml(m) {
@@ -584,38 +584,32 @@ function _responseBlockHtml(label) {
     '</div>';
 }
 
-// ── Module-level comment blocks (green + pink/orange) ────────────────────────
-function _moduleCommentBlocksHtml(g, mod) {
-  var draftVal = g[mod + '_draft'] || '';
-  var commentVal = g[mod + '_comment'] || '';
-  var isPending = (g.status === 'en_revision');
-  var html = '';
-  if (isPending || draftVal) {
-    var ph = isPending ? 'Estos comentarios se aplicarán a la versión final de esta revisión' : '';
-    html += '<div class="module-draft-block">' +
-      '<label class="module-draft-label">🟠 Comentarios del trader previos a esta versión final</label>' +
-      '<textarea class="module-draft-field" placeholder="' + _esc(ph) + '">' + _esc(draftVal) + '</textarea>' +
-      '<button class="btn-save-comment" onclick="saveModuleComment(\'' + _esc(g.badge) + '\',\'' + mod + '_draft\',this)" style="margin-top:8px;">Guardar comentario</button>' +
-    '</div>';
-  }
-  html += '<div class="module-comment-green">' +
-    '<label class="module-comment-green-label">🟢 Comentarios adicionales para el informe</label>' +
-    '<textarea class="module-comment-field" placeholder="Escribe comentarios adicionales para incluir en el informe…">' + _esc(commentVal) + '</textarea>' +
-    '<button class="btn-save-comment" onclick="saveModuleComment(\'' + _esc(g.badge) + '\',\'' + mod + '_comment\',this)" style="margin-top:8px;">Guardar comentario</button>' +
+// ── Per-card comment blocks (green + pink/orange) ────────────────────────────
+function _pendingHistoryHtml(correction, cardId, badge) {
+  return '<div class="module-draft-block" style="margin-top:12px;">' +
+    '<label class="module-draft-label">🟠 Comentarios del trader previos a esta versión final</label>' +
+    '<textarea class="module-draft-field correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '">' + _esc(correction) + '</textarea>' +
+    '<button class="btn-save-comment" onclick="saveCardField(\'' + _esc(badge) + '\',\'' + _esc(cardId) + '\',\'correction\',this)" style="margin-top:8px;">Guardar comentario</button>' +
   '</div>';
-  return html;
 }
 
-function saveModuleComment(badge, field, btn) {
+function _additionalCommentHtml(cardId, badge, value) {
+  return '<div class="module-comment-green" style="margin-top:10px;">' +
+    '<label class="module-comment-green-label">🟢 Comentarios adicionales para el informe</label>' +
+    '<textarea class="module-comment-field" placeholder="Escribe comentarios adicionales para incluir en el informe…">' + _esc(value) + '</textarea>' +
+    '<button class="btn-save-comment" onclick="saveCardField(\'' + _esc(badge) + '\',\'' + _esc(cardId) + '\',\'additional_comment\',this)" style="margin-top:8px;">Guardar comentario</button>' +
+  '</div>';
+}
+
+function saveCardField(badge, cardId, field, btn) {
   var textarea = btn.previousElementSibling;
   if (!textarea || textarea.tagName !== 'TEXTAREA') return;
-  var val = textarea.value;
   btn.textContent = 'Guardando…';
   btn.disabled = true;
   fetch(WORKER_URL + '/group', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ badge: badge, action: 'save_module_comment', field: field, value: val })
+    body: JSON.stringify({ badge: badge, action: 'save_card_field', cardId: cardId, field: field, value: textarea.value })
   })
   .then(function(r) { return r.json(); })
   .then(function(res) {
@@ -647,8 +641,13 @@ function _renderM1Group(g) {
       '<div class="mes-desc">' + _esc(m1.empty_desc) + '</div>' +
       '<div class="mes-trigger">' + _esc(m1.empty_trigger) + '</div>' +
       '</div>';
-    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-general', g.badge);
-    else html += _responseBlockHtml('notas sobre backtest');
+    if (g.status === 'en_revision') {
+      html += _correctionFieldHtml('M1-general', g.badge);
+      html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
+    } else if (g.status === 'pendiente_final') {
+      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-general', g.badge);
+      html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
+    } else { html += _responseBlockHtml('notas sobre backtest'); }
   }
 
   else if (m1.type === 'quality') {
@@ -667,8 +666,13 @@ function _renderM1Group(g) {
       html += '</div>';
     });
     html += _scoreHtml(m1.score);
-    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-quality', g.badge);
-    else html += _responseBlockHtml(g.name);
+    if (g.status === 'en_revision') {
+      html += _correctionFieldHtml('M1-quality', g.badge);
+      html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
+    } else if (g.status === 'pendiente_final') {
+      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-quality', g.badge);
+      html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
+    } else { html += _responseBlockHtml(g.name); }
   }
 
   else if (m1.type === 'readiness') {
@@ -679,8 +683,13 @@ function _renderM1Group(g) {
     m1.metrics.forEach(function(m) { html += _qmCardHtml(m); });
     html += '</div>';
     html += _scoreHtml(m1.score);
-    if (g.status === 'en_revision') html += _correctionFieldHtml('M1-readiness', g.badge);
-    else html += _responseBlockHtml(g.name);
+    if (g.status === 'en_revision') {
+      html += _correctionFieldHtml('M1-readiness', g.badge);
+      html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
+    } else if (g.status === 'pendiente_final') {
+      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-readiness', g.badge);
+      html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
+    } else { html += _responseBlockHtml(g.name); }
   }
 
   if (g.status === 'en_revision') {
@@ -691,7 +700,6 @@ function _renderM1Group(g) {
       '</div>';
   }
 
-  html += _moduleCommentBlocksHtml(g, 'm1');
   return html;
 }
 
@@ -711,7 +719,9 @@ function _renderM2Group(g) {
     var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
     var elbl = _estadoLbl[r.estado] || r.estado;
     var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
-    var traderHtml = (g.status !== 'en_revision') ? _traderRevisionHtml(r.comment) : '';
+    var pendingHtml = (g.status === 'pendiente_final' && r.correction) ? _pendingHistoryHtml(r.correction, r.id, g.badge) : '';
+    var additionalHtml = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(r.id, g.badge, r.additional_comment || '') : '';
+    var traderHtml = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(r.comment) : '';
     html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
         '<span class="rec-num">' + _esc(r.id) + '</span>' +
@@ -723,10 +733,9 @@ function _renderM2Group(g) {
         '</div>' +
       '</div>' +
       '<div class="rec-desc">' + _esc(r.desc) + '</div>' +
-      correctionHtml + traderHtml +
+      correctionHtml + pendingHtml + additionalHtml + traderHtml +
       '</div>';
   });
-  html += _moduleCommentBlocksHtml(g, 'm2');
   return html;
 }
 
@@ -752,7 +761,9 @@ function _renderM3Group(g) {
     var accionCss = o.accion === 'si' ? 'obs-accion-si' : o.accion === 'resuelta' ? 'obs-accion-resuelta' : 'obs-accion-no';
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
     var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
-    var traderHtml3 = (g.status !== 'en_revision') ? _traderRevisionHtml(o.comment) : '';
+    var pendHtml3 = (g.status === 'pendiente_final' && o.correction) ? _pendingHistoryHtml(o.correction, o.id, g.badge) : '';
+    var addlHtml3 = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(o.id, g.badge, o.additional_comment || '') : '';
+    var traderHtml3 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(o.comment) : '';
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
         '<div class="obs-timestamp">' + datePart + '<br>' + timePart + '</div>' +
@@ -765,11 +776,10 @@ function _renderM3Group(g) {
           '<span class="obs-tag ' + accionCss + '">' + accionLbl + '</span>' +
           '<span class="obs-context">' + _esc(o.context||'') + '</span>' +
         '</div>' +
-        corrHtml3 + traderHtml3 +
+        corrHtml3 + pendHtml3 + addlHtml3 + traderHtml3 +
       '</div>' +
       '</div>';
   });
-  html += _moduleCommentBlocksHtml(g, 'm3');
   return html;
 }
 
@@ -801,17 +811,18 @@ function _renderM4Group(g) {
     }
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
     var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
-    var traderHtml4 = (g.status !== 'en_revision') ? _traderRevisionHtml(a.comment) : '';
+    var pendHtml4 = (g.status === 'pendiente_final' && a.correction) ? _pendingHistoryHtml(a.correction, a.id, g.badge) : '';
+    var addlHtml4 = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(a.id, g.badge, a.additional_comment || '') : '';
+    var traderHtml4 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(a.comment) : '';
     html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
         '<span class="arch-category ' + catCss + '">' + _esc(a.label||a.categoria) + '</span>' +
         '<span class="arch-title">' + _esc(a.title) + '</span>' +
       '</div>' +
       '<div class="arch-desc">' + _esc(a.desc) + '</div>' +
-      codeHtml + corrHtml4 + traderHtml4 +
+      codeHtml + corrHtml4 + pendHtml4 + addlHtml4 + traderHtml4 +
       '</div>';
   });
-  html += _moduleCommentBlocksHtml(g, 'm4');
   return html;
 }
 
@@ -1117,9 +1128,10 @@ function _renderM5(group) {
   }
 
   // Cards
-  var cardsHtml = (m5.cards || []).map(function(c) {
+  var cardsHtml = (m5.cards || []).map(function(c, ci) {
     var tipo = c.tipo || 'neutral';
     var horizonte = c.horizonte || '';
+    var m5CardId = 'm5-card-' + ci;
     return '<div class="m5-card tipo-' + _esc(tipo) + '">' +
       '<div class="m5-card-header">' +
         '<span class="m5-card-tipo tipo-' + _esc(tipo) + '">' + _esc(tipo) + '</span>' +
@@ -1127,6 +1139,7 @@ function _renderM5(group) {
       '</div>' +
       '<div class="m5-card-title">' + _esc(c.title || '') + '</div>' +
       '<div class="m5-card-desc">' + _esc(c.desc || '') + '</div>' +
+      _additionalCommentHtml(m5CardId, group.badge, c.additional_comment || '') +
     '</div>';
   }).join('');
 
@@ -1158,8 +1171,7 @@ function _renderM5(group) {
       '<span class="correction-sublabel">Notas sobre el contexto actual, acciones tomadas o decisiones basadas en este análisis.</span>' +
       '<textarea class="correction-field" id="m5-notes-field" placeholder="Escribe tus notas aquí…" style="min-height:80px;">' + _esc(savedNotes) + '</textarea>' +
       '<button class="btn-save-comment" onclick="saveM5Notes(\'' + _esc(group.badge) + '\', this)" style="margin-top:8px;">Guardar nota</button>' +
-    '</div>' +
-    _moduleCommentBlocksHtml(group, 'm5');
+    '</div>';
 }
 
 function triggerM5Refresh(btn) {
