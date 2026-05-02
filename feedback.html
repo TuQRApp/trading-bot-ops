@@ -254,6 +254,12 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .m5-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
 .m5-card-desc{font-size:12px;color:var(--muted);line-height:1.55;}
 .m5-events-section{margin-top:28px;}
+.m5-cot-row{display:grid;grid-template-columns:60px 90px 1fr 90px;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);font-size:12px;}
+.m5-cot-row:last-child{border-bottom:none;}
+.m5-cot-label{font-family:var(--font-mono);font-weight:700;font-size:11px;}
+.m5-cot-bias{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;font-weight:700;}
+.m5-cot-net{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.m5-cot-date{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-align:right;}
 .m5-events-title{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
 .m5-event-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
 .m5-event-currency{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);flex-shrink:0;}
@@ -980,6 +986,8 @@ function _renderM5(group) {
   var vix = macro.vix || {};
   var fg = macro.fear_greed_crypto || {};
   var events = macro.high_impact_events || [];
+  var fred = macro.fred || null;
+  var cot = macro.cot || null;
 
   // Format last updated
   var updatedStr = m5.last_updated
@@ -999,6 +1007,39 @@ function _renderM5(group) {
     : '';
 
   var eventCountPill = '<div class="m5-macro-pill"><span class="m5-macro-pill-label">Eventos alta impacto</span><span class="m5-macro-pill-value">' + events.length + '</span><span class="m5-macro-pill-sub">esta semana</span></div>';
+
+  // FRED pills
+  var fredDxyPill = '';
+  var fredCurvePill = '';
+  if (fred) {
+    if (fred.dxy) {
+      fredDxyPill = '<div class="m5-macro-pill"><span class="m5-macro-pill-label">DXY (USD)</span><span class="m5-macro-pill-value">' + fred.dxy.value + '</span><span class="m5-macro-pill-sub">' + (fred.dxy.date || '') + '</span></div>';
+    }
+    if (fred.yield_spread) {
+      var crv = fred.curve_regime || '';
+      var crvColor = crv === 'normal' ? '#059669' : crv === 'flat' ? '#f59e0b' : '#ef4444';
+      fredCurvePill = '<div class="m5-macro-pill"><span class="m5-macro-pill-label">Curva 10Y-2Y</span><span class="m5-macro-pill-value" style="color:' + crvColor + '">' + fred.yield_spread.value + '</span><span class="m5-macro-pill-sub">' + _esc(crv) + '</span></div>';
+    }
+  }
+
+  // COT section
+  var cotHtml = '';
+  if (cot && Object.keys(cot).length) {
+    var cotRows = Object.keys(cot).map(function(label) {
+      var d = cot[label];
+      var biasColor = d.bias === 'bullish' ? '#059669' : '#ef4444';
+      var netFmt = (d.net > 0 ? '+' : '') + d.net.toLocaleString();
+      return '<div class="m5-cot-row">' +
+        '<span class="m5-cot-label">' + _esc(label) + '</span>' +
+        '<span class="m5-cot-bias" style="color:' + biasColor + '">' + _esc(d.bias) + '</span>' +
+        '<span class="m5-cot-net">' + netFmt + '</span>' +
+        '<span class="m5-cot-date">' + _esc(d.date || '') + '</span>' +
+      '</div>';
+    }).join('');
+    cotHtml = '<div class="m5-events-section">' +
+      '<div class="m5-events-title">CFTC COT — Posicionamiento institucional (net no-comercial)</div>' +
+      cotRows + '</div>';
+  }
 
   // Cards
   var cardsHtml = (m5.cards || []).map(function(c) {
@@ -1032,10 +1073,11 @@ function _renderM5(group) {
       '<span class="m5-updated-label">Actualizado: ' + updatedStr + '</span>' +
       '<button class="btn-m5-refresh" onclick="triggerM5Refresh(this)">↻ Actualizar ahora</button>' +
     '</div>' +
-    '<div class="m5-macro-bar">' + vixPill + fgPill + eventCountPill + '</div>' +
+    '<div class="m5-macro-bar">' + vixPill + fgPill + eventCountPill + fredDxyPill + fredCurvePill + '</div>' +
     (m5.resumen ? '<div class="m5-resumen">' + _esc(m5.resumen) + '</div>' : '') +
     '<div class="m5-cards">' + cardsHtml + '</div>' +
     eventsHtml +
+    cotHtml +
     '<div class="correction-wrap" style="margin-top:28px;">' +
       '<label class="correction-label">💬 Comentarios del Trader — Contexto de Mercado</label>' +
       '<span class="correction-sublabel">Notas sobre el contexto actual, acciones tomadas o decisiones basadas en este análisis.</span>' +

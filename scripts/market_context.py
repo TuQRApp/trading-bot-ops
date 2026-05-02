@@ -5,6 +5,7 @@ Fetches live macro data and generates M5 briefings for each active bot.
 
 import os, json, sys, requests
 from datetime import datetime, timezone
+from urllib.parse import quote
 from anthropic import Anthropic
 
 WORKER_URL = os.environ.get("WORKER_URL", "https://trading-upload.nestragues.workers.dev")
@@ -93,6 +94,78 @@ def fetch_economic_calendar():
         print(f"  [warn] Calendar fetch failed: {e}")
         return []
 
+def fetch_fred():
+    api_key = os.environ.get("FRED_API_KEY", "")
+    if not api_key:
+        print("  [warn] FRED_API_KEY not set — skipping")
+        return None
+    def get_series(sid):
+        url = (
+            "https://api.stlouisfed.org/fred/series/observations"
+            f"?series_id={sid}&api_key={api_key}&limit=5&sort_order=desc&file_type=json"
+        )
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        for obs in r.json().get("observations", []):
+            if obs["value"] != ".":
+                return {"value": round(float(obs["value"]), 3), "date": obs["date"]}
+        return None
+    try:
+        dxy  = get_series("DTWEXBGS")
+        t10  = get_series("DGS10")
+        t2   = get_series("DGS2")
+        sprd = get_series("T10Y2Y")
+        result = {}
+        if dxy:  result["dxy"]          = dxy
+        if t10:  result["t10y"]         = t10
+        if t2:   result["t2y"]          = t2
+        if sprd:
+            result["yield_spread"] = sprd
+            v = sprd["value"]
+            if v > 0.5:    result["curve_regime"] = "normal"
+            elif v > 0:    result["curve_regime"] = "flat"
+            elif v > -0.5: result["curve_regime"] = "mildly_inverted"
+            else:          result["curve_regime"] = "inverted"
+        return result or None
+    except Exception as e:
+        print(f"  [warn] FRED fetch failed: {e}")
+        return None
+
+def fetch_cot():
+    targets = {
+        "EURO FX - CHICAGO MERCANTILE EXCHANGE":             "EUR",
+        "BRITISH POUND STERLING - CHICAGO MERCANTILE EXCHANGE": "GBP",
+        "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE":        "JPY",
+        "GOLD - COMMODITY EXCHANGE INC.":                    "XAU",
+    }
+    base = "https://publicreporting.cftc.gov/resource/jun7-fc8e.json"
+    result = {}
+    for market_name, label in targets.items():
+        try:
+            r = requests.get(base, params={
+                "$where": f"market_and_exchange_names='{market_name}'",
+                "$limit": "1",
+                "$order": "report_date_as_yyyy_mm_dd DESC",
+            }, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            rows = r.json()
+            if not rows:
+                continue
+            row = rows[0]
+            long_nc  = int(float(row.get("noncomm_positions_long_all",  0)))
+            short_nc = int(float(row.get("noncomm_positions_short_all", 0)))
+            net = long_nc - short_nc
+            result[label] = {
+                "net":   net,
+                "long":  long_nc,
+                "short": short_nc,
+                "bias":  "bullish" if net > 0 else "bearish",
+                "date":  (row.get("report_date_as_yyyy_mm_dd") or "")[:10],
+            }
+        except Exception as e:
+            print(f"  [warn] COT {label} failed: {e}")
+    return result or None
+
 def build_macro_snapshot():
     print("  Fetching VIX...")
     vix = fetch_vix()
@@ -100,10 +173,16 @@ def build_macro_snapshot():
     fg = fetch_fear_greed_crypto()
     print("  Fetching economic calendar...")
     calendar = fetch_economic_calendar()
+    print("  Fetching FRED (DXY / yield curve)...")
+    fred = fetch_fred()
+    print("  Fetching CFTC COT...")
+    cot = fetch_cot()
     return {
         "vix": vix,
         "fear_greed_crypto": fg,
         "high_impact_events": calendar,
+        "fred": fred,
+        "cot": cot,
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
@@ -136,11 +215,15 @@ Current market data (as of {macro["fetched_at"]}):
 VIX: {json.dumps(macro["vix"], ensure_ascii=True) if macro["vix"] else "unavailable"}
 Crypto Fear & Greed: {json.dumps(macro["fear_greed_crypto"], ensure_ascii=True) if macro["fear_greed_crypto"] else "unavailable"}
 High-impact economic events this week: {json.dumps(macro["high_impact_events"], ensure_ascii=True)}
+FRED - USD strength and yield curve: {json.dumps(macro.get("fred"), ensure_ascii=True) if macro.get("fred") else "unavailable"}
+CFTC COT - non-commercial (speculative) net positioning: {json.dumps(macro.get("cot"), ensure_ascii=True) if macro.get("cot") else "unavailable"}
 
 Generate 4-6 specific, actionable cards for the trader. Focus on:
 - Upcoming high-impact events that require pausing or adjusting this bot
 - Whether current volatility regime (VIX) favors or challenges this strategy
 - Crypto sentiment if the bot trades crypto instruments
+- USD strength (DXY) and yield curve regime impact on forex pairs this bot trades
+- CFTC COT institutional positioning bias for EUR, GBP, JPY, or Gold if relevant to this bot
 - Concrete timing and action items
 
 Rules:
