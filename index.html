@@ -628,9 +628,12 @@ footer {
       </div>
       <div class="upload-field">
         <label>Carpeta (opcional)</label>
-        <select id="upload-folder-select" class="upload-input" style="min-width:180px;">
-          <option value="">Sin carpeta (raíz)</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="upload-folder-select" class="upload-input" style="flex:1;min-width:160px;">
+            <option value="">Sin carpeta (raíz)</option>
+          </select>
+          <button type="button" class="upload-btn" style="padding:9px 14px;" onclick="createFolderForUpload()">+ Nueva</button>
+        </div>
       </div>
       <div class="upload-field">
         <label>Archivos</label>
@@ -878,7 +881,9 @@ function _renderFolderSection(folder, groups, folderChildren, allFolders, depth)
   });
   fGroups.forEach(function(g) { html += _renderFileRow(g, allFolders); });
   if (totalItems === 0) {
-    html += '<div class="folder-empty-note">Carpeta vacía — mueve grupos aquí usando el selector "Mover a…"</div>';
+    html += '<div class="folder-empty-note">Carpeta vacía — mueve grupos aquí usando el selector "Mover a…"' +
+      (depth < 2 ? ' · <button class="btn-subfolder" style="margin-left:6px;" onclick="createFolder(\'' + folder.id + '\')">+ subcarpeta</button>' : '') +
+      '</div>';
   }
   html += '</div></div>';
   return html;
@@ -1139,6 +1144,28 @@ function _hideUploadBanner() {
 }
 
 // ── Folders ────────────────────────────────────────────────────────────────────
+async function createFolderForUpload() {
+  var name = prompt('Nombre de la nueva carpeta:');
+  if (!name || !name.trim()) return;
+  try {
+    var r = await fetch(WORKER + '/folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim(), parent_id: null })
+    });
+    var res = await r.json();
+    if (res.ok) {
+      var dr = await fetch(DATA_URL);
+      var data = await dr.json();
+      _populateFolderSelect(data.folders || []);
+      renderFileList(data);
+      document.getElementById('upload-folder-select').value = res.id;
+    } else {
+      alert('Error al crear carpeta: ' + (res.error || 'desconocido'));
+    }
+  } catch(e) { alert('Error de red: ' + e.message); }
+}
+
 function toggleFolder(folderId) {
   var cont = document.getElementById('fcont-' + folderId);
   var toggle = document.getElementById('ftoggle-' + folderId);
