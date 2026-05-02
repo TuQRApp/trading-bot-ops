@@ -325,6 +325,14 @@ async function handlePatchGroup(request, env) {
       return json({ ok: true });
     }
 
+    if (action === 'save_module_comment') {
+      const { field, value } = body;
+      if (!field) return json({ error: 'field required' }, 400);
+      group[field] = value || '';
+      await writeData(data, sha, env);
+      return json({ ok: true });
+    }
+
     if (action === 'submit_review') {
       const corrections = body.corrections || {};
       for (const mod of ['m2', 'm3', 'm4']) {

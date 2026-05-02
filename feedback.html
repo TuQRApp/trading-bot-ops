@@ -328,6 +328,17 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .revision-top-banner-badges{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
 .revision-top-banner-badge{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;background:rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.35);color:#b45309;}
 
+.module-comment-green{margin-top:20px;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 14px;background:rgba(16,185,129,0.05);}
+.module-comment-green-label{font-family:var(--font-mono);font-size:10px;font-weight:700;color:#059669;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.module-comment-field{width:100%;font-family:var(--font-display);font-size:12px;color:var(--text);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:8px 12px;background:rgba(0,0,0,0.2);outline:none;resize:vertical;min-height:60px;box-sizing:border-box;}
+.module-comment-field:focus{border-color:rgba(16,185,129,0.65);background:rgba(16,185,129,0.04);}
+.module-comment-field::placeholder{color:var(--muted);font-style:italic;}
+.module-draft-block{margin-top:20px;border:1px solid rgba(249,115,22,0.4);border-radius:10px;padding:12px 14px;background:rgba(249,115,22,0.06);}
+.module-draft-label{font-family:var(--font-mono);font-size:10px;font-weight:700;color:#ea580c;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.module-draft-field{width:100%;font-family:var(--font-display);font-size:12px;color:var(--text);border:1px solid rgba(249,115,22,0.35);border-radius:6px;padding:8px 12px;background:rgba(0,0,0,0.2);outline:none;resize:vertical;min-height:60px;box-sizing:border-box;}
+.module-draft-field:focus{border-color:rgba(249,115,22,0.65);background:rgba(249,115,22,0.04);}
+.module-draft-field::placeholder{color:rgba(234,88,12,0.65);font-style:italic;}
+
 .revision-action-bar{position:fixed;bottom:0;left:0;right:0;background:#fffbf5;border-top:3px solid #ea580c;padding:16px 32px;display:flex;align-items:center;gap:20px;z-index:100;box-shadow:0 -6px 24px rgba(234,88,12,0.15);}
 .revision-info{font-family:var(--font-mono);font-size:12px;color:#7c2d12;flex:1;font-weight:600;}
 .btn-submit-review{font-family:var(--font-mono);font-size:12px;padding:12px 24px;border-radius:8px;border:2px solid #ea580c;background:#ea580c;color:#fff;cursor:pointer;font-weight:700;transition:all 0.2s;letter-spacing:0.3px;}
@@ -573,6 +584,55 @@ function _responseBlockHtml(label) {
     '</div>';
 }
 
+// ── Module-level comment blocks (green + pink/orange) ────────────────────────
+function _moduleCommentBlocksHtml(g, mod) {
+  var draftVal = g[mod + '_draft'] || '';
+  var commentVal = g[mod + '_comment'] || '';
+  var isPending = (g.status === 'en_revision');
+  var html = '';
+  if (isPending || draftVal) {
+    var ph = isPending ? 'Estos comentarios se aplicarán a la versión final de esta revisión' : '';
+    html += '<div class="module-draft-block">' +
+      '<label class="module-draft-label">🟠 Comentarios del trader previos a esta versión final</label>' +
+      '<textarea class="module-draft-field" placeholder="' + _esc(ph) + '">' + _esc(draftVal) + '</textarea>' +
+      '<button class="btn-save-comment" onclick="saveModuleComment(\'' + _esc(g.badge) + '\',\'' + mod + '_draft\',this)" style="margin-top:8px;">Guardar comentario</button>' +
+    '</div>';
+  }
+  html += '<div class="module-comment-green">' +
+    '<label class="module-comment-green-label">🟢 Comentarios adicionales para el informe</label>' +
+    '<textarea class="module-comment-field" placeholder="Escribe comentarios adicionales para incluir en el informe…">' + _esc(commentVal) + '</textarea>' +
+    '<button class="btn-save-comment" onclick="saveModuleComment(\'' + _esc(g.badge) + '\',\'' + mod + '_comment\',this)" style="margin-top:8px;">Guardar comentario</button>' +
+  '</div>';
+  return html;
+}
+
+function saveModuleComment(badge, field, btn) {
+  var textarea = btn.previousElementSibling;
+  if (!textarea || textarea.tagName !== 'TEXTAREA') return;
+  var val = textarea.value;
+  btn.textContent = 'Guardando…';
+  btn.disabled = true;
+  fetch(WORKER_URL + '/group', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: badge, action: 'save_module_comment', field: field, value: val })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      btn.textContent = '✓ Guardado';
+      setTimeout(function() { btn.textContent = 'Guardar comentario'; btn.disabled = false; }, 2000);
+    } else {
+      alert('Error: ' + (res.error || 'desconocido'));
+      btn.textContent = 'Guardar comentario'; btn.disabled = false;
+    }
+  })
+  .catch(function(e) {
+    alert('Error: ' + e.message);
+    btn.textContent = 'Guardar comentario'; btn.disabled = false;
+  });
+}
+
 // ── M1 renderer ──────────────────────────────────────────────────────────────
 function _renderM1Group(g) {
   var m1 = g.m1, html = '';
@@ -631,6 +691,7 @@ function _renderM1Group(g) {
       '</div>';
   }
 
+  html += _moduleCommentBlocksHtml(g, 'm1');
   return html;
 }
 
@@ -665,6 +726,7 @@ function _renderM2Group(g) {
       correctionHtml + traderHtml +
       '</div>';
   });
+  html += _moduleCommentBlocksHtml(g, 'm2');
   return html;
 }
 
@@ -707,6 +769,7 @@ function _renderM3Group(g) {
       '</div>' +
       '</div>';
   });
+  html += _moduleCommentBlocksHtml(g, 'm3');
   return html;
 }
 
@@ -748,6 +811,7 @@ function _renderM4Group(g) {
       codeHtml + corrHtml4 + traderHtml4 +
       '</div>';
   });
+  html += _moduleCommentBlocksHtml(g, 'm4');
   return html;
 }
 
@@ -1094,7 +1158,8 @@ function _renderM5(group) {
       '<span class="correction-sublabel">Notas sobre el contexto actual, acciones tomadas o decisiones basadas en este análisis.</span>' +
       '<textarea class="correction-field" id="m5-notes-field" placeholder="Escribe tus notas aquí…" style="min-height:80px;">' + _esc(savedNotes) + '</textarea>' +
       '<button class="btn-save-comment" onclick="saveM5Notes(\'' + _esc(group.badge) + '\', this)" style="margin-top:8px;">Guardar nota</button>' +
-    '</div>';
+    '</div>' +
+    _moduleCommentBlocksHtml(group, 'm5');
 }
 
 function triggerM5Refresh(btn) {
