@@ -356,32 +356,159 @@ def preprocess_csv(filename, content):
     return facts
 
 
+HTML_LARGE_THRESHOLD = 5 * 1024 * 1024   # 5 MB — above this, skip full DOM parse
+HTML_HEAD_BYTES      = 200_000           # read only first 200 KB for large files
+
+
+def _parse_numeric(s):
+    """Convert strings like '55.4%', '-7.87%', '2.162', '$10,000' to float or None."""
+    import re
+    s = re.sub(r"[%$,\s]", "", str(s))
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _extract_card_stats(html_fragment):
+    """
+    Extract per-instrument stats from custom div-based backtest HTML.
+    Handles the .symbol-block / h3 / .card / .lbl / .val pattern.
+    Returns a list of dicts, one per instrument.
+    """
+    import re
+
+    tag_re    = re.compile(r"<[^>]+>")
+    h3_re     = re.compile(r"<h3[^>]*>(.*?)</h3>", re.DOTALL)
+    lbl_re    = re.compile(
+        r'class="lbl"[^>]*>(.*?)</div>\s*<div[^>]*class="val"[^>]*>(.*?)</div>',
+        re.DOTALL,
+    )
+
+    instruments = []
+    blocks = re.split(r'<div[^>]*class="symbol-block"', html_fragment)
+
+    for block in blocks[1:]:
+        h3 = h3_re.search(block[:600])
+        if not h3:
+            continue
+        symbol = tag_re.sub("", h3.group(1)).strip()
+
+        cards = {}
+        for lbl, val in lbl_re.findall(block[:3000]):
+            k = tag_re.sub("", lbl).strip()
+            v = tag_re.sub("", val).strip()
+            if k and v:
+                cards[k] = v
+        if cards:
+            instruments.append({"symbol": symbol, **cards})
+
+    return instruments
+
+
+def _aggregate_card_instruments(instruments):
+    """
+    Given a list of per-instrument card dicts, aggregate into overall pnl_stats-like dict.
+    Handles Spanish and English label names.
+    """
+    WR_KEYS = {"win rate", "win rate %", "wr", "tasa de acierto"}
+    PF_KEYS = {"profit factor", "pf", "factor de beneficio"}
+    DD_KEYS = {"max dd", "max drawdown", "drawdown", "dd máx", "dd max"}
+    TR_KEYS = {"trades", "total trades", "operaciones", "n trades"}
+    SH_KEYS = {"sharpe", "sharpe ratio"}
+
+    wrs, pfs, dds, trades, sharpes = [], [], [], [], []
+
+    for inst in instruments:
+        for k, v in inst.items():
+            kl = k.lower()
+            n = _parse_numeric(v)
+            if n is None:
+                continue
+            if kl in WR_KEYS:
+                wrs.append(n)
+            elif kl in PF_KEYS:
+                pfs.append(n)
+            elif kl in DD_KEYS:
+                dds.append(n)
+            elif kl in TR_KEYS:
+                trades.append(int(n))
+            elif kl in SH_KEYS:
+                sharpes.append(n)
+
+    if not wrs:
+        return None
+
+    def _avg(lst): return round(sum(lst) / len(lst), 3) if lst else None
+    def _worst_dd(lst): return round(min(lst), 4) if lst else None
+
+    return {
+        "total_trades":    sum(trades) if trades else None,
+        "n_instruments":   len(instruments),
+        "win_rate_pct":    _avg(wrs),
+        "profit_factor":   _avg(pfs),
+        "max_drawdown":    _worst_dd(dds),
+        "sharpe_approx":   _avg(sharpes),
+        "per_instrument":  [
+            {"symbol": i.get("symbol"), "win_rate": i.get("Win Rate") or i.get("Tasa de acierto"),
+             "profit_factor": i.get("Profit Factor"), "trades": i.get("Trades") or i.get("Operaciones")}
+            for i in instruments
+        ],
+    }
+
+
 def preprocess_html(filename, content):
     """
-    Extract trading statistics from an MT5 HTML backtest report.
-    Tries to parse the summary table and the trades table.
-    Falls back to stripping tags and returning the first 3000 chars of text.
+    Extract trading statistics from a backtest HTML report.
+
+    Strategy:
+    - Large files (>5 MB): read first 200 KB, use regex on .lbl/.val card pattern.
+    - Small files (<5 MB): try pandas.read_html() for standard MT5 table format,
+      then fall back to card pattern.
+    - Final fallback: strip tags, return first 3000 chars of visible text.
     """
     import io
     import re
     import pandas as pd
 
-    facts = {"filename": filename, "source": "html_backtest"}
+    facts    = {"filename": filename, "source": "html_backtest"}
+    is_large = len(content) > HTML_LARGE_THRESHOLD
 
+    # ── Path A: large file — regex on card stats only ─────────────────────────
+    if is_large:
+        head = content[:HTML_HEAD_BYTES]
+        instruments = _extract_card_stats(head)
+        if instruments:
+            agg = _aggregate_card_instruments(instruments)
+            if agg:
+                facts["pnl_stats"]  = agg
+                facts["n_instruments"] = agg["n_instruments"]
+                print(f"    [{filename}] large HTML ({len(content)//1024}KB): "
+                      f"{agg['n_instruments']} instruments, "
+                      f"WR={agg['win_rate_pct']}%, PF={agg['profit_factor']}, "
+                      f"trades={agg['total_trades']}")
+                return facts
+        # fallback for large files
+        text = re.sub(r"<[^>]+>", " ", head)
+        text = re.sub(r"\s+", " ", text).strip()
+        facts["text_extract"] = text[:3000]
+        facts["extract_note"] = "Large HTML — card stats not found, showing head text extract"
+        print(f"    [{filename}] large HTML: card pattern not found, text fallback")
+        return facts
+
+    # ── Path B: small file — try pandas.read_html() ───────────────────────────
     try:
         tables = pd.read_html(io.StringIO(content), flavor="html.parser")
 
-        stats_table = None
+        stats_table  = None
         trades_table = None
 
         for t in tables:
             text = t.to_string().lower()
-            # Stats table: narrow (≤4 cols), contains financial keywords
             if t.shape[1] <= 4 and any(
-                kw in text for kw in ["profit factor", "drawdown", "total trades", "win rate", "profit"]
+                kw in text for kw in ["profit factor", "drawdown", "total trades", "win rate"]
             ):
                 stats_table = t
-            # Trades table: wide (>5 cols), many rows, has trade columns
             if t.shape[0] > 5 and t.shape[1] > 5 and any(
                 kw in text for kw in ["profit", "type", "size", "ticket", "open time"]
             ):
@@ -395,7 +522,7 @@ def preprocess_html(filename, content):
                 for i in range(0, len(vals) - 1, 2):
                     kv[vals[i]] = vals[i + 1]
             facts["summary_stats"] = kv
-            print(f"    [{filename}] HTML summary: {len(kv)} stats extracted")
+            print(f"    [{filename}] HTML summary table: {len(kv)} stats")
 
         if trades_table is not None:
             pnl_col = next(
@@ -404,20 +531,29 @@ def preprocess_html(filename, content):
                 None,
             )
             if pnl_col:
-                csv_text = trades_table.to_csv(index=False)
-                csv_facts = preprocess_csv(f"{filename}[trades]", csv_text)
+                csv_facts = preprocess_csv(f"{filename}[trades]", trades_table.to_csv(index=False))
                 if "pnl_stats" in csv_facts:
                     facts["pnl_stats"] = csv_facts["pnl_stats"]
-                    facts["rows"] = csv_facts.get("rows", 0)
-                    print(f"    [{filename}] HTML trades: {facts['rows']} trades parsed from table")
+                    facts["rows"]      = csv_facts.get("rows", 0)
+                    print(f"    [{filename}] HTML trades table: {facts['rows']} trades")
 
-    except Exception as e:
-        # Fallback: strip tags, keep first 3000 chars of visible text
+        if "pnl_stats" not in facts and "summary_stats" not in facts:
+            raise ValueError("no useful tables found")
+
+    except Exception:
+        # Fall back to card pattern, then text extract
+        instruments = _extract_card_stats(content)
+        if instruments:
+            agg = _aggregate_card_instruments(instruments)
+            if agg:
+                facts["pnl_stats"] = agg
+                print(f"    [{filename}] HTML card pattern: {agg['n_instruments']} instruments")
+                return facts
         text = re.sub(r"<[^>]+>", " ", content)
         text = re.sub(r"\s+", " ", text).strip()
         facts["text_extract"] = text[:3000]
-        facts["extract_note"] = f"HTML table parsing failed — showing text extract ({e})"
-        print(f"    [{filename}] HTML fallback text extract ({e})")
+        facts["extract_note"] = "HTML parsing failed — showing text extract"
+        print(f"    [{filename}] HTML: all parsers failed, text fallback")
 
     return facts
 
