@@ -186,6 +186,63 @@ def _ml_cluster_trades(df, pnl_col):
     }
 
 
+def _walk_forward_test(df, pnl_col, train_pct=0.7):
+    """
+    Chronological 70/30 split to detect overfitting.
+    Returns None if there are fewer than 40 trades.
+    """
+    import pandas as pd
+
+    pnl   = pd.to_numeric(df[pnl_col], errors="coerce").dropna()
+    n     = len(pnl)
+    split = int(n * train_pct)
+
+    if split < 28 or (n - split) < 12:
+        return None
+
+    def _m(series):
+        wins   = series[series > 0]
+        losses = series[series < 0]
+        t      = len(series)
+        gp = float(wins.sum())        if len(wins)   > 0 else 0.0
+        gl = float(abs(losses.sum())) if len(losses) > 0 else 0.0
+        cumul = series.cumsum()
+        return {
+            "n_trades":      t,
+            "win_rate_pct":  round(len(wins) / t * 100, 2) if t else None,
+            "profit_factor": round(gp / gl, 3)             if gl > 0 else None,
+            "max_drawdown":  round(float((cumul - cumul.cummax()).min()), 4),
+        }
+
+    train = _m(pnl.iloc[:split])
+    test  = _m(pnl.iloc[split:])
+
+    wr_delta     = None
+    pf_delta_pct = None
+    if train["win_rate_pct"] and test["win_rate_pct"]:
+        wr_delta = round(train["win_rate_pct"] - test["win_rate_pct"], 1)
+    if train["profit_factor"] and test["profit_factor"]:
+        pf_delta_pct = round(
+            (train["profit_factor"] - test["profit_factor"]) / train["profit_factor"] * 100, 1
+        )
+
+    if wr_delta is not None:
+        if   wr_delta > 15 or (pf_delta_pct or 0) > 40: verdict = "high_overfit_risk"
+        elif wr_delta >  8 or (pf_delta_pct or 0) > 20: verdict = "moderate_overfit_risk"
+        else:                                             verdict = "stable"
+    else:
+        verdict = "insufficient_data"
+
+    return {
+        "split":              f"{int(train_pct*100)}/{int((1-train_pct)*100)}",
+        "train":              train,
+        "test":               test,
+        "wr_delta_pp":        wr_delta,
+        "pf_degradation_pct": pf_delta_pct,
+        "verdict":            verdict,
+    }
+
+
 def preprocess_csv(filename, content):
     """Compute quantitative stats from a CSV file using pandas."""
     import io
@@ -275,6 +332,17 @@ def preprocess_csv(filename, content):
                         print(f"    ML clustering: {cluster_result['n_clusters']} clusters — {cluster_result['insight'][:80]}")
                 except Exception as e:
                     print(f"    [warn] ML clustering failed: {e}")
+
+            if total >= 40:
+                try:
+                    wf = _walk_forward_test(df, pnl_col)
+                    if wf:
+                        stats["walk_forward"] = wf
+                        print(f"    Walk-forward (70/30): train WR={wf['train']['win_rate_pct']}% "
+                              f"test WR={wf['test']['win_rate_pct']}% "
+                              f"delta={wf['wr_delta_pp']}pp — {wf['verdict']}")
+                except Exception as e:
+                    print(f"    [warn] Walk-forward failed: {e}")
 
             facts["pnl_stats"] = stats
 
@@ -394,6 +462,14 @@ ANALYSIS_SYSTEM = [
             "Use pnl_stats directly as the basis for m1 metrics — do not recalculate or contradict them. "
             "If trade_clusters is present, use the insight to generate or strengthen m2/m3 recommendations about regime dependency. "
             "Use complexity and magic_numbers from Python facts to strengthen m4 findings.\n"
+            "- If walk_forward is in pnl_stats: include it as a QM metric in m1 "
+            "(label='Walk-forward 70/30', value='WR X% -> Y%', status matches verdict: "
+            "stable=ok, moderate_overfit_risk=warn, high_overfit_risk=bad). "
+            "verdict='high_overfit_risk' MUST lower the m1 score and generate an alta-priority m2 recommendation.\n"
+            "- If LIVE VS BACKTEST COMPARISON block is present: generate a dedicated alta-priority m2 card "
+            "explaining the expected gap between backtest and live performance using the provided ranges. "
+            "If live_data_available=False, add an m2 card recommending to upload live trades CSV. "
+            "Reference the live bot badges by name.\n"
             "- m1: Use type \"quality\" when CSV/backtest data is present. Use type \"empty\" when only .py files. "
             "For quality: last_updated must be ISO 8601 (e.g. 2026-05-03T04:30:00Z). "
             "metrics[].status must be ok/warn/bad. Use pnl_stats from PRE-ANALYSIS FACTS directly.\n"
@@ -477,12 +553,17 @@ TIPO_MAP = {
 }
 
 
-def build_analysis_user(files_text, date_str, preproc_facts=None):
+def build_analysis_user(files_text, date_str, preproc_facts=None, comparison=None):
     parts = [f"Today: {date_str}"]
     if preproc_facts:
         parts.append(
             "=== PRE-ANALYSIS FACTS (computed deterministically — verified, do not recalculate) ===\n"
             + json.dumps(preproc_facts, ensure_ascii=True, indent=2)
+        )
+    if comparison:
+        parts.append(
+            "=== LIVE VS BACKTEST COMPARISON ===\n"
+            + json.dumps(comparison, ensure_ascii=True, indent=2)
         )
     parts.append(f"Files:\n{files_text}")
     return "\n\n".join(parts)
@@ -516,6 +597,90 @@ def build_gpt4o_user(analysis, py_files_text):
         f"Already covered — do NOT repeat these:\n{json.dumps(existing_titles, ensure_ascii=True)}\n\n"
         f"Code to review (JSON output required):\n{py_files_text}"
     )
+
+
+def _find_related_groups(current_group, all_groups):
+    """Find groups sharing the same folder_id as current_group."""
+    folder_id = current_group.get("folder_id")
+    if not folder_id:
+        return []
+    return [
+        g for g in all_groups
+        if g.get("folder_id") == folder_id and g["badge"] != current_group["badge"]
+    ]
+
+
+def _build_comparison_block(current_group, all_groups, preproc_facts):
+    """
+    When the current group is a backtest (has CSVs), find related live bot groups
+    and build a comparison block with expected live performance ranges.
+    """
+    has_csv = any(f["name"].endswith(".csv") for f in current_group.get("files", []))
+    if not has_csv or not all_groups:
+        return None
+
+    related = _find_related_groups(current_group, all_groups)
+    live_groups = [
+        g for g in related
+        if any(f["name"].endswith(".py") for f in g.get("files", []))
+        and not any(f["name"].endswith(".csv") for f in g.get("files", []))
+    ]
+    if not live_groups:
+        return None
+
+    # Aggregate backtest WR and PF across all CSV files
+    wrs, pfs = [], []
+    per_instrument = []
+    for fact in (preproc_facts or []):
+        ps = fact.get("pnl_stats", {})
+        if not ps:
+            continue
+        entry = {"file": fact["filename"], "n_trades": ps.get("total_trades")}
+        if ps.get("win_rate_pct"):
+            entry["win_rate_pct"]  = ps["win_rate_pct"]
+            wrs.append(ps["win_rate_pct"])
+        if ps.get("profit_factor"):
+            entry["profit_factor"] = ps["profit_factor"]
+            pfs.append(ps["profit_factor"])
+        wf = ps.get("walk_forward")
+        if wf:
+            entry["walk_forward_verdict"] = wf["verdict"]
+        per_instrument.append(entry)
+
+    if not per_instrument:
+        return None
+
+    avg_wr = round(sum(wrs) / len(wrs), 1) if wrs else None
+    avg_pf = round(sum(pfs) / len(pfs), 2) if pfs else None
+
+    # Expected live range: empirical 20-40% WR degradation, 40-60% PF degradation
+    expected = {}
+    if avg_wr:
+        expected["win_rate_pct"]   = {"low": round(avg_wr * 0.60, 1), "high": round(avg_wr * 0.80, 1)}
+    if avg_pf:
+        expected["profit_factor"]  = {"low": round(avg_pf * 0.40, 2), "high": round(avg_pf * 0.60, 2)}
+
+    live_has_data = any(
+        any(f["name"].endswith(".csv") for f in g.get("files", []))
+        for g in live_groups
+    )
+
+    print(f"    Comparison: backtest {current_group['badge']} vs live "
+          f"{[g['badge'] for g in live_groups]} — live_data={live_has_data}")
+
+    return {
+        "backtest_group":      current_group["badge"],
+        "live_bot_groups":     [g["badge"] for g in live_groups],
+        "live_data_available": live_has_data,
+        "per_instrument":      per_instrument,
+        "backtest_averages":   {"win_rate_pct": avg_wr, "profit_factor": avg_pf},
+        "expected_live_range": expected,
+        "note": (
+            "Live bots running but no real trade CSV uploaded yet. "
+            "Upload MT5 trade export to enable actual live-vs-backtest comparison."
+        ) if not live_has_data else
+        "Live trade data available — compare metrics above against backtest.",
+    }
 
 
 def build_finalize_user(group):
@@ -627,7 +792,7 @@ def _prepare_file_block(fname, content):
     return f"=== {fname} ===\n{content}"
 
 
-def process_pending(group):
+def process_pending(group, all_groups=None):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
 
     parts    = []
@@ -660,11 +825,14 @@ def process_pending(group):
                 print(f"    {r['filename']}: {r.get('lines', '?')} lines, "
                       f"{len(r.get('functions', []))} functions")
 
+    # Live vs backtest comparison block
+    comparison = _build_comparison_block(group, all_groups, preproc)
+
     # Pass 1 — Claude initial analysis
     print("  Pass 1 — Claude initial analysis...")
     analysis = call_claude(
         ANALYSIS_SYSTEM,
-        build_analysis_user("\n\n".join(parts), date.today().isoformat(), preproc),
+        build_analysis_user("\n\n".join(parts), date.today().isoformat(), preproc, comparison),
     )
     print(f"    -> {len(analysis.get('m2',[]))} recs | {len(analysis.get('m3',[]))} obs | {len(analysis.get('m4',[]))} findings")
 
@@ -785,7 +953,7 @@ def main():
     for g in pending:
         print(f"\n[PENDING] {g['badge']} — {g['name']}")
         try:
-            if process_pending(g):
+            if process_pending(g, groups):
                 changed = True
                 print("  -> en_revision")
         except Exception as e:
