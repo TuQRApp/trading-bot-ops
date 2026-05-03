@@ -593,7 +593,7 @@
           "tipo_label": "Riesgo",
           "prioridad": "alta",
           "estado": "pendiente",
-          "title": "Riesgo por se�al no considera las 3 ordenes abiertas simultaneamente",
+          "title": "Riesgo por señal no considera las 3 ordenes abiertas simultaneamente",
           "desc": "calc_lot dimensiona el lote total como el 2% del equity sobre la distancia entry-SL de UNA sola posicion, pero se abren 3 ordenes limite con el mismo SL. Si las 3 se ejecutan, la exposicion real puede ser hasta 3 veces el riesgo calculado (6% del equity por simbolo). Se debe calcular el lote dividido de modo que el riesgo total de las 3 subposiciones sume exactamente el 2%, o bien reducir RISK_PCT a 0.02/3 = ~0.0067 por subposicion.",
           "comment": ""
         },
@@ -653,8 +653,8 @@
           "tipo_label": "Logica",
           "prioridad": "media",
           "estado": "pendiente",
-          "title": "Condicion de se�al SHORT no exige c_close < canal_top con margen",
-          "desc": "La condicion SHORT requiere c_high >= entry_short_raw AND c_close < canal_top. entry_short_raw = fib(top, bot, 1.191) es mayor que canal_top, por lo que c_high debe superar ese nivel pero c_close solo necesita ser menor que canal_top (sin margen). Una vela que cierre justo un punto por debajo de canal_top genera se�al, aunque el precio nunca haya alcanzado el nivel de entrada de forma clara. Seria mas robusto exigir c_close < fib(top, bot, 1.0) con un margen minimo.",
+          "title": "Condicion de señal SHORT no exige c_close < canal_top con margen",
+          "desc": "La condicion SHORT requiere c_high >= entry_short_raw AND c_close < canal_top. entry_short_raw = fib(top, bot, 1.191) es mayor que canal_top, por lo que c_high debe superar ese nivel pero c_close solo necesita ser menor que canal_top (sin margen). Una vela que cierre justo un punto por debajo de canal_top genera señal, aunque el precio nunca haya alcanzado el nivel de entrada de forma clara. Seria mas robusto exigir c_close < fib(top, bot, 1.0) con un margen minimo.",
           "comment": ""
         },
         {
@@ -714,7 +714,7 @@
           "tipo": "warn",
           "origin": "bot_canal_fib_v3 - copiaV2.py",
           "title": "67 bloques if con solo 2 try/except - fragilidad ante fallos de MT5",
-          "desc": "El archivo tiene 67 bloques condicionales pero solo 2 bloques try/except. Funciones criticas como place_orders, manage_breakeven y calc_lot no tienen manejo de excepciones propio. Una desconexion transitoria de MT5 o un retorno None inesperado puede propagar una excepcion no controlada hasta el loop principal, causando un sleep(30) y potencialmente perdiendo se�ales o dejando ordenes parciales abiertas.",
+          "desc": "El archivo tiene 67 bloques condicionales pero solo 2 bloques try/except. Funciones criticas como place_orders, manage_breakeven y calc_lot no tienen manejo de excepciones propio. Una desconexion transitoria de MT5 o un retorno None inesperado puede propagar una excepcion no controlada hasta el loop principal, causando un sleep(30) y potencialmente perdiendo señales o dejando ordenes parciales abiertas.",
           "comment": ""
         },
         {
@@ -831,7 +831,7 @@
         {
           "id": "H-06",
           "categoria": "ausencia",
-          "title": "Sin validacion de que la barra de se�al esta realmente cerrada",
+          "title": "Sin validacion de que la barra de señal esta realmente cerrada",
           "desc": "detect_signal usa df.iloc[-2] como ultima barra cerrada. Esto asume que iloc[-1] es siempre la barra en formacion, pero si la solicitud llega exactamente en el cierre de una vela de 3 minutos, iloc[-1] podria ser la vela recien cerrada y iloc[-2] la anterior. No hay validacion de que bar_time + 3min <= ahora.",
           "code": "bar      = df.iloc[-2]\nbar_time = df.index[-2]\n# No hay verificacion de cierre real",
           "fix": "bar      = df.iloc[-2]\nbar_time = df.index[-2]\n# Verificar que la barra este efectivamente cerrada\nif bar_time + timedelta(minutes=3) > datetime.now(UTC):\n    return None  # barra aun no cerrada completamente",
@@ -1139,7 +1139,7 @@
         "score": {
           "valor": 5.5,
           "max": 10,
-          "label": "S�lido en simulaci�n, no validado out-of-sample",
+          "label": "Sólido en simulación, no validado out-of-sample",
           "bullets": [
             {
               "type": "ok",
@@ -1147,23 +1147,23 @@
             },
             {
               "type": "ok",
-              "text": "Profit factor alto (7-11) indica edge estad�stico real"
+              "text": "Profit factor alto (7-11) indica edge estadístico real"
             },
             {
               "type": "ok",
-              "text": "Costos reales de IC Markets MT5 aplicados (spread + comisi�n por instrumento)"
+              "text": "Costos reales de IC Markets MT5 aplicados (spread + comisión por instrumento)"
             },
             {
               "type": "ok",
-              "text": "Drawdown m�ximo bajo 6% en todos los instrumentos pese al compounding agresivo"
+              "text": "Drawdown máximo bajo 6% en todos los instrumentos pese al compounding agresivo"
             },
             {
               "type": "warn",
-              "text": "Todo el an�lisis es in-sample: 6 meses sin validaci�n out-of-sample"
+              "text": "Todo el análisis es in-sample: 6 meses sin validación out-of-sample"
             },
             {
               "type": "warn",
-              "text": "Lotes crecen sin l�mite absoluto real hasta saturar el cap del simulador (10.0)"
+              "text": "Lotes crecen sin límite absoluto real hasta saturar el cap del simulador (10.0)"
             },
             {
               "type": "bad",
@@ -1171,108 +1171,108 @@
             },
             {
               "type": "bad",
-              "text": "pnl_usd() retorna 0.0 sin conexi�n MT5 activa - los resultados del CSV requieren MT5 conectado"
+              "text": "pnl_usd() retorna 0.0 sin conexión MT5 activa - los resultados del CSV requieren MT5 conectado"
             }
           ]
         },
         "metrics": [
           {
             "id": "QM-01",
-            "label": "Win Rate � BTCUSD",
+            "label": "Win Rate · BTCUSD",
             "value": "71.5%",
             "status": "ok",
             "note": "93 WIN / 37 LOSS / 45 BREAKEVEN de 175 trades"
           },
           {
             "id": "QM-02",
-            "label": "Win Rate � XAGUSD",
+            "label": "Win Rate · XAGUSD",
             "value": "70.7%",
             "status": "ok",
             "note": "94 WIN / 39 LOSS / 12 BREAKEVEN de 145 trades"
           },
           {
             "id": "QM-03",
-            "label": "Win Rate � XAUUSD",
+            "label": "Win Rate · XAUUSD",
             "value": "84.7%",
             "status": "ok",
             "note": "127 WIN / 23 LOSS / 15 BREAKEVEN de 165 trades"
           },
           {
             "id": "QM-04",
-            "label": "Profit Factor � BTCUSD",
+            "label": "Profit Factor · BTCUSD",
             "value": "9.4",
             "status": "ok",
-            "note": "Ganancias vs p�rdidas netas incluyendo BREAKEVEN"
+            "note": "Ganancias vs pérdidas netas incluyendo BREAKEVEN"
           },
           {
             "id": "QM-05",
-            "label": "Profit Factor � XAGUSD",
+            "label": "Profit Factor · XAGUSD",
             "value": "7.5",
             "status": "ok",
             "note": "PF alto sostenido por WR elevado"
           },
           {
             "id": "QM-06",
-            "label": "Profit Factor � XAUUSD",
+            "label": "Profit Factor · XAUUSD",
             "value": "10.9",
             "status": "ok",
             "note": "Mejor PF del set - correlaciona con mayor WR"
           },
           {
             "id": "QM-07",
-            "label": "Max Drawdown � BTCUSD",
+            "label": "Max Drawdown · BTCUSD",
             "value": "5.4%",
             "status": "ok",
-            "note": "Mayor ca�da relativa ocurre en fase inicial (<$30K capital)"
+            "note": "Mayor caída relativa ocurre en fase inicial (<$30K capital)"
           },
           {
             "id": "QM-08",
-            "label": "Max Drawdown � XAGUSD",
+            "label": "Max Drawdown · XAGUSD",
             "value": "4.8%",
             "status": "ok",
-            "note": "Ca�da m�xima ~Feb 2026 durante p�rdidas consecutivas"
+            "note": "Caída máxima ~Feb 2026 durante pérdidas consecutivas"
           },
           {
             "id": "QM-09",
-            "label": "Max Drawdown � XAUUSD",
+            "label": "Max Drawdown · XAUUSD",
             "value": "3.9%",
             "status": "ok",
             "note": "El DD relativo disminuye a medida que el capital crece"
           },
           {
             "id": "QM-10",
-            "label": "Retorno total � BTCUSD",
+            "label": "Retorno total · BTCUSD",
             "value": "+2,181%",
             "status": "bad",
             "note": "Imposible en vivo - resultado de compounding ilimitado sin cap real"
           },
           {
             "id": "QM-11",
-            "label": "Retorno total � XAGUSD",
+            "label": "Retorno total · XAGUSD",
             "value": "+7,400%",
             "status": "bad",
             "note": "$10,000 ? $749,996 en 6 meses - no reproducible en cuenta real"
           },
           {
             "id": "QM-12",
-            "label": "Retorno total � XAUUSD",
+            "label": "Retorno total · XAUUSD",
             "value": "+17,863%",
             "status": "bad",
-            "note": "$10,000 ? $1,796,328 - se�al de sobreajuste temporal severo"
+            "note": "$10,000 ? $1,796,328 - señal de sobreajuste temporal severo"
           },
           {
             "id": "QM-13",
             "label": "Trades totales",
             "value": "485",
             "status": "ok",
-            "note": "175 BTC + 145 XAG + 165 XAU � 6 meses � M3"
+            "note": "175 BTC + 145 XAG + 165 XAU · 6 meses · M3"
           },
           {
             "id": "QM-14",
-            "label": "Per�odo de an�lisis",
+            "label": "Período de análisis",
             "value": "Nov 2025 - Abr 2026",
             "status": "warn",
-            "note": "6 meses - corto para validaci�n estad�stica robusta"
+            "note": "6 meses - corto para validación estadística robusta"
           },
           {
             "id": "QM-15",
@@ -1290,13 +1290,13 @@
           },
           {
             "id": "QM-17",
-            "label": "TPs promedio � BTCUSD",
+            "label": "TPs promedio · BTCUSD",
             "value": "1.75 / 3",
             "status": "ok",
             "note": "Alto porcentaje de operaciones alcanza los 3 TPs"
           }
         ],
-        "last_updated_meta": "backtest_canal_fib.py � canal_fib_BTCUSD.csv � canal_fib_XAGUSD.csv � canal_fib_XAUUSD.csv"
+        "last_updated_meta": "backtest_canal_fib.py · canal_fib_BTCUSD.csv · canal_fib_XAGUSD.csv · canal_fib_XAUUSD.csv"
       },
       "m2": [
         {
@@ -1305,8 +1305,8 @@
           "tipo_label": "Dato",
           "prioridad": "alta",
           "estado": "pendiente",
-          "title": "Implementar walk-forward testing: todo el an�lisis es in-sample",
-          "desc": "El backtest usa los 6 meses completos como datos de entrenamiento sin ninguna validaci�n out-of-sample. La forma correcta es dividir: entrenar con Nov 2025 - Feb 2026 (4 meses) y validar con Mar - Abr 2026 (2 meses). Si la performance cae dr�sticamente en el per�odo de validaci�n, los par�metros Fibonacci est�n ajustados al pasado y el bot no generalizar�. Implementar con una funci�n walk_forward(df, train_pct=0.7) que re-parametrice CANAL_LENGTH y niveles Fib sobre la ventana de entrenamiento y mida en la siguiente.",
+          "title": "Implementar walk-forward testing: todo el análisis es in-sample",
+          "desc": "El backtest usa los 6 meses completos como datos de entrenamiento sin ninguna validación out-of-sample. La forma correcta es dividir: entrenar con Nov 2025 - Feb 2026 (4 meses) y validar con Mar - Abr 2026 (2 meses). Si la performance cae drásticamente en el período de validación, los parámetros Fibonacci están ajustados al pasado y el bot no generalizará. Implementar con una función walk_forward(df, train_pct=0.7) que re-parametrice CANAL_LENGTH y niveles Fib sobre la ventana de entrenamiento y mida en la siguiente.",
           "comment": ""
         },
         {
@@ -1315,28 +1315,28 @@
           "tipo_label": "Riesgo",
           "prioridad": "alta",
           "estado": "pendiente",
-          "title": "Agregar l�mite de lote absoluto para cuenta real",
-          "desc": "El compounding libre lleva los lotes a 10.0 (cap del simulador) generando posiciones de decenas de miles de USD en margen. En una cuenta real de $10,000 el broker rechazar� estos lotes o el margin call llegar� antes. Definir MAX_LOT_REAL por instrumento: BTCUSD 0.10 lotes, XAUUSD 1.0 lote, XAGUSD 2.0 lotes. Esto limita la ganancia pero refleja lo que se puede ejecutar realmente.",
+          "title": "Agregar límite de lote absoluto para cuenta real",
+          "desc": "El compounding libre lleva los lotes a 10.0 (cap del simulador) generando posiciones de decenas de miles de USD en margen. En una cuenta real de $10,000 el broker rechazará estos lotes o el margin call llegará antes. Definir MAX_LOT_REAL por instrumento: BTCUSD 0.10 lotes, XAUUSD 1.0 lote, XAGUSD 2.0 lotes. Esto limita la ganancia pero refleja lo que se puede ejecutar realmente.",
           "comment": ""
         },
         {
           "id": "R-03",
           "tipo": "param",
-          "tipo_label": "Par�metro",
+          "tipo_label": "Parámetro",
           "prioridad": "alta",
           "estado": "pendiente",
           "title": "Modelar slippage en entradas de timeframe M3",
-          "desc": "El backtest aplica solo spread fijo al precio de entrada. En M3 con se�ales de breakout en niveles de extensi�n Fibonacci 1.191/-0.191, la ejecuci�n real tendr� slippage adicional de 2-4 ticks por gap de liquidez. Agregar SLIPPAGE_TICKS = 2 al modelo: entry_px += slippage_price para LONG y -= para SHORT. El impacto en WR puede ser significativo en BTCUSD donde los movimientos son m�s r�pidos.",
+          "desc": "El backtest aplica solo spread fijo al precio de entrada. En M3 con señales de breakout en niveles de extensión Fibonacci 1.191/-0.191, la ejecución real tendrá slippage adicional de 2-4 ticks por gap de liquidez. Agregar SLIPPAGE_TICKS = 2 al modelo: entry_px += slippage_price para LONG y -= para SHORT. El impacto en WR puede ser significativo en BTCUSD donde los movimientos son más rápidos.",
           "comment": ""
         },
         {
           "id": "R-04",
           "tipo": "param",
-          "tipo_label": "Par�metro",
+          "tipo_label": "Parámetro",
           "prioridad": "media",
           "estado": "pendiente",
           "title": "Separar niveles Fibonacci por instrumento",
-          "desc": "Los mismos 20 niveles Fib (SHORT_ENTRY=1.191, SHORT_SL=1.382, etc.) se aplican a BTCUSD, XAGUSD y XAUUSD. La volatilidad relativa de estos activos es muy distinta: BTC mueve 2-4% en una sola vela M3 durante eventos; XAU mueve 0.2-0.5%. Usar los mismos coeficientes de extensi�n produce canales que son demasiado ajustados para BTC y demasiado amplios para XAU en t�rminos relativos. Optimizar SHORT_SL y LONG_SL por instrumento al menos.",
+          "desc": "Los mismos 20 niveles Fib (SHORT_ENTRY=1.191, SHORT_SL=1.382, etc.) se aplican a BTCUSD, XAGUSD y XAUUSD. La volatilidad relativa de estos activos es muy distinta: BTC mueve 2-4% en una sola vela M3 durante eventos; XAU mueve 0.2-0.5%. Usar los mismos coeficientes de extensión produce canales que son demasiado ajustados para BTC y demasiado amplios para XAU en términos relativos. Optimizar SHORT_SL y LONG_SL por instrumento al menos.",
           "comment": ""
         },
         {
@@ -1345,8 +1345,8 @@
           "tipo_label": "Riesgo",
           "prioridad": "media",
           "estado": "pendiente",
-          "title": "Agregar simulaci�n de circuit breaker por drawdown diario",
-          "desc": "El backtest no simula la pausa por p�rdidas acumuladas intradiarias. En vivo, bot_canal_fib_v3.py detiene operaciones al 4% DD diario. Al no simular esta l�gica en el backtest, las m�tricas son inconsistentes con el comportamiento real del bot. Implementar daily_loss_tracker en la funci�n backtest() que pause cuando capital_actual < capital_dia_inicio * 0.96.",
+          "title": "Agregar simulación de circuit breaker por drawdown diario",
+          "desc": "El backtest no simula la pausa por pérdidas acumuladas intradiarias. En vivo, bot_canal_fib_v3.py detiene operaciones al 4% DD diario. Al no simular esta lógica en el backtest, las métricas son inconsistentes con el comportamiento real del bot. Implementar daily_loss_tracker en la función backtest() que pause cuando capital_actual < capital_dia_inicio * 0.96.",
           "comment": ""
         }
       ],
@@ -1355,8 +1355,8 @@
           "id": "OBS-001",
           "tipo": "error",
           "origin": "backtest_canal_fib.py",
-          "title": "pnl_usd() retorna 0.0 sin conexi�n MT5 activa",
-          "desc": "La funci�n pnl_usd() calcula el P&L usando mt5.symbol_info(symbol). Si MT5 no est� conectado o el s�mbolo no est� disponible, symbol_info devuelve None y la funci�n retorna 0.0 silenciosamente. Todos los trades en el CSV habr�an registrado pnl_neto=0 si el backtest se ejecut� sin MT5 conectado. A�adir una assertion antes del bucle: assert conectar(), 'MT5 required for accurate PnL calculation'.",
+          "title": "pnl_usd() retorna 0.0 sin conexión MT5 activa",
+          "desc": "La función pnl_usd() calcula el P&L usando mt5.symbol_info(symbol). Si MT5 no está conectado o el símbolo no está disponible, symbol_info devuelve None y la función retorna 0.0 silenciosamente. Todos los trades en el CSV habrían registrado pnl_neto=0 si el backtest se ejecutó sin MT5 conectado. Añadir una assertion antes del bucle: assert conectar(), 'MT5 required for accurate PnL calculation'.",
           "comment": ""
         },
         {
@@ -1364,39 +1364,39 @@
           "tipo": "warn",
           "origin": "backtest_canal_fib.py",
           "title": "SL LONG suma spread en lugar de restarlo - mismo bug que bot_canal_fib_v3.py",
-          "desc": "En backtest(), para direcci�n LONG: sl_px = fib(canal_top, canal_bot, LONG_SL) + spread. LONG_SL = -0.382 coloca el SL por debajo del entry. Sumar el spread lo acerca al entry, reduciendo la distancia real al SL y sobreestimando el lote calculado. Este bug existe tambi�n en el bot live y valida que ambos archivos comparten la misma l�gica defectuosa.",
+          "desc": "En backtest(), para dirección LONG: sl_px = fib(canal_top, canal_bot, LONG_SL) + spread. LONG_SL = -0.382 coloca el SL por debajo del entry. Sumar el spread lo acerca al entry, reduciendo la distancia real al SL y sobreestimando el lote calculado. Este bug existe también en el bot live y valida que ambos archivos comparten la misma lógica defectuosa.",
           "comment": ""
         },
         {
           "id": "OBS-003",
           "tipo": "warn",
           "origin": "backtest_canal_fib.py",
-          "title": "El �ndice avanza i += CANAL_LENGTH tras cada trade - se�ales concurrentes descartadas",
-          "desc": "Tras registrar un trade, el loop salta 20 barras (1 hora en M3). Durante este per�odo se descarta cualquier nueva se�al, incluyendo el mismo instrumento en otro canal. Esto infravalora el n�mero real de trades posibles y sesga los resultados si el precio contin�a tendencia. Un backtest m�s preciso usar�a i += 1 con un flag de posici�n abierta.",
+          "title": "El índice avanza i += CANAL_LENGTH tras cada trade - señales concurrentes descartadas",
+          "desc": "Tras registrar un trade, el loop salta 20 barras (1 hora en M3). Durante este período se descarta cualquier nueva señal, incluyendo el mismo instrumento en otro canal. Esto infravalora el número real de trades posibles y sesga los resultados si el precio continúa tendencia. Un backtest más preciso usaría i += 1 con un flag de posición abierta.",
           "comment": ""
         },
         {
           "id": "OBS-004",
           "tipo": "warn",
           "origin": "backtest_canal_fib.py",
-          "title": "calc_lot() y pnl_usd() usan tick de MT5 en vivo, no el hist�rico de la barra",
-          "desc": "El c�lculo de lote usa mt5.order_calc_profit() y mt5.symbol_info() con datos del momento de ejecuci�n del backtest, no con los precios hist�ricos de cada barra simulada. En BTCUSD donde el precio var�a 30-40% en el per�odo analizado, los lotes calculados con el precio actual del tick son incorrectos para las barras hist�ricas. Los resultados del CSV no son reproducibles si se ejecuta el backtest en otra fecha.",
+          "title": "calc_lot() y pnl_usd() usan tick de MT5 en vivo, no el histórico de la barra",
+          "desc": "El cálculo de lote usa mt5.order_calc_profit() y mt5.symbol_info() con datos del momento de ejecución del backtest, no con los precios históricos de cada barra simulada. En BTCUSD donde el precio varía 30-40% en el período analizado, los lotes calculados con el precio actual del tick son incorrectos para las barras históricas. Los resultados del CSV no son reproducibles si se ejecuta el backtest en otra fecha.",
           "comment": ""
         },
         {
           "id": "OBS-005",
           "tipo": "info",
           "origin": "canal_fib_XAUUSD.csv",
-          "title": "XAUUSD rally +33% en el per�odo - retornos amplificados por tendencia excepcional",
-          "desc": "XAUUSD pas� de ~$4,000 a ~$5,200 durante Nov 2025 - Abr 2026 (+33% en 6 meses). Este rally estructural del oro ampli� los canales Fibonacci y aument� la frecuencia de capturas de TP3, produciendo el +17,863% del CSV. Este resultado no es neutral respecto a la estrategia: es un producto del per�odo analizado. En un contexto lateral del oro, el PF y el WR ser�an considerablemente menores.",
+          "title": "XAUUSD rally +33% en el período - retornos amplificados por tendencia excepcional",
+          "desc": "XAUUSD pasó de ~$4,000 a ~$5,200 durante Nov 2025 - Abr 2026 (+33% en 6 meses). Este rally estructural del oro amplió los canales Fibonacci y aumentó la frecuencia de capturas de TP3, produciendo el +17,863% del CSV. Este resultado no es neutral respecto a la estrategia: es un producto del período analizado. En un contexto lateral del oro, el PF y el WR serían considerablemente menores.",
           "comment": ""
         },
         {
           "id": "OBS-006",
           "tipo": "warn",
           "origin": "backtest_canal_fib.py",
-          "title": "get_costos_reales() usa defaults est�ticos cuando no hay historial de deals",
-          "desc": "Si no hay deals en los �ltimos 30 d�as con el s�mbolo dado, la funci�n retorna comm_usd=3.50 (XAU/XAG) o 5.00 (BTC). Estos son defaults de IC Markets pero pueden no reflejar el plan de comisiones espec�fico del trader. Si el backtest se ejecut� antes de tener historial de deals real, todos los costos de comisi�n usan estos defaults y pueden subestimar o sobreestimar el costo real.",
+          "title": "get_costos_reales() usa defaults estáticos cuando no hay historial de deals",
+          "desc": "Si no hay deals en los últimos 30 días con el símbolo dado, la función retorna comm_usd=3.50 (XAU/XAG) o 5.00 (BTC). Estos son defaults de IC Markets pero pueden no reflejar el plan de comisiones específico del trader. Si el backtest se ejecutó antes de tener historial de deals real, todos los costos de comisión usan estos defaults y pueden subestimar o sobreestimar el costo real.",
           "comment": ""
         }
       ],
@@ -1405,7 +1405,7 @@
           "id": "H-01",
           "categoria": "bug",
           "title": "pnl_usd() silencioso: retorna 0.0 si symbol_info es None",
-          "desc": "La funci�n no alerta al usuario si MT5 no responde. Si mt5.symbol_info(symbol) retorna None, la guarda if info is None: return 0.0 produce un CSV con pnl_neto=0 en todos los trades sin ning�n error visible.",
+          "desc": "La función no alerta al usuario si MT5 no responde. Si mt5.symbol_info(symbol) retorna None, la guarda if info is None: return 0.0 produce un CSV con pnl_neto=0 en todos los trades sin ningún error visible.",
           "code": "def pnl_usd(symbol, entry_px, exit_px, direction, lot):\n    info = mt5.symbol_info(symbol)\n    if info is None or info.trade_tick_size == 0:\n        return 0.0   # silencioso - sin warning",
           "fix": "def pnl_usd(symbol, entry_px, exit_px, direction, lot):\n    info = mt5.symbol_info(symbol)\n    if info is None:\n        raise RuntimeError(f'symbol_info({symbol}) returned None - MT5 disconnected?')\n    if info.trade_tick_size == 0:\n        raise ValueError(f'{symbol}: trade_tick_size is 0')\n    ...",
           "comment": ""
@@ -1413,8 +1413,8 @@
         {
           "id": "H-02",
           "categoria": "bug",
-          "title": "SL LONG suma spread - id�ntico bug presente en bot_canal_fib_v3.py",
-          "desc": "En backtest(), sl_px para LONG suma el spread en lugar de restarlo. LONG_SL = -0.382 ya sit�a el SL por debajo del entry; sumar el spread lo acerca adicionalmente. Esto sobreestima el lote y subestima la distancia real al SL, produciendo resultados inflados.",
+          "title": "SL LONG suma spread - idéntico bug presente en bot_canal_fib_v3.py",
+          "desc": "En backtest(), sl_px para LONG suma el spread en lugar de restarlo. LONG_SL = -0.382 ya sitúa el SL por debajo del entry; sumar el spread lo acerca adicionalmente. Esto sobreestima el lote y subestima la distancia real al SL, produciendo resultados inflados.",
           "code": "sl_px = fib_price(canal_top, canal_bot, LONG_SL) + spread   # LONG_SL=-0.382, spread acerca el SL",
           "fix": "sl_px = fib_price(canal_top, canal_bot, LONG_SL) - spread   # aleja el SL del entry correctamente",
           "comment": ""
@@ -1422,17 +1422,17 @@
         {
           "id": "H-03",
           "categoria": "riesgo",
-          "title": "volume_max del simulador no es un l�mite de riesgo real para cuenta live",
+          "title": "volume_max del simulador no es un límite de riesgo real para cuenta live",
           "desc": "El lote se capea con info.volume_max que en cuentas demo puede ser 100+ lotes. El cap efectivo de 10.0 visible en el CSV es el ajuste de demo, no un control de riesgo implementado. En live con capital creciente, el lote puede alcanzar niveles de margin que el broker rechace o que excedan la liquidez del instrumento.",
           "code": "lot = max(info.volume_min,\n          min(round(lot / info.volume_step) * info.volume_step,\n              info.volume_max))   # volume_max en demo != control de riesgo real",
-          "fix": "MAX_LOT = {'BTCUSD': 0.10, 'XAUUSD': 1.0, 'XAGUSD': 2.0}  # ajustar seg�n cuenta real\n\nlot = max(info.volume_min,\n          min(round(lot / info.volume_step) * info.volume_step,\n              min(info.volume_max, MAX_LOT.get(symbol, 1.0))))",
+          "fix": "MAX_LOT = {'BTCUSD': 0.10, 'XAUUSD': 1.0, 'XAGUSD': 2.0}  # ajustar según cuenta real\n\nlot = max(info.volume_min,\n          min(round(lot / info.volume_step) * info.volume_step,\n              min(info.volume_max, MAX_LOT.get(symbol, 1.0))))",
           "comment": ""
         },
         {
           "id": "H-04",
           "categoria": "mejora",
           "title": "Breakeven move a entry_px ignora el spread - SL post-TP1 ligeramente negativo neto",
-          "desc": "Cuando TP1 se alcanza, current_sl se mueve a entry_px. Para LONG, entry_px ya incluye el spread (entry_px = fib + spread). Mover el SL a entry_px cierra a breakeven del precio de entrada, pero el costo de entrada ya est� pagado. El resultado real es una peque�a p�rdida neta por la comisi�n de apertura sobre el 1/3 cerrado a TP1.",
+          "desc": "Cuando TP1 se alcanza, current_sl se mueve a entry_px. Para LONG, entry_px ya incluye el spread (entry_px = fib + spread). Mover el SL a entry_px cierra a breakeven del precio de entrada, pero el costo de entrada ya está pagado. El resultado real es una pequeña pérdida neta por la comisión de apertura sobre el 1/3 cerrado a TP1.",
           "code": "if t_idx == 0:\n    current_sl = entry_px   # breakeven al precio de entrada, no al costo real",
           "fix": "if t_idx == 0:\n    # Para LONG: mover SL levemente por encima del entry para cubrir el spread de apertura\n    current_sl = entry_px + spread if direction == 'LONG' else entry_px - spread",
           "comment": ""
@@ -1440,58 +1440,58 @@
         {
           "id": "H-05",
           "categoria": "ausencia",
-          "title": "Resultados no reproducibles: lotes y PnL dependen del tick en vivo al momento de ejecuci�n",
-          "desc": "Ejecutar el mismo backtest en dos fechas distintas producir� resultados diferentes porque calc_lot() usa mt5.order_calc_profit() con el precio spot actual de MT5. Para garantizar reproducibilidad, los par�metros de contrato (tick_value, tick_size) deber�an guardarse junto al CSV o inferirse de los datos hist�ricos.",
-          "code": "# En calc_lot():\npnl_1lot = mt5.order_calc_profit(order_type, symbol, 1.0, entry_px, exit_px)\n# usa precio interno de MT5 en el momento de llamada, no el precio hist�rico de la barra",
-          "fix": "# Guardar snapshot de par�metros de contrato al inicio del backtest:\ncontract_params = {sym: {'tick_value': mt5.symbol_info(sym).trade_tick_value,\n                          'tick_size': mt5.symbol_info(sym).trade_tick_size}\n                   for sym in SYMBOLS}\n\n# Pasar a calc_lot() en lugar de llamar symbol_info en cada barra:\ndef calc_lot(symbol, entry_px, sl_px, capital, tick_value, tick_size): ...",
+          "title": "Resultados no reproducibles: lotes y PnL dependen del tick en vivo al momento de ejecución",
+          "desc": "Ejecutar el mismo backtest en dos fechas distintas producirá resultados diferentes porque calc_lot() usa mt5.order_calc_profit() con el precio spot actual de MT5. Para garantizar reproducibilidad, los parámetros de contrato (tick_value, tick_size) deberían guardarse junto al CSV o inferirse de los datos históricos.",
+          "code": "# En calc_lot():\npnl_1lot = mt5.order_calc_profit(order_type, symbol, 1.0, entry_px, exit_px)\n# usa precio interno de MT5 en el momento de llamada, no el precio histórico de la barra",
+          "fix": "# Guardar snapshot de parámetros de contrato al inicio del backtest:\ncontract_params = {sym: {'tick_value': mt5.symbol_info(sym).trade_tick_value,\n                          'tick_size': mt5.symbol_info(sym).trade_tick_size}\n                   for sym in SYMBOLS}\n\n# Pasar a calc_lot() en lugar de llamar symbol_info en cada barra:\ndef calc_lot(symbol, entry_px, sl_px, capital, tick_value, tick_size): ...",
           "comment": ""
         }
       ],
       "versions": [
         "FILE-003"
       ],
-      "category": "Backtest � 3 instrumentos � IC Markets MT5 � Canal Fibonacci + TPs escalonados",
-      "summary": "Backtest de 6 meses (Nov 2025 - Abr 2026) sobre BTCUSD, XAGUSD y XAUUSD en M3 usando canales de 20 barras con entradas en extensiones Fibonacci 1.191/-0.191 y 3 TPs en 0.809/0.618/0.500. Capital inicial $10,000 por instrumento con riesgo 2% compuesto: resultados de +2,181% (BTC), +7,400% (XAG) y +17,863% (XAU), con win rates entre 71-85% y drawdown m�ximo bajo 6%. Los retornos est�n inflados por compounding sin l�mite de lote real y ausencia de validaci�n out-of-sample.",
+      "category": "Backtest · 3 instrumentos · IC Markets MT5 · Canal Fibonacci + TPs escalonados",
+      "summary": "Backtest de 6 meses (Nov 2025 - Abr 2026) sobre BTCUSD, XAGUSD y XAUUSD en M3 usando canales de 20 barras con entradas en extensiones Fibonacci 1.191/-0.191 y 3 TPs en 0.809/0.618/0.500. Capital inicial $10,000 por instrumento con riesgo 2% compuesto: resultados de +2,181% (BTC), +7,400% (XAG) y +17,863% (XAU), con win rates entre 71-85% y drawdown máximo bajo 6%. Los retornos están inflados por compounding sin límite de lote real y ausencia de validación out-of-sample.",
       "trader_notes": "",
       "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "El per�odo Nov 2025 - Abr 2026 fue excepcionalmente favorable para la estrategia: XAUUSD rally +33%, XAGUSD rally +55% y BTCUSD oper� un ciclo bajista limpio seguido de recuperaci�n. Estos contextos amplificaron los retornos del backtest. Para despliegue live en mayo 2026, el primer paso cr�tico es validar la estrategia en datos out-of-sample antes de comprometer capital.",
+        "resumen": "El período Nov 2025 - Abr 2026 fue excepcionalmente favorable para la estrategia: XAUUSD rally +33%, XAGUSD rally +55% y BTCUSD operó un ciclo bajista limpio seguido de recuperación. Estos contextos amplificaron los retornos del backtest. Para despliegue live en mayo 2026, el primer paso crítico es validar la estrategia en datos out-of-sample antes de comprometer capital.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
             "title": "Validar OOS antes de ir live: riesgo alto de sobreajuste temporal",
-            "desc": "Los par�metros Fibonacci (CANAL_LENGTH=20, SHORT_ENTRY=1.191, etc.) nunca se probaron fuera del per�odo de an�lisis. Antes de cualquier despliegue real, ejecutar el backtest sobre un per�odo completamente distinto. Si el win rate cae por debajo del 55% o el PF por debajo de 1.5 en datos OOS, los par�metros actuales son espec�ficos de Nov 2025 - Abr 2026 y requieren reoptimizaci�n.",
+            "desc": "Los parámetros Fibonacci (CANAL_LENGTH=20, SHORT_ENTRY=1.191, etc.) nunca se probaron fuera del período de análisis. Antes de cualquier despliegue real, ejecutar el backtest sobre un período completamente distinto. Si el win rate cae por debajo del 55% o el PF por debajo de 1.5 en datos OOS, los parámetros actuales son específicos de Nov 2025 - Abr 2026 y requieren reoptimización.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "XAUUSD rally +33% amplific� el backtest - no extrapolable a entorno lateral",
-            "desc": "El oro subi� de ~$4,000 a ~$5,200 en el per�odo analizado, generando canales Fibonacci amplios y frecuentes capturas de TP3. En un per�odo lateral o bajista del oro, la misma estrategia producir�a canales m�s estrechos y un PF significativamente m�s bajo. El +17,863% de XAUUSD no es una estimaci�n realista de rendimiento annual sostenible.",
+            "title": "XAUUSD rally +33% amplificó el backtest - no extrapolable a entorno lateral",
+            "desc": "El oro subió de ~$4,000 a ~$5,200 en el período analizado, generando canales Fibonacci amplios y frecuentes capturas de TP3. En un período lateral o bajista del oro, la misma estrategia produciráa canales más estrechos y un PF significativamente más bajo. El +17,863% de XAUUSD no es una estimaci�n realista de rendimiento annual sostenible.",
             "horizonte": "semana"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "BTCUSD cay� $108K ? $66K en la primera mitad - el edge fue principalmente SHORT",
-            "desc": "La mayor parte del PnL de BTCUSD proviene del per�odo bajista Nov 2025 - Feb 2026 donde las se�ales SHORT en extensi�n 1.191 fueron frecuentes y limpias. Si BTC retoma tendencia alcista sostenida, la proporci�n de se�ales SHORT efectivas disminuir�. Monitorear el ratio SHORT/LONG en las primeras semanas de operaci�n live para detectar cambio de r�gimen.",
+            "title": "BTCUSD cayó $108K ? $66K en la primera mitad - el edge fue principalmente SHORT",
+            "desc": "La mayor parte del PnL de BTCUSD proviene del período bajista Nov 2025 - Feb 2026 donde las señales SHORT en extensión 1.191 fueron frecuentes y limpias. Si BTC retoma tendencia alcista sostenida, la proporci�n de señales SHORT efectivas disminuirá. Monitorear el ratio SHORT/LONG en las primeras semanas de operaci�n live para detectar cambio de régimen.",
             "horizonte": "48h"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
             "title": "3 instrumentos descorrelacionados protegen de fallos individuales",
-            "desc": "BTC (digital), XAU (refugio) y XAG (industrial) tienen drivers distintos. En el backtest, cuando BTC tuvo rachas de p�rdidas en Feb-Abr 2026, los metales compensaron. Para el despliegue live, mantener los 3 activos con sizing proporcional al capital real por instrumento es la configuraci�n m�s robusta.",
+            "desc": "BTC (digital), XAU (refugio) y XAG (industrial) tienen drivers distintos. En el backtest, cuando BTC tuvo rachas de pérdidas en Feb-Abr 2026, los metales compensaron. Para el despliegue live, mantener los 3 activos con sizing proporcional al capital real por instrumento es la configuración más robusta.",
             "horizonte": "24h"
           },
           {
             "id": "M5-05",
             "tipo": "neutral",
-            "title": "XAGUSD mostr� el mejor balance riesgo/reward ajustado del set",
-            "desc": "XAGUSD gener� +7,400% con WR de 70.7% y max DD de 4.8% - la combinaci�n m�s equilibrada de los 3. La plata industrial tiene correlaci�n con ciclos de actividad manufacturera y responde bien a canales t�cnicos M3. Si el entorno macro sigue favorable para metales, XAGUSD puede ser el primer instrumento a activar en una versi�n live conservadora.",
+            "title": "XAGUSD mostró el mejor balance riesgo/reward ajustado del set",
+            "desc": "XAGUSD generó +7,400% con WR de 70.7% y max DD de 4.8% - la combinación más equilibrada de los 3. La plata industrial tiene correlación con ciclos de actividad manufacturera y responde bien a canales técnicos M3. Si el entorno macro sigue favorable para metales, XAGUSD puede ser el primer instrumento a activar en una versión live conservadora.",
             "horizonte": "semana"
           }
         ],
@@ -1499,15 +1499,15 @@
         "macro_snapshot": {
           "btcusd_backtest_final": {
             "value": 76613,
-            "note": "�ltimo precio en CSV (Abr 2026)"
+            "note": "último precio en CSV (Abr 2026)"
           },
           "xauusd_backtest_final": {
             "value": 4629,
-            "note": "�ltimo precio en CSV ($4,629/oz)"
+            "note": "último precio en CSV ($4,629/oz)"
           },
           "xagusd_backtest_final": {
             "value": 73.57,
-            "note": "�ltimo precio en CSV ($73.57/oz)"
+            "note": "último precio en CSV ($73.57/oz)"
           },
           "btcusd_return_6m": {
             "value": 2181,
