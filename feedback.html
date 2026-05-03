@@ -1052,13 +1052,13 @@ function _renderM5(group) {
   if (!container) return;
 
   if (!group) {
-    container.innerHTML = '<div class="m5-empty"><div class="m5-empty-icon">📡</div><div class="m5-empty-title">Selecciona un archivo activo</div><div class="m5-empty-sub">El contexto de mercado está disponible para archivos con ciclo completo.</div></div>';
+    container.innerHTML = '<div class="m5-empty"><div class="m5-empty-icon">📡</div><div class="m5-empty-title">Selecciona un archivo</div><div class="m5-empty-sub">El contexto de mercado está disponible para archivos en revisión o activos.</div></div>';
     return;
   }
 
   var m5 = group.m5;
   if (!m5) {
-    container.innerHTML = '<div class="m5-empty"><div class="m5-empty-icon">⏳</div><div class="m5-empty-title">Sin datos de mercado aún</div><div class="m5-empty-sub">El contexto se genera automáticamente cada día hábil a las 11:00 UTC. Podés forzar una actualización con el botón de abajo.</div>' +
+    container.innerHTML = '<div class="m5-empty"><div class="m5-empty-icon">⏳</div><div class="m5-empty-title">Sin datos de mercado aún</div><div class="m5-empty-sub">El contexto se genera automáticamente cuando finaliza el primer análisis. Puedes forzar una actualización con el botón de abajo.</div>' +
       '<div style="margin-top:20px;"><button class="btn-m5-refresh" onclick="triggerM5Refresh(this)">Generar ahora</button></div></div>';
     return;
   }
@@ -1219,14 +1219,18 @@ function saveM5Notes(badge, btn) {
 }
 
 function _initM5() {
-  // Find the currently selected group and render its M5
   var selectedBtn = document.querySelector('.file-filter-btn.active');
   var badge = selectedBtn ? selectedBtn.dataset.badge : null;
   var group = badge && window._renderData
     ? window._renderData.groups.find(function(g) { return g.badge === badge; })
     : null;
-  var activo = group && (group.status === 'activo' || group.status === 'en_revision' || group.status === 'pendiente_final') ? group : null;
-  _renderM5(activo);
+  var eligible = ['activo', 'en_revision', 'pendiente_final'];
+  var showGroup = group && eligible.indexOf(group.status) !== -1 ? group : null;
+  // Auto-select first eligible group when none is explicitly selected
+  if (!showGroup && window._renderData) {
+    showGroup = window._renderData.groups.find(function(g) { return eligible.indexOf(g.status) !== -1; }) || null;
+  }
+  _renderM5(showGroup);
 }
 
 function _initRevisionBar() {
