@@ -461,6 +461,17 @@ function _esc(s) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
 }
+function _icon(g) {
+  var ic = (g && g.icon) || '';
+  if (!ic || ic === '??' || ic === '?') {
+    var t = g && g.ftype;
+    if (t === 'py')   return '🐍';
+    if (t === 'html') return '📊';
+    if (t === 'csv')  return '📈';
+    return '📄';
+  }
+  return ic;
+}
 function _fmtTs(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -484,7 +495,7 @@ function _fshHtml(g, count) {
   }
   return '<div class="file-section-header ' + g.fsh_class + '" style="flex-wrap:wrap;">' +
     '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
-      '<div class="fsh-icon ftype-' + g.ftype + '">' + g.icon + '</div>' +
+      '<div class="fsh-icon ftype-' + g.ftype + '">' + _icon(g) + '</div>' +
       '<span class="fsh-name">' + _esc(g.name) + '</span>' +
       '<span class="fsh-badge">' + _esc(g.badge) + '</span>' +
       (statusBadge || '') +
@@ -1273,7 +1284,7 @@ function _buildFileFilterBtns(skipAutoSelect) {
       fileId: rootGroup.badge,
       activeBadge: dg.badge,
       name: dg.name,
-      icon: dg.icon || '📄',
+      icon: _icon(dg),
       fshClass: dg.fsh_class || '',
       folderId: rootGroup.folder_id || null,
       parentGroup: rootGroup

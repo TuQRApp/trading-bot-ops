@@ -232,7 +232,7 @@ Rules:
 - oportunidad = favorable condition the trader should exploit
 - neutral = informational context
 - horizonte: now (act immediately), 24h, 48h, semana
-- All text in Spanish. ASCII only (no accented vowels, no em-dashes).
+- All text in Spanish with proper accents (á é í ó ú ü ñ). Avoid em-dashes and smart quotes.
 - Order: alertas first, then oportunidades, then neutral.
 - OUTPUT ONLY VALID JSON matching this schema exactly:
 {M5_SCHEMA}

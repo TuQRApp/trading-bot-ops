@@ -890,8 +890,8 @@ ANALYSIS_SYSTEM = [
             "You are a senior quantitative trading systems analyst reviewing a Python trading bot.\n\n"
             "Analyze the file(s) provided and return a JSON object following this schema exactly.\n"
             "OUTPUT ONLY VALID JSON. No markdown fences, no text before or after the JSON object.\n"
-            "Use only ASCII characters (no em-dashes, no special quotes, no accented vowels) — this is critical for JSON safety.\n"
-            "All descriptive text must be in Spanish.\n\n"
+            "All descriptive text must be in Spanish with proper accents (á é í ó ú ü ñ). "
+            "Avoid only characters that break JSON strings: em-dashes (—), smart/curly quotes (“”‘’).\n\n"
             f"Schema:\n{SCHEMA}\n\n"
             "Rules:\n"
             "- If PRE-ANALYSIS FACTS are present: treat them as verified ground truth. "
@@ -950,7 +950,7 @@ CRITIC_SYSTEM = [
             "Return ONLY genuinely new findings not already in the analysis. "
             "If the analysis is complete, return empty arrays.\n"
             "Limit: 0-3 cards per module.\n\n"
-            "OUTPUT ONLY VALID JSON. ASCII only. All text in Spanish.\n\n"
+            "OUTPUT ONLY VALID JSON. All text in Spanish with proper accents. Avoid em-dashes and smart quotes.\n\n"
             "Schema:\n"
             "{\n"
             "  \"additional_m2\": [same schema as m2 cards, IDs start at R-20],\n"
@@ -971,7 +971,7 @@ GPT4O_SYSTEM = (
     "IDs: m2 starts at R-30, m4 starts at H-30. "
     "Limit: 0-3 cards per module. Return empty arrays if nothing new found. "
     "Output valid JSON: {\"additional_m2\": [...], \"additional_m4\": [...]}. "
-    "ASCII only (no accented vowels, no em-dashes). All descriptions in Spanish."
+    "All descriptions in Spanish with proper accents. Avoid em-dashes and smart quotes."
 )
 
 FINALIZE_SYSTEM = [
@@ -988,7 +988,7 @@ FINALIZE_SYSTEM = [
             "- Remove the \"correction\" key from every card.\n"
             "- If m1 is included, update it accordingly and remove its \"correction\" key.\n"
             "- Return ONLY the cards you received — do not add or invent cards.\n"
-            "- OUTPUT ONLY VALID JSON. No markdown fences. ASCII only. All text in Spanish.\n\n"
+            "- OUTPUT ONLY VALID JSON. No markdown fences. All text in Spanish with proper accents. Avoid em-dashes and smart quotes.\n\n"
             "Output: {\"m1\": {...} (only if included in input), "
             "\"m2\": [...], \"m3\": [...], \"m4\": [...]} — only include modules present in input."
         ),
