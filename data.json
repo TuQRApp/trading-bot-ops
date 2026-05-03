@@ -1,11 +1,348 @@
 {
   "version": "1.0",
   "trader_email": "nestragues@icloud.com",
-  "groups": [],
+  "groups": [
+    {
+      "id": "fsh-a",
+      "fsh_class": "fsh-a",
+      "name": "Fibo1",
+      "badge": "FILE-001",
+      "icon": "🐍",
+      "ftype": "py",
+      "folder": "Fibo1",
+      "folder_id": "f1777769301915",
+      "date": "2026-05-03T00:50:45.588Z",
+      "files": [
+        {
+          "name": "bot_canal_fib_v3.py",
+          "type": "py"
+        }
+      ],
+      "status": "en_revision",
+      "m1": {
+        "type": "empty",
+        "last_updated": "2026-05-03 | bot_canal_fib_v3.py",
+        "empty_title": "Sin resultados de backtest disponibles",
+        "empty_desc": "Solo se ha proporcionado el archivo de bot en vivo (bot_canal_fib_v3.py). No existe ningun archivo CSV ni resultado de backtest adjunto. La cabecera del codigo menciona 'reglas identicas al backtest v3' pero dicho backtest no fue incluido en el analisis, por lo que es imposible calcular metricas de PnL, Sharpe, drawdown maximo ni tasa de acierto.",
+        "empty_trigger": "bot_canal_fib_v3.py"
+      },
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "SL de LONG incorrecto: spread sumado en lugar de restado",
+          "desc": "En place_orders para LONG, el SL se calcula como fib(top, bot, LONG_SL) + spread. Como LONG_SL = -0.382 produce un precio por debajo del entry, sumar el spread lo acerca al entry, reduciendo la distancia real de stop. La logica correcta es restar el spread para que el corredor cubra costos al salir: sl_px = fib(top, bot, LONG_SL) - spread. El mismo error existe simetricamente pero en sentido favorable para SHORT (sl_px = fib(..., SHORT_SL) + spread es correcto). Validar contra el backtest v3 original.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Circuit breaker no cancela ordenes pendientes al activarse",
+          "desc": "Cuando puede_operar() devuelve False (DD diario, pausa o detencion total), el bot deja de enviar nuevas ordenes pero NO cancela las ordenes limite ya pendientes en MT5. Esto significa que el broker puede ejecutar posiciones durante la pausa activa, anulando completamente la proteccion del circuit breaker. Se debe agregar una funcion que cancele todas las ordenes pendientes con MAGIC=20250501 inmediatamente al activar cualquier nivel del circuit breaker.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Costos cacheados indefinidamente: spread puede volverse obsoleto",
+          "desc": "get_costos() almacena spread y comision en _costos_cache y nunca los refresca. En activos volatiles como BTCUSD o XAUUSD, el spread puede variar significativamente entre sesiones. Si el bot arranca con spread bajo y luego el spread se amplia, los niveles de TP/SL calculados seran incorrectos. Se recomienda invalidar la cache cada N horas (p.ej. cada 4h) o recalcular el spread en cada ciclo solo a partir del tick en vivo, cacheando unicamente la comision.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "LONG SL aplicacion de spread inconsistente con backtest",
+          "desc": "La entrada LONG usa entry_px = fib(..., LONG_ENTRY) + spread (correcto, encarece la entrada). Sin embargo el SL LONG usa + spread cuando deberia usar - spread para ser coherente con la logica de coste de salida. Si el backtest v3 usa una convencion diferente, la divergencia entre live y backtest producira un riesgo real mayor al 2% objetivo en cada trade LONG. Documentar y unificar la convencion de spread en todos los niveles.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "CAPITAL_INI hardcodeado a $10,000 requiere ajuste manual obligatorio",
+          "desc": "La variable CAPITAL_INI = 10_000.0 determina el cap de lote (5x = $50k efectivos). Si el usuario despliega el bot con una cuenta de diferente tamano sin actualizar este valor, el cap actuara de forma erronea: con una cuenta de $5k el cap sera excesivamente permisivo (50k efectivos vs 5k real), y con una cuenta de $100k sera demasiado restrictivo. Se debe leer CAPITAL_INI desde el equity inicial de la cuenta o desde un parametro de configuracion externo (archivo .env o argumento CLI).",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "detect_signal no verifica que la ventana del canal tenga exactamente 20 barras",
+          "desc": "El canal se calcula sobre df.iloc[-22:-2], que asume que hay al menos 22 filas. get_bars solicita n=60 y verifica len >= CANAL_LENGTH + 5 = 25, lo cual garantiza 25 filas pero la ventana necesita 22. Sin embargo si el broker devuelve huecos (fines de semana, suspensiones), el slice puede contener menos de 20 barras de mercado real. Se debe contar explicitamente las barras en la ventana y rechazar la señal si len(canal_window) < CANAL_LENGTH.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "manage_breakeven detecta TP1 por ausencia de orden, no por ejecucion confirmada",
+          "desc": "La logica asume que si no existe una orden pendiente con 'TP1' en el comment, entonces TP1 ya se ejecuto. Pero TP1 tambien podria no existir porque fue cancelada manualmente, expirada, o porque la orden limitte original nunca se ejecuto (posicion nunca abierta). Esto puede provocar mover el SL a breakeven en posiciones que nunca llegaron a TP1. Se debe validar que la posicion realmente supero el nivel TP1 comparando el precio de apertura y el TP1 calculado vs el precio actual.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "title": "registrar_cierres usa ventana fija de 2 horas: puede perder cierres tras reconexion",
+          "desc": "La funcion consulta mt5.history_deals_get desde hace 2 horas. Si el bot estuvo caido mas de 2 horas (reinicio, desconexion prolongada), los cierres ocurridos fuera de esa ventana no seran registrados y el circuit breaker no tendra informacion de esas perdidas. Se recomienda almacenar persistentemente el ultimo timestamp de deal procesado y usar ese valor como inicio de la consulta en lugar de ahora - 2h.",
+          "comment": ""
+        },
+        {
+          "id": "R-09",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "estado": "pendiente",
+          "title": "Archivo de log referencia v2 pero el bot es v3",
+          "desc": "El FileHandler escribe en 'bot_canal_fib_v2.log' mientras el bot se identifica como v3 en todos los demas lugares. Esto genera confusion operativa y puede llevar a revisar el log incorrecto durante un incidente. Actualizar el nombre del archivo de log a 'bot_canal_fib_v3.log'.",
+          "comment": ""
+        },
+        {
+          "id": "R-10",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "estado": "pendiente",
+          "title": "Ausencia de notificaciones externas ante eventos criticos del circuit breaker",
+          "desc": "El circuit breaker nivel 3 (detencion completa) solo escribe en el log local. En produccion, si el proceso sigue corriendo pero detenido, el operador no recibira ninguna alerta activa. Se recomienda integrar un mecanismo de notificacion (Telegram, email, webhook) que emita una alerta cuando se active cualquier nivel del circuit breaker, especialmente el nivel 3.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "Sin persistencia de _last_deal_id: duplicacion de perdidas en circuit breaker tras reinicio",
+          "desc": "El hallazgo H-07 documenta el bug de codigo, pero no existe una recomendacion de riesgo operativo correspondiente: cada reinicio del bot puede incrementar consec_loss y equity_dia con perdidas ya contabilizadas en sesiones anteriores, activando el circuit breaker de forma espuria y bloqueando el bot en dias rentables. La correccion de codigo es necesaria pero insuficiente: se debe ademas documentar un procedimiento de arranque que verifique el estado del circuit breaker antes de reanudar operaciones en vivo.",
+          "comment": ""
+        },
+        {
+          "id": "R-21",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "title": "calc_lot no valida que el resultado sea mayor que el lote minimo del simbolo",
+          "desc": "La funcion calc_lot calcula el lote en funcion del riesgo y la distancia al SL. Si la distancia SL-entry es muy grande (canal muy amplio), el lote calculado puede caer por debajo del lote minimo del broker (p.ej. 0.01 en XAUUSD). En ese caso lot_tercio resultaria en 0.0 al truncar, y MT5 rechazaria las tres ordenes silenciosamente o enviaria ordenes de tamano 0. Se debe agregar: lot = max(lot_calculado, mt5.symbol_info(symbol).volume_min) con log de advertencia cuando se aplique el minimo, y verificar que lot_tercio >= volume_min antes de enviar.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "error",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Import de 'collections' dentro de funcion manage_breakeven",
+          "desc": "La linea 'from collections import defaultdict' aparece dentro del cuerpo de la funcion manage_breakeven() en lugar de al inicio del modulo. Aunque funciona en Python, es una mala practica que dificulta la lectura, impide que linters detecten dependencias correctamente y agrega overhead en cada llamada a la funcion. Mover el import al bloque de imports del modulo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "67 bloques if con solo 2 bloques try: manejo de errores insuficiente",
+          "desc": "El archivo tiene 67 bloques condicionales pero solo 2 bloques try/except. Funciones criticas como place_orders, manage_breakeven y calc_lot no tienen manejo de excepciones propio. Un error de red o respuesta inesperada de MT5 en cualquiera de ellas propagara la excepcion hasta el bucle principal, donde se captura genericamente con un sleep de 30s. Esto puede dejar ordenes a medias o saltarse el breakeven durante el periodo de espera.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "ORDER_FILLING_IOC puede rechazar ordenes limite en algunos brokers",
+          "desc": "Las 3 ordenes pendientes se envian con type_filling = ORDER_FILLING_IOC (Immediate Or Cancel). Para ordenes LIMIT pendientes, el filling correcto suele ser ORDER_FILLING_RETURN en MT5. Con IOC, si el precio no esta disponible en el momento exacto de ejecucion, la orden puede cancelarse automaticamente. Verificar con IC Markets el filling type correcto para ordenes SELL_LIMIT y BUY_LIMIT.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Numeros magicos de niveles Fibonacci dispersos como constantes globales y en magic_numbers",
+          "desc": "El analisis detecta 20 numeros magicos incluyendo 0.191, 0.382, 0.5, 0.618, 0.809, 1.191, 1.382 definidos como constantes globales pero tambien usados implicitamente en calculos. Los valores como 3, 3.5, 4, 5.0, 8, 13 aparecen en la logica sin documentacion de su origen (probablemente Fibonacci de tiempo o parametros de gestion). Consolidar todos en una seccion de configuracion con comentarios explicativos.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "warn",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Verificacion de margen solo para lot_total pero las ordenes se envian con lot_1_3",
+          "desc": "El codigo calcula margin_req usando lot_total (lote completo) pero envia 3 ordenes independientes de lot_1_3 cada una. MT5 podria reservar margen para cada orden por separado o de forma diferente. Ademas, si las 3 ordenes se ejecutan simultaneamente el margen total requerido puede diferir de la estimacion. El check deberia sumar el margen de las 3 posiciones independientes o usar lot_total directamente en el calculo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Condicion de señal SHORT/LONG no valida que la mecha sea exclusivamente fuera del canal",
+          "desc": "La condicion SHORT requiere c_high >= entry_short_raw AND c_close < canal_top. Sin embargo, no verifica que el cierre este por debajo de entry_short_raw (1.191), lo que permitiria señales donde el precio cerro entre 1.0 y 1.191, una zona ambigua. El backtest v3 describe 'cierre < 1.0' segun la cabecera del archivo pero el codigo implementa 'cierre < canal_top'. Verificar cual es la logica correcta del backtest.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "info",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "CB_MAX_CONSEC_LOSS no se reinicia al inicio de un nuevo dia",
+          "desc": "En nuevo_dia() solo se resetea equity_dia y fecha_dia. El contador consec_loss persiste entre dias. Una racha de 2 perdidas al cierre del dia mas 1 perdida al inicio del siguiente dia activara el circuit breaker nivel 1, aunque las perdidas no sean del mismo dia de trading. Evaluar si el comportamiento deseado es reiniciar consec_loss a 0 con cada nuevo dia.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-008",
+          "tipo": "info",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Log de apertura registra lista de tickets como string, dificultando reconciliacion",
+          "desc": "En log_trade para ORDEN_ABIERTA, el campo 'ticket' se guarda como str(tickets), es decir una representacion de lista Python como '[123456, 123457, 123458]'. Esto hace imposible filtrar el CSV por ticket individual. Se deberia escribir una fila por cada ticket o serializar los tickets como JSON array para facilitar el analisis posterior.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "error",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "Solo 2 bloques try para 67 bloques if y 8 loops: calc_lot puede dividir por cero",
+          "desc": "calc_lot calcula el lote como riesgo_usd / (distancia_sl * valor_pip). Si distancia_sl es cero (entry_px == sl_px, posible cuando spread >= distancia fibonacci), se produce ZeroDivisionError no capturado. Con solo 2 try/except en todo el archivo, este error propagaria hasta el handler generico del loop principal, dejando el ciclo dormido 30s con la senal sin procesar. Se debe agregar una guarda explicita: if distancia_sl <= 1e-10: return 0.0 y loguear el evento.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "warn",
+          "origin": "bot_canal_fib_v3.py",
+          "title": "consec_loss no se reinicia al inicio de un nuevo dia pero tampoco ante una operacion ganadora",
+          "desc": "El analisis OBS-007 nota que consec_loss no se resetea con nuevo_dia(). Adicionalmente, al revisar registrar_resultado, no queda claro si consec_loss se pone a cero cuando se registra una ganancia o si solo se incrementa en perdidas. Si consec_loss solo se incrementa y nunca se decrementa ni resetea en ganancias, una racha de perdidas pasada mantendra activo el nivel 1 del circuit breaker indefinidamente incluso despues de trades ganadores. Documentar y validar la logica de reset de consec_loss ante resultados positivos.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "Nombre de archivo de log incorrecto: v2 en bot v3",
+          "desc": "El FileHandler apunta a 'bot_canal_fib_v2.log' en un bot que es v3. Los logs operativos se escriben en el archivo incorrecto, dificultando el diagnostico en produccion.",
+          "code": "logging.FileHandler(\"bot_canal_fib_v2.log\", encoding=\"utf-8\")",
+          "fix": "logging.FileHandler(\"bot_canal_fib_v3.log\", encoding=\"utf-8\")",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "Import de defaultdict dentro de funcion en lugar de nivel modulo",
+          "desc": "from collections import defaultdict esta dentro del cuerpo de manage_breakeven(). Se reimporta en cada llamada al loop principal (cada ~20 segundos). Ademas, si Python tuviese un problema con el modulo, el error ocurriria en runtime dentro de la funcion en lugar de al inicio.",
+          "code": "def manage_breakeven():\n    ...\n    from collections import defaultdict\n    sym_pos = defaultdict(list)",
+          "fix": "# Al inicio del archivo, junto al resto de imports:\nfrom collections import defaultdict\n\n# Eliminar el import dentro de manage_breakeven()",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "SL de posicion LONG suma spread en lugar de restarlo",
+          "desc": "Para LONG, el SL debe estar por debajo del entry. Sumar el spread lo acerca al entry reduciendo la distancia real de stop y aumentando el riesgo efectivo por encima del 2% objetivo. La asimetria con SHORT (donde el spread se suma correctamente alejando el SL) indica un error de signo.",
+          "code": "# LONG branch en place_orders:\nsl_px = fib(top, bot, LONG_SL) + spread   # INCORRECTO: acerca el SL al entry",
+          "fix": "sl_px = fib(top, bot, LONG_SL) - spread   # CORRECTO: aleja el SL del entry",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "Circuit breaker no cancela ordenes pendientes al activarse",
+          "desc": "Cuando puede_operar() devuelve False, el bot deja de abrir nuevas ordenes pero las ordenes LIMIT ya enviadas permanecen activas en el broker. Pueden ejecutarse durante la pausa, generando posiciones no supervisadas y anulando la proteccion de riesgo.",
+          "code": "if cb.puede_operar():\n    for symbol in available:\n        signal = detect_signal(symbol, last_bar_times)\n        if signal:\n            place_orders(signal)\n# No hay cancelacion de ordenes pendientes cuando puede_operar() == False",
+          "fix": "def cancelar_ordenes_pendientes(symbols):\n    for sym in symbols:\n        orders = mt5.orders_get(symbol=sym) or []\n        for o in orders:\n            if o.magic == MAGIC:\n                mt5.order_send({\n                    \"action\": mt5.TRADE_ACTION_REMOVE,\n                    \"order\": o.ticket\n                })\n\n# En run(), antes del bloque if cb.puede_operar():\nif not cb.puede_operar():\n    cancelar_ordenes_pendientes(available)\nelse:\n    for symbol in available:\n        ...",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "riesgo",
+          "title": "CAPITAL_INI hardcodeado introduce riesgo operativo en cuentas de diferente tamano",
+          "desc": "CAPITAL_INI = 10_000.0 es un parametro critico de sizing. Si el operador despliega el bot en una cuenta de tamano diferente sin modificar esta constante, el cap de lote sera incorrecto en ambas direcciones (muy permisivo o muy restrictivo), distorsionando el riesgo real por operacion.",
+          "code": "CAPITAL_INI  = 10_000.0     # capital base de referencia (ajustar al tuyo)",
+          "fix": "# Leer de cuenta real al conectar:\ndef get_capital_ini():\n    acct = mt5.account_info()\n    if acct and acct.balance > 0:\n        return acct.balance\n    return 10_000.0  # fallback\n\n# En run(), despues de connect():\nCAPITAL_INI = get_capital_ini()\ncb = CircuitBreaker(equity_ini=mt5.account_info().equity)",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "riesgo",
+          "title": "ORDER_FILLING_IOC inapropiado para ordenes LIMIT pendientes",
+          "desc": "Las ordenes pendientes SELL_LIMIT y BUY_LIMIT se envian con ORDER_FILLING_IOC. Este modo cancela la orden si no puede ejecutarse inmediatamente al precio solicitado, lo cual es el comportamiento normal de una orden limite pendiente que espera ser activada. En muchos brokers MT5, las ordenes limite requieren ORDER_FILLING_RETURN para permitir ejecucion parcial o espera.",
+          "code": "\"type_filling\": mt5.ORDER_FILLING_IOC,",
+          "fix": "\"type_filling\": mt5.ORDER_FILLING_RETURN,\n# Verificar con mt5.symbol_info(symbol).filling_mode los modos soportados",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "ausencia",
+          "title": "Sin persistencia de _last_deal_id entre reinicios del bot",
+          "desc": "La variable global _last_deal_id se inicializa a 0 cada vez que el bot arranca. Tras un reinicio, registrar_cierres puede reprocesar deals anteriores si tienen ticket > 0, duplicando entradas en el CSV y enviando senales incorrectas al circuit breaker (p.ej. incrementar consec_loss con perdidas ya contabilizadas).",
+          "code": "_last_deal_id = 0\n\ndef registrar_cierres(cb=None):\n    global _last_deal_id\n    ...\n    if d.ticket <= _last_deal_id:\n        continue",
+          "fix": "# Al iniciar el bot, leer el ultimo deal_id del CSV de trades:\ndef cargar_ultimo_deal_id():\n    if not Path(TRADES_LOG).exists():\n        return 0\n    try:\n        df = pd.read_csv(TRADES_LOG)\n        tickets = pd.to_numeric(df['ticket'], errors='coerce').dropna()\n        return int(tickets.max()) if not tickets.empty else 0\n    except Exception:\n        return 0\n\n_last_deal_id = cargar_ultimo_deal_id()",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "ausencia",
+          "title": "Sin validacion de canal_window menor a 20 barras reales",
+          "desc": "df.iloc[-22:-2] puede devolver menos de 20 filas si el DataFrame tiene huecos por suspensiones de mercado o datos insuficientes. Canal calculado sobre menos barras produce niveles incorrectos y senales falsas.",
+          "code": "canal_window = df.iloc[-22:-2]\ncanal_top    = float(canal_window[\"high\"].max())\ncanal_bot    = float(canal_window[\"low\"].min())",
+          "fix": "canal_window = df.iloc[-22:-2]\nif len(canal_window) < CANAL_LENGTH:\n    last_bar_times[symbol] = bar_time\n    return None\ncanal_top = float(canal_window[\"high\"].max())\ncanal_bot = float(canal_window[\"low\"].min())",
+          "comment": ""
+        },
+        {
+          "id": "H-09",
+          "categoria": "mejora",
+          "title": "Cache de costos sin expiracion: spread desactualizado en sesiones largas",
+          "desc": "get_costos() cachea el spread indefinidamente. En activos con spread variable (BTCUSD, XAUUSD en apertura de NY), el spread puede triplicarse. Los niveles de TP/SL calculados con el spread de apertura del bot seran erroneos horas despues.",
+          "code": "_costos_cache = {}\n\ndef get_costos(symbol):\n    if symbol in _costos_cache:\n        return _costos_cache[symbol]",
+          "fix": "_costos_cache = {}  # {symbol: (spread, comm, timestamp)}\n_CACHE_TTL_SECONDS = 4 * 3600  # 4 horas\n\ndef get_costos(symbol):\n    entry = _costos_cache.get(symbol)\n    if entry:\n        spread, comm, ts = entry\n        if (datetime.now(UTC) - ts).total_seconds() < _CACHE_TTL_SECONDS:\n            return spread, comm\n    # ... recalcular ...\n    _costos_cache[symbol] = (spread_price, comm_usd, datetime.now(UTC))\n    return spread_price, comm_usd",
+          "comment": ""
+        },
+        {
+          "id": "H-10",
+          "categoria": "mejora",
+          "title": "Condicion de señal SHORT usa 'cierre < canal_top' en lugar de 'cierre < 1.0' documentado",
+          "desc": "La cabecera del archivo especifica 'SHORT: mecha >= 1.191 y cierre < 1.0' (normalizado). El codigo implementa c_close < canal_top, que equivale a cierre < nivel 1.0 del canal solo cuando canal_top = fib(top, bot, 1.0) = top. La condicion es equivalente pero implicita y diferente a lo documentado. Para LONG la cabecera dice 'cierre > 0.0' (= canal_bot) y el codigo usa c_close > canal_bot. Hacer las condiciones explicitas con fib() para que coincidan exactamente con la documentacion y el backtest.",
+          "code": "if c_high >= entry_short_raw and c_close < canal_top:\n    direction = \"SHORT\"\nelif c_low <= entry_long_raw and c_close > canal_bot:\n    direction = \"LONG\"",
+          "fix": "close_level_short = fib(canal_top, canal_bot, 1.0)  # = canal_top\nclose_level_long  = fib(canal_top, canal_bot, 0.0)  # = canal_bot\nif c_high >= entry_short_raw and c_close < close_level_short:\n    direction = \"SHORT\"\nelif c_low <= entry_long_raw and c_close > close_level_long:\n    direction = \"LONG\"",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "calc_lot sin guarda contra division por cero cuando entry_px == sl_px",
+          "desc": "Si el spread es igual o mayor a la distancia fibonacci entre entry y SL (posible en activos de spread alto con canal estrecho), distancia_sl puede ser cero o negativo, causando ZeroDivisionError no capturado. El unico try/except del area no cubre esta funcion.",
+          "code": "# En calc_lot, aproximadamente:\ndistancia_sl = abs(entry_px - sl_px)  # puede ser 0.0\nlot = riesgo_usd / (distancia_sl * valor_pip)  # ZeroDivisionError",
+          "fix": "distancia_sl = abs(entry_px - sl_px)\nif distancia_sl < 1e-10:\n    logger.warning(\"calc_lot: distancia SL ~0 para %s, entry=%.5f sl=%.5f. Operacion omitida.\", symbol, entry_px, sl_px)\n    return 0.0\nlot = riesgo_usd / (distancia_sl * valor_pip)",
+          "comment": ""
+        }
+      ],
+      "category": "Live Bot | 3 instruments | MetaTrader5 | Fibonacci Channel Breakout M3",
+      "summary": "Bot en vivo para MT5 que opera XAUUSD, XAGUSD y BTCUSD en M3 usando un canal Fibonacci de 20 barras. Detecta mechas que superan los niveles 1.191/-0.191, coloca 3 ordenes limite (TP1/TP2/TP3 en tercios del lote) con SL en 1.382/-0.382, gestiona breakeven automatico tras TP1 y aplica un circuit breaker de 3 niveles (perdidas consecutivas, DD diario 4%, DD total 10%). No se dispone de archivos CSV de backtest, por lo que no hay metricas de rendimiento verificadas.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": ""
+    }
+  ],
   "folders": [
     {
-      "id": "f1777756968062",
-      "name": "Fibo",
+      "id": "f1777769301915",
+      "name": "Fibo2may",
       "parent_id": null
     }
   ]
