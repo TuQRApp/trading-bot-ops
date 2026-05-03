@@ -629,11 +629,10 @@ def _prepare_file_block(fname, content):
         print(f"    [{fname}] CSV truncated to {len(sample)} sample rows (of {len(lines)-1})")
         return f"=== {fname} ===\n{body}"
 
-    # Python files: higher cap to preserve full code for M4 analysis
-    cap = 80_000 if ext == "py" else MAX_CHARS_PER_FILE
-    if len(content) > cap:
-        content = content[:cap] + f"\n... [truncated at {cap} chars]"
-        print(f"    [{fname}] truncated to {cap} chars")
+    # Python files: no cap — cost scales linearly with size, bots rarely exceed 200 KB
+    if ext != "py" and len(content) > MAX_CHARS_PER_FILE:
+        content = content[:MAX_CHARS_PER_FILE] + f"\n... [truncated at {MAX_CHARS_PER_FILE} chars]"
+        print(f"    [{fname}] truncated to {MAX_CHARS_PER_FILE} chars")
     return f"=== {fname} ===\n{content}"
 
 
