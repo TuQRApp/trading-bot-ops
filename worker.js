@@ -129,7 +129,9 @@ async function handleUpload(request, env) {
     if (!file || !folder) return json({ error: 'file and folder are required' }, 400);
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const base64 = btoa(String.fromCharCode(...bytes));
+    let fileBinary = '';
+    for (let i = 0; i < bytes.length; i++) fileBinary += String.fromCharCode(bytes[i]);
+    const base64 = btoa(fileBinary);
     const path = ROOT + '/' + folder + '/' + file.name;
 
     // Check if file already exists (need SHA to update)
