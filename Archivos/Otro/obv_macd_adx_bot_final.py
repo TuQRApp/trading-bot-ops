@@ -72,14 +72,13 @@ CONFIG = {
     "default_spread"  : 5.0,   # USD genérico
     "default_comm"    : 3.5,   # USD/lado genérico
     "spread_overrides": {      # símbolo → spread USD si MT5 falla
-        "BTCUSD"  : 12.0,
-        "XAUUSD"  : 10.5,
-        "WTI_M6"  : 3.0,
-        "XTIUSD"  : 3.0,
-        "XNGUSD"  : 2.0,
-        "US30"    : 2.0,
-        "US500"   : 1.5,
-        "USTEC"   : 2.0,
+        "BTCUSD" : 12.0,
+        "XAUUSD" : 10.5,
+        "WTI_M6" : 3.0,
+        "BRENT_M6": 3.0,
+        "US30"   : 2.0,
+        "US500"  : 1.5,
+        "USTEC"  : 2.0,
     },
     "comm_overrides"  : {
         "BTCUSD" : 7.0,
@@ -782,42 +781,17 @@ def abrir_orden(symbol, direccion, precio, atr_val, log):
         tp    = round(precio - tp_dist, digits)
 
     account = mt5.account_info()
-    riesgo  = account.equity * CONFIG["risk_pct"]   # equity, no balance
-
-    # Calcular PnL de 1 lote si toca el SL — preguntarle al broker directamente
-    # Esto evita errores de conversión tick_value en instrumentos exóticos
-    price_sl_1lot = sl  # precio de salida si SL tocado
-    pnl_1lot = mt5.order_calc_profit(otype, symbol, 1.0, precio, price_sl_1lot)
-
-    if pnl_1lot is None or abs(pnl_1lot) < 1e-8:
-        # Fallback: método tick_value original
-        tick_v = info.trade_tick_value
-        tick_s = info.trade_tick_size
-        if tick_s > 0 and tick_v > 0:
-            sl_ticks = sl_dist / tick_s
-            lot = riesgo / (sl_ticks * tick_v) if sl_ticks > 0 else info.volume_min
-        else:
-            lot = info.volume_min
+    riesgo  = account.balance * CONFIG["risk_pct"]
+    tick_v  = info.trade_tick_value
+    tick_s  = info.trade_tick_size
+    if tick_s > 0 and tick_v > 0:
+        sl_ticks = abs(precio - sl) / tick_s
+        lot = riesgo / (sl_ticks * tick_v) if sl_ticks > 0 else info.volume_min
+        lot = max(info.volume_min,
+                  min(round(lot / info.volume_step) * info.volume_step,
+                      info.volume_max))
     else:
-        lot = riesgo / abs(pnl_1lot)
-
-    lot = max(info.volume_min,
-              min(round(lot / info.volume_step) * info.volume_step,
-                  info.volume_max))
-
-    # Verificar margen real
-    margen_req = mt5.order_calc_margin(otype, symbol, lot, precio)
-    if margen_req and margen_req > account.margin_free * 0.80:
-        if margen_req > 0:
-            lot = lot * (account.margin_free * 0.80) / margen_req
-            lot = max(info.volume_min,
-                      round(lot / info.volume_step) * info.volume_step)
-
-    # Log para verificar riesgo real
-    pnl_check = mt5.order_calc_profit(otype, symbol, lot, precio, price_sl_1lot)
-    riesgo_real = abs(pnl_check) if pnl_check else 0
-    log.info(f"  📊 {symbol}: lot={lot:.3f} | "
-             f"riesgo=${riesgo_real:.2f} ({riesgo_real/account.equity*100:.1f}%)")
+        lot = info.volume_min
 
     request = {
         "action"      : mt5.TRADE_ACTION_DEAL,
