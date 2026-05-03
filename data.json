@@ -18,7 +18,7 @@
           "type": "py"
         }
       ],
-      "status": "pendiente_final",
+      "status": "activo",
       "version_of": null,
       "m1": {
         "type": "empty",
@@ -33,33 +33,30 @@
           "tipo": "risk",
           "tipo_label": "Riesgo",
           "prioridad": "alta",
-          "estado": "pendiente",
+          "estado": "descartado",
           "title": "SL LONG calculado con spread incorrecto: deberia restar, no sumar",
           "desc": "En place_orders para LONG, el SL se calcula como fib(top, bot, LONG_SL) + spread. LONG_SL = -0.382 esta por debajo del precio de entrada, por lo que sumar el spread mueve el SL hacia la entrada en lugar de alejarlo. El backtest aplica la misma logica y podria tener el mismo defecto. La correccion es restar el spread al SL en posiciones LONG: sl_px = fib(top, bot, LONG_SL) - spread.",
-          "comment": "",
-          "correction": "No aplica"
+          "comment": ""
         },
         {
           "id": "R-02",
           "tipo": "risk",
           "tipo_label": "Riesgo",
           "prioridad": "alta",
-          "estado": "pendiente",
+          "estado": "implementado",
           "title": "Cache de costos nunca se invalida en sesion larga",
           "desc": "La funcion get_costos guarda spread y comision en _costos_cache sin TTL ni mecanismo de refresco. En sesiones de varios dias, el spread puede cambiar significativamente (apertura de mercado, eventos macro, baja liquidez nocturna). Un spread obsoleto provoca que los niveles de TP y SL enviados al broker sean incorrectos. Se recomienda invalidar la cache cada hora o al inicio de cada dia via cb.nuevo_dia().",
-          "comment": "",
-          "correction": "Hacerlo"
+          "comment": ""
         },
         {
           "id": "R-03",
           "tipo": "risk",
           "tipo_label": "Riesgo",
           "prioridad": "alta",
-          "estado": "pendiente",
+          "estado": "descartado",
           "title": "Circuit breaker no cancela ordenes pendientes al activarse",
           "desc": "Cuando el circuit breaker activa pausa o detencion completa, las ordenes limite ya enviadas al broker permanecen activas y pueden ejecutarse durante el periodo de bloqueo. Esto anula la proteccion. Se debe llamar a mt5.order_send con TRADE_ACTION_REMOVE para cada orden pendiente del MAGIC al activar cualquier nivel del circuit breaker.",
-          "comment": "",
-          "correction": "No aplica"
+          "comment": ""
         },
         {
           "id": "R-04",
@@ -242,8 +239,7 @@
           "desc": "El campo direction del CSV usa LONG cuando el deal es DEAL_TYPE_SELL. En MT5, un deal de tipo SELL cierra una posicion LONG (el broker vende para cerrar). La logica actual invierte la etiqueta.",
           "code": "\"direction\": \"LONG\" if d.type == mt5.DEAL_TYPE_SELL else \"SHORT\"",
           "fix": "\"direction\": \"SHORT\" if d.type == mt5.DEAL_TYPE_SELL else \"LONG\"",
-          "comment": "",
-          "correction": "Hacerlo"
+          "comment": ""
         },
         {
           "id": "H-02",
@@ -252,8 +248,7 @@
           "desc": "El FileHandler del logger apunta a 'bot_canal_fib_v2.log' en la version 3 del bot. En produccion con ambas versiones activas esto mezclaria logs o sobreescribiria registros de la version anterior.",
           "code": "logging.FileHandler(\"bot_canal_fib_v2.log\", encoding=\"utf-8\")",
           "fix": "logging.FileHandler(\"bot_canal_fib_v3.log\", encoding=\"utf-8\")",
-          "comment": "",
-          "correction": "Hacerlo"
+          "comment": ""
         },
         {
           "id": "H-03",
@@ -262,8 +257,7 @@
           "desc": "Para posiciones LONG el SL esta por debajo de la entrada. Sumar el spread lo acerca al entry, reduciendo silenciosamente el riesgo y desalineando el live del backtest.",
           "code": "sl_px = fib(top, bot, LONG_SL) + spread   # LONG_SL = -0.382",
           "fix": "sl_px = fib(top, bot, LONG_SL) - spread   # aleja el SL del entry",
-          "comment": "",
-          "correction": "No hacerlo"
+          "comment": "Trader indica no implementar en esta version."
         },
         {
           "id": "H-04",
@@ -353,7 +347,7 @@
       "category": "Bot en vivo | 3 instrumentos | MetaTrader5 | Canal Fibonacci multi-TP",
       "summary": "Bot de trading en vivo para MT5 que opera XAUUSD, XAGUSD y BTCUSD en M3 usando canales de Fibonacci de 20 barras con entradas limite en niveles 1.191/-0.191 y tres TPs escalonados (0.809/0.618/0.500). El sizing usa order_calc_profit con 2% del equity efectivo (cap a 5x capital base), aplica spread real a todos los niveles y gestiona breakeven automatico tras el TP1. Incluye circuit breaker por drawdown diario (4%), drawdown total (10%) y perdidas consecutivas (3), pero no existen resultados de backtest en CSV que permitan evaluar metricas historicas.",
       "trader_notes": "",
-      "revision_submitted": true,
+      "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
