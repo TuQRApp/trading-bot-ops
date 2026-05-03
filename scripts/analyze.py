@@ -450,18 +450,19 @@ FINALIZE_SYSTEM = [
     {
         "type": "text",
         "text": (
-            "You are finalizing a trading bot analysis after the trader reviewed the draft.\n\n"
-            "CRITICAL: Every correction listed in the user message is a MANDATORY change that MUST be reflected in the final analysis.\n"
-            "Do NOT ignore, soften, or partially apply corrections. Treat each one as a direct instruction from the trader.\n\n"
+            "You are updating specific cards in a trading bot analysis based on trader feedback.\n\n"
+            "You receive ONLY the cards that need changes — not the full analysis.\n"
+            "CRITICAL: Apply every correction exactly as the trader specified. Do not soften or ignore any correction.\n\n"
             "Instructions:\n"
-            "- For EVERY card that received a correction: incorporate the feedback substantively — rewrite the title, desc, or fix as needed. "
-            "Set the card's \"comment\" field to a short note summarizing what the trader said and what was adjusted.\n"
-            "- If m1 received a correction, update the m1 block accordingly.\n"
-            "- For cards with no correction, keep \"comment\" as \"\".\n"
-            "- Do NOT change IDs or overall structure.\n"
-            "- Remove the \"correction\" key from all cards and from m1 if present.\n"
-            "- OUTPUT ONLY VALID JSON. No markdown fences.\n"
-            "- Use only ASCII characters. All text in Spanish."
+            "- Rewrite each card's title, desc, and/or fix/note to incorporate the correction substantively.\n"
+            "- Set the card's \"comment\" field to a brief note summarizing what was adjusted.\n"
+            "- Do NOT change IDs, tipos, prioridad, or card structure.\n"
+            "- Remove the \"correction\" key from every card.\n"
+            "- If m1 is included, update it accordingly and remove its \"correction\" key.\n"
+            "- Return ONLY the cards you received — do not add or invent cards.\n"
+            "- OUTPUT ONLY VALID JSON. No markdown fences. ASCII only. All text in Spanish.\n\n"
+            "Output: {\"m1\": {...} (only if included in input), "
+            "\"m2\": [...], \"m3\": [...], \"m4\": [...]} — only include modules present in input."
         ),
         "cache_control": {"type": "ephemeral"},
     }
@@ -518,38 +519,28 @@ def build_gpt4o_user(analysis, py_files_text):
 
 
 def build_finalize_user(group):
+    """Build a minimal payload with ONLY the corrected cards — not the full analysis."""
     trader_notes = (group.get("trader_notes") or "").strip()
-
-    corrections = {}
-    for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", []):
-        c = (card.get("correction") or "").strip()
-        if c:
-            corrections[card["id"]] = c
-
     m1 = group.get("m1", {})
     m1_correction = (m1.get("correction") or "").strip()
-    has_m1_correction = bool(m1_correction)
 
-    current = {
-        "m1": m1,
-        "m2": group.get("m2", []),
-        "m3": group.get("m3", []),
-        "m4": group.get("m4", []),
-    }
+    payload = {}
+    if m1_correction:
+        payload["m1"] = m1
 
-    output_structure = (
-        '{"m1": {...}, "m2": [...], "m3": [...], "m4": [...]}'
-        if has_m1_correction
-        else '{"m2": [...], "m3": [...], "m4": [...]}'
-    )
+    for module in ("m2", "m3", "m4"):
+        corrected = [c for c in group.get(module, []) if (c.get("correction") or "").strip()]
+        if corrected:
+            payload[module] = corrected
+
+    n = sum(len(v) for v in payload.values() if isinstance(v, list)) + bool(m1_correction)
+    print(f"    Sending {n} corrected card(s) to Claude (of "
+          f"{sum(len(group.get(m,[])) for m in ('m2','m3','m4'))} total)")
 
     return (
-        f"Current analysis:\n{json.dumps(current, ensure_ascii=True, indent=2)}\n\n"
-        f"Trader general notes: \"{trader_notes}\"\n\n"
-        f"M1 correction: \"{m1_correction if m1_correction else 'None'}\"\n\n"
-        f"Card-level corrections (card_id -> trader correction):\n"
-        f"{json.dumps(corrections, ensure_ascii=True, indent=2) if corrections else 'None'}\n\n"
-        f"Output structure: {output_structure}"
+        f"Trader general notes: \"{trader_notes or 'None'}\"\n\n"
+        f"Cards to update ({n} corrected — only these are shown):\n"
+        + json.dumps(payload, ensure_ascii=True, indent=2)
     )
 
 
@@ -745,11 +736,17 @@ def process_pendiente_final(group):
 
     if trader_notes or has_corrections:
         updated = call_claude(FINALIZE_SYSTEM, build_finalize_user(group))
+        # Merge by ID: only replace cards that Claude actually rewrote
         if "m1" in updated:
             group["m1"] = updated["m1"]
-        group["m2"] = updated.get("m2", group["m2"])
-        group["m3"] = updated.get("m3", group["m3"])
-        group["m4"] = updated.get("m4", group["m4"])
+        for module in ("m2", "m3", "m4"):
+            if module in updated:
+                updated_by_id = {c["id"]: c for c in updated[module]}
+                group[module] = [
+                    updated_by_id.get(card["id"], card)
+                    for card in group.get(module, [])
+                ]
+                print(f"    {module}: updated {len(updated_by_id)} card(s)")
     else:
         print("  No corrections — approving as-is")
 
