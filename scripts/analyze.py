@@ -629,10 +629,11 @@ def _prepare_file_block(fname, content):
         print(f"    [{fname}] CSV truncated to {len(sample)} sample rows (of {len(lines)-1})")
         return f"=== {fname} ===\n{body}"
 
-    # For all other types (.py, .txt, etc.): cap at MAX_CHARS_PER_FILE
-    if len(content) > MAX_CHARS_PER_FILE:
-        content = content[:MAX_CHARS_PER_FILE] + f"\n... [truncated at {MAX_CHARS_PER_FILE} chars]"
-        print(f"    [{fname}] truncated to {MAX_CHARS_PER_FILE} chars")
+    # Python files: higher cap to preserve full code for M4 analysis
+    cap = 80_000 if ext == "py" else MAX_CHARS_PER_FILE
+    if len(content) > cap:
+        content = content[:cap] + f"\n... [truncated at {cap} chars]"
+        print(f"    [{fname}] truncated to {cap} chars")
     return f"=== {fname} ===\n{content}"
 
 
