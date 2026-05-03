@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 from datetime import date
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from anthropic import Anthropic
 
 try:
@@ -88,6 +89,42 @@ def preprocess_python(filename, content):
         facts["syntax_error"] = str(e)
 
     return facts
+
+
+def _detect_obfuscation(filename, content):
+    """
+    Returns a reason string if the file looks obfuscated, else None.
+    Conservative: only flags clear cases to avoid false positives on minified helpers.
+    """
+    import re
+
+    lines = content.splitlines()
+    if len(lines) < 5:
+        return None
+
+    long_line_count = sum(1 for l in lines if len(l) > 500)
+    exec_encoded    = bool(re.search(r'\bexec\s*\(\s*(base64|zlib|b64decode|compile|decode)', content))
+    eval_encoded    = bool(re.search(r'\beval\s*\(\s*(base64|zlib|b64decode|compile|decode)', content))
+    base64_blob     = bool(re.search(r'[A-Za-z0-9+/]{300,}={0,2}', content))
+
+    try:
+        tree    = ast.parse(content)
+        n_funcs = sum(1 for n in ast.walk(tree) if isinstance(n, ast.FunctionDef))
+        n_lines = len(lines)
+        sparse  = n_lines > 100 and n_funcs < 2 and (base64_blob or exec_encoded or long_line_count > 3)
+    except SyntaxError:
+        if base64_blob or exec_encoded:
+            return "error de sintaxis con indicadores de ofuscacion"
+        sparse = False
+
+    if exec_encoded or eval_encoded:
+        return "exec/eval con datos codificados detectado"
+    if base64_blob and long_line_count > 3:
+        return f"cadenas codificadas largas ({long_line_count} lineas >500 chars)"
+    if sparse:
+        return f"estructura anormalmente compacta ({n_funcs} funciones en {n_lines} lineas)"
+
+    return None
 
 
 def _ml_cluster_trades(df, pnl_col):
@@ -359,6 +396,11 @@ def preprocess_csv(filename, content):
 HTML_LARGE_THRESHOLD = 5 * 1024 * 1024   # 5 MB — above this, skip full DOM parse
 HTML_HEAD_BYTES      = 200_000           # read only first 200 KB for large files
 
+SKIP_EXTENSIONS = frozenset({
+    "pdf", "png", "jpg", "jpeg", "gif", "bmp", "tiff", "svg",
+    "docx", "xlsx", "xls", "pptx", "zip", "rar", "7z",
+})
+
 
 def _parse_numeric(s):
     """Convert strings like '55.4%', '-7.87%', '2.162', '$10,000' to float or None."""
@@ -517,6 +559,84 @@ def _extract_trades_html(content):
     return df
 
 
+def _extract_trades_mt5_standard(content):
+    """
+    Extract trade rows from a standard MT5 Strategy Tester HTML export.
+    Streams through </tr> splits — no DOM parse, works on any file size.
+    Detects the header row by column name aliases (EN + ES), then maps column
+    indices and parses every subsequent trade row.
+    Returns (DataFrame or None, summary_stats dict or None).
+    """
+    import re
+    import pandas as pd
+
+    tag_re = re.compile(r"<[^>]+>")
+
+    PROFIT_ALIASES  = {"profit", "net profit", "ganancia", "ganancias", "beneficio", "neto"}
+    TIME_ALIASES    = {"time", "open time", "time open", "tiempo", "hora", "datetime", "fecha"}
+    SYMBOL_ALIASES  = {"symbol", "sim", "simbolo", "símbolo", "instrumento"}
+    TYPE_ALIASES    = {"type", "direction", "dirección", "side", "tipo", "deal type"}
+    BALANCE_ALIASES = {"balance", "saldo"}
+
+    header_idx = {}
+    trades     = []
+    summary_kv = {}
+
+    for row in content.split("</tr>"):
+        cells_raw = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.DOTALL | re.IGNORECASE)
+        if not cells_raw:
+            continue
+        cells       = [tag_re.sub("", c).strip() for c in cells_raw]
+        cells_lower = [c.lower() for c in cells]
+
+        # Before header: collect 2-col summary stats
+        if not header_idx and len(cells) == 2 and cells[0] and cells[1]:
+            kl = cells_lower[0]
+            if any(kw in kl for kw in ("profit", "factor", "drawdown", "trades", "win", "ganancia", "operaciones")):
+                num = _parse_numeric(cells[1])
+                if num is not None:
+                    summary_kv[cells[0]] = cells[1]
+            continue
+
+        # Header row: must contain both a profit and a time column
+        if not header_idx and len(cells) >= 5:
+            has_profit = any(c in PROFIT_ALIASES for c in cells_lower)
+            has_time   = any(c in TIME_ALIASES   for c in cells_lower)
+            if has_profit and has_time:
+                for i, cl in enumerate(cells_lower):
+                    if cl in PROFIT_ALIASES  and "profit"  not in header_idx: header_idx["profit"]  = i
+                    elif cl in TIME_ALIASES  and "time"    not in header_idx: header_idx["time"]    = i
+                    elif cl in SYMBOL_ALIASES and "symbol" not in header_idx: header_idx["symbol"]  = i
+                    elif cl in TYPE_ALIASES  and "type"    not in header_idx: header_idx["type"]    = i
+                    elif cl in BALANCE_ALIASES and "balance" not in header_idx: header_idx["balance"] = i
+                continue
+
+        # Trade row
+        if header_idx and "profit" in header_idx:
+            pi = header_idx["profit"]
+            if len(cells) <= pi:
+                continue
+            pnl = _parse_numeric(cells[pi])
+            if pnl is None:
+                continue
+            trade = {"profit": pnl}
+            for dest, src in (("time", "time"), ("Symbol", "symbol"), ("Dir", "type"), ("Capital", "balance")):
+                if src in header_idx and len(cells) > header_idx[src]:
+                    raw = cells[header_idx[src]]
+                    trade[dest] = _parse_numeric(raw) if dest == "Capital" else raw
+            trades.append(trade)
+
+    if not trades:
+        return None, summary_kv or None
+
+    df = pd.DataFrame(trades)
+    if "time" in df.columns:
+        df["time"] = pd.to_datetime(df["time"], errors="coerce")
+        df = df.sort_values("time").reset_index(drop=True)
+    df = df.dropna(subset=["profit"]).reset_index(drop=True)
+    return df, summary_kv or None
+
+
 def preprocess_html(filename, content):
     """
     Extract trading statistics from a backtest HTML report.
@@ -568,6 +688,38 @@ def preprocess_html(filename, content):
     except Exception as e:
         print(f"    [{filename}] trade extraction failed: {e}")
 
+    # ── Path 1b: standard MT5 trade table (any size) ──────────────────────────
+    if "pnl_stats" not in facts:
+        try:
+            df_mt5, mt5_summary = _extract_trades_mt5_standard(content)
+            if df_mt5 is not None and len(df_mt5) > 0:
+                n_sym = df_mt5["Symbol"].nunique() if "Symbol" in df_mt5.columns else 1
+                print(f"    [{filename}] standard MT5: {len(df_mt5)} trades, {n_sym} instruments")
+                csv_facts = preprocess_csv(f"{filename}[mt5]", df_mt5.to_csv(index=False))
+                if "pnl_stats" in csv_facts:
+                    facts["pnl_stats"] = csv_facts["pnl_stats"]
+                    facts["rows"]      = len(df_mt5)
+                if mt5_summary:
+                    facts["summary_stats"] = mt5_summary
+                if "Symbol" in df_mt5.columns:
+                    per_inst = []
+                    for sym, grp in df_mt5.groupby("Symbol"):
+                        wins   = grp["profit"][grp["profit"] > 0]
+                        losses = grp["profit"][grp["profit"] < 0]
+                        gp     = float(wins.sum())        if len(wins)   > 0 else 0.0
+                        gl     = float(abs(losses.sum())) if len(losses) > 0 else 0.0
+                        per_inst.append({
+                            "symbol":        sym,
+                            "n_trades":      len(grp),
+                            "win_rate_pct":  round(len(wins) / len(grp) * 100, 2) if len(grp) else None,
+                            "profit_factor": round(gp / gl, 3) if gl > 0 else None,
+                        })
+                    if per_inst:
+                        facts["per_instrument"] = per_inst
+                return facts
+        except Exception as e:
+            print(f"    [{filename}] standard MT5 extraction failed: {e}")
+
     # ── Path 2: pandas.read_html (small files only) ───────────────────────────
     if len(content) <= HTML_LARGE_THRESHOLD:
         try:
@@ -616,10 +768,12 @@ def preprocess_files(group_files, folder):
     """Run pre-analysis on all files before calling Claude."""
     results = []
     for f in group_files:
+        ext = f["name"].rsplit(".", 1)[-1].lower()
+        if ext in SKIP_EXTENSIONS:
+            continue
         content = read_file(folder, f["name"])
         if not content:
             continue
-        ext = f["name"].rsplit(".", 1)[-1].lower()
         if ext == "py":
             results.append(preprocess_python(f["name"], content))
         elif ext == "csv":
@@ -1055,6 +1209,10 @@ def _prepare_file_block(fname, content):
     """Return a prompt-safe block for a file, applying type-specific truncation."""
     ext = fname.rsplit(".", 1)[-1].lower()
 
+    if ext in SKIP_EXTENSIONS:
+        print(f"    [{fname}] {ext.upper()}: unsupported format — skipped")
+        return None
+
     if ext == "html":
         # Raw HTML is JavaScript-heavy — send only a placeholder.
         # All useful stats are extracted by preprocess_html into PRE-ANALYSIS FACTS.
@@ -1084,17 +1242,60 @@ def _prepare_file_block(fname, content):
 def process_pending(group, all_groups=None):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
 
-    parts    = []
-    py_parts = []
+    parts            = []
+    py_parts         = []
+    obfuscated_files = []
+
     for f in group.get("files", []):
-        content = read_file(group["folder"], f["name"])
+        fname = f["name"]
+        ext   = fname.rsplit(".", 1)[-1].lower()
+        if ext in SKIP_EXTENSIONS:
+            print(f"    [{fname}] {ext.upper()}: unsupported format — skipped")
+            continue
+        content = read_file(group["folder"], fname)
         if not content:
             continue
-        block = _prepare_file_block(f["name"], content)
+        if ext == "py":
+            reason = _detect_obfuscation(fname, content)
+            if reason:
+                print(f"    [{fname}] OBFUSCATED: {reason}")
+                obfuscated_files.append((fname, reason))
+                continue
+        block = _prepare_file_block(fname, content)
         if block:
             parts.append(block)
-            if f["name"].endswith(".py"):
+            if fname.endswith(".py"):
                 py_parts.append(block)
+
+    if obfuscated_files:
+        names = ", ".join(fn for fn, _ in obfuscated_files)
+        group["status"]             = "activo"
+        group["category"]           = "Archivo ofuscado - no analizable"
+        group["summary"]            = (
+            f"El archivo {names} parece estar ofuscado o protegido. "
+            f"No es posible analizar codigo ofuscado. "
+            f"Sube el codigo fuente original sin ofuscacion para obtener el analisis completo."
+        )
+        group["m1"] = {
+            "type": "empty",
+            "last_updated": date.today().isoformat() + "T00:00:00Z",
+            "last_updated_meta": names,
+            "empty_title": "Archivo ofuscado",
+            "empty_desc": (
+                f"No es posible analizar este archivo porque parece estar ofuscado o protegido. "
+                f"Sube el codigo fuente legible para obtener el analisis."
+            ),
+            "empty_trigger": names,
+        }
+        group["m2"]                 = []
+        group["m3"]                 = []
+        group["m4"]                 = []
+        group["trader_notes"]       = ""
+        group["revision_submitted"] = False
+        group["rereview_requested"] = False
+        group["rereview_notes"]     = ""
+        print(f"  -> OBFUSCATED — marked activo with error message")
+        return True
 
     if not parts:
         print("  No readable files found — skipping")
@@ -1239,15 +1440,20 @@ def main():
     changed   = False
     had_error = False
 
-    for g in pending:
-        print(f"\n[PENDING] {g['badge']} — {g['name']}")
-        try:
-            if process_pending(g, groups):
-                changed = True
-                print("  -> en_revision")
-        except Exception as e:
-            print(f"  ERROR: {e}", file=sys.stderr)
-            had_error = True
+    if pending:
+        n = len(pending)
+        print(f"\nProcessing {n} pending group(s){' in parallel' if n > 1 else ''}...")
+        with ThreadPoolExecutor(max_workers=min(n, 4)) as executor:
+            futures = {executor.submit(process_pending, g, groups): g for g in pending}
+            for future in as_completed(futures):
+                g = futures[future]
+                try:
+                    if future.result():
+                        changed = True
+                        print(f"  [{g['badge']}] -> {g['status']}")
+                except Exception as e:
+                    print(f"  [{g['badge']}] ERROR: {e}", file=sys.stderr)
+                    had_error = True
 
     for g in pendiente_final:
         print(f"\n[PENDIENTE_FINAL] {g['badge']} — {g['name']}")
