@@ -309,11 +309,39 @@ SCHEMA = """
   "category": "Type | N instruments | Platform | Strategy (short, use | as separator)",
   "summary": "2-3 dense sentences: what the file does, key technology, main metrics, current state.",
   "m1": {
-    "type": "empty",
-    "last_updated": "YYYY-MM-DD | filename",
-    "empty_title": "Short title",
-    "empty_desc": "Explanation of why no backtest results are available.",
-    "empty_trigger": "filename.py"
+    "OPTION A — use when CSV/backtest data is present (type=quality)": {
+      "type": "quality",
+      "last_updated": "YYYY-MM-DDTHH:MM:SSZ",
+      "last_updated_meta": "file1.py · file2.csv",
+      "fsh_count": "N trades · N instruments",
+      "score": {
+        "valor": 7.5,
+        "max": 10,
+        "label": "Short verdict label",
+        "bullets": [
+          {"type": "ok",   "text": "positive point"},
+          {"type": "warn", "text": "warning"},
+          {"type": "bad",  "text": "serious problem"}
+        ]
+      },
+      "metrics": [
+        {
+          "id": "QM-01",
+          "label": "Metric name",
+          "value": "62.3%",
+          "status": "ok",
+          "note": "brief explanation"
+        }
+      ]
+    },
+    "OPTION B — use when only .py files, no backtest data (type=empty)": {
+      "type": "empty",
+      "last_updated": "YYYY-MM-DDTHH:MM:SSZ",
+      "last_updated_meta": "filename.py",
+      "empty_title": "Short title",
+      "empty_desc": "Explanation of why no backtest results are available.",
+      "empty_trigger": "filename.py"
+    }
   },
   "m2": [
     {
@@ -366,7 +394,9 @@ ANALYSIS_SYSTEM = [
             "Use pnl_stats directly as the basis for m1 metrics — do not recalculate or contradict them. "
             "If trade_clusters is present, use the insight to generate or strengthen m2/m3 recommendations about regime dependency. "
             "Use complexity and magic_numbers from Python facts to strengthen m4 findings.\n"
-            "- m1: Only CSV/backtest results justify type \"quality\". If only .py files are present, use type \"empty\".\n"
+            "- m1: Use type \"quality\" when CSV/backtest data is present. Use type \"empty\" when only .py files. "
+            "For quality: last_updated must be ISO 8601 (e.g. 2026-05-03T04:30:00Z). "
+            "metrics[].status must be ok/warn/bad. Use pnl_stats from PRE-ANALYSIS FACTS directly.\n"
             "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always \"pendiente\". comment always \"\".\n"
             "- m3: 5-8 observations. tipo must be one of: warn, error, info. comment always \"\".\n"
             "- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always \"\".\n"
@@ -573,6 +603,39 @@ def merge_additional(analysis, extra, modules=("m2", "m3", "m4")):
 
 # ── Processing ────────────────────────────────────────────────────────────────
 
+MAX_CHARS_PER_FILE = 20_000
+CSV_SAMPLE_ROWS    = 30
+
+def _prepare_file_block(fname, content):
+    """Return a prompt-safe block for a file, applying type-specific truncation."""
+    ext = fname.rsplit(".", 1)[-1].lower()
+
+    if ext == "html":
+        # HTML backtest reports are JavaScript-heavy — useless as raw text.
+        # All useful metrics are already captured by preprocess_csv / preprocess_python.
+        print(f"    [{fname}] HTML skipped — stats extracted via pre-analysis")
+        return None
+
+    if ext == "csv":
+        # Raw CSV rows are redundant: preprocess_csv already computes all metrics.
+        # Include only a small sample so Claude can see the schema.
+        lines = content.splitlines()
+        header = lines[0] if lines else ""
+        sample = lines[1 : CSV_SAMPLE_ROWS + 1]
+        omitted = len(lines) - 1 - len(sample)
+        body = "\n".join([header] + sample)
+        if omitted > 0:
+            body += f"\n... {omitted} more rows omitted — full stats in PRE-ANALYSIS FACTS"
+        print(f"    [{fname}] CSV truncated to {len(sample)} sample rows (of {len(lines)-1})")
+        return f"=== {fname} ===\n{body}"
+
+    # For all other types (.py, .txt, etc.): cap at MAX_CHARS_PER_FILE
+    if len(content) > MAX_CHARS_PER_FILE:
+        content = content[:MAX_CHARS_PER_FILE] + f"\n... [truncated at {MAX_CHARS_PER_FILE} chars]"
+        print(f"    [{fname}] truncated to {MAX_CHARS_PER_FILE} chars")
+    return f"=== {fname} ===\n{content}"
+
+
 def process_pending(group):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
 
@@ -580,8 +643,10 @@ def process_pending(group):
     py_parts = []
     for f in group.get("files", []):
         content = read_file(group["folder"], f["name"])
-        if content:
-            block = f"=== {f['name']} ===\n{content}"
+        if not content:
+            continue
+        block = _prepare_file_block(f["name"], content)
+        if block:
             parts.append(block)
             if f["name"].endswith(".py"):
                 py_parts.append(block)
