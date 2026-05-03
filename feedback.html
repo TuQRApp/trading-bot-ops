@@ -604,6 +604,8 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-general', g.badge);
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-general', g.badge);
+    } else if (g.status === 'activo') {
+      html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
     } else { html += _responseBlockHtml('notas sobre backtest'); }
   }
 
@@ -627,6 +629,8 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-quality', g.badge);
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-quality', g.badge);
+    } else if (g.status === 'activo') {
+      html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -642,6 +646,8 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-readiness', g.badge);
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-readiness', g.badge);
+    } else if (g.status === 'activo') {
+      html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -673,7 +679,7 @@ function _renderM2Group(g) {
     var elbl = _estadoLbl[r.estado] || r.estado;
     var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
     var pendingHtml = (g.status === 'pendiente_final') ? _pendingHistoryHtml(r.correction || '', r.id, g.badge) : '';
-    var additionalHtml = '';
+    var additionalHtml = (g.status === 'activo') ? _additionalCommentHtml(r.id, g.badge, r.additional_comment || '') : '';
     var traderHtml = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(r.comment) : '';
     html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
@@ -715,7 +721,7 @@ function _renderM3Group(g) {
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
     var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
     var pendHtml3 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(o.correction || '', o.id, g.badge) : '';
-    var addlHtml3 = '';
+    var addlHtml3 = (g.status === 'activo') ? _additionalCommentHtml(o.id, g.badge, o.additional_comment || '') : '';
     var traderHtml3 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(o.comment) : '';
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
@@ -765,7 +771,7 @@ function _renderM4Group(g) {
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
     var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
     var pendHtml4 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(a.correction || '', a.id, g.badge) : '';
-    var addlHtml4 = '';
+    var addlHtml4 = (g.status === 'activo') ? _additionalCommentHtml(a.id, g.badge, a.additional_comment || '') : '';
     var traderHtml4 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(a.comment) : '';
     html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
@@ -1186,7 +1192,12 @@ function _initRevisionBar() {
   var topBanner = document.getElementById('revision-top-banner');
   if (topBanner) topBanner.style.display = 'none';
 
-  if (revGroups.length === 0) return;
+  if (revGroups.length === 0) {
+    var bar0 = document.getElementById('revision-action-bar');
+    if (bar0) bar0.style.display = 'none';
+    document.body.style.paddingBottom = '';
+    return;
+  }
 
   // Bottom action bar
   var bar = document.getElementById('revision-action-bar');
