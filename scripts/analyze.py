@@ -17,7 +17,6 @@ import sys
 from pathlib import Path
 from datetime import date
 import requests
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from anthropic import Anthropic
 
 try:
@@ -1440,20 +1439,15 @@ def main():
     changed   = False
     had_error = False
 
-    if pending:
-        n = len(pending)
-        print(f"\nProcessing {n} pending group(s){' in parallel' if n > 1 else ''}...")
-        with ThreadPoolExecutor(max_workers=min(n, 4)) as executor:
-            futures = {executor.submit(process_pending, g, groups): g for g in pending}
-            for future in as_completed(futures):
-                g = futures[future]
-                try:
-                    if future.result():
-                        changed = True
-                        print(f"  [{g['badge']}] -> {g['status']}")
-                except Exception as e:
-                    print(f"  [{g['badge']}] ERROR: {e}", file=sys.stderr)
-                    had_error = True
+    for g in pending:
+        print(f"\n[PENDING] {g['badge']} — {g['name']}")
+        try:
+            if process_pending(g, groups):
+                changed = True
+                print(f"  -> {g['status']}")
+        except Exception as e:
+            print(f"  ERROR: {e}", file=sys.stderr)
+            had_error = True
 
     for g in pendiente_final:
         print(f"\n[PENDIENTE_FINAL] {g['badge']} — {g['name']}")
