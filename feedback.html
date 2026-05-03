@@ -588,7 +588,7 @@ function _responseBlockHtml(label) {
 // ── Per-card comment blocks (green + pink/orange) ────────────────────────────
 function _pendingHistoryHtml(correction, cardId, badge) {
   return '<div class="module-draft-block" style="margin-top:12px;">' +
-    '<label class="module-draft-label">🟠 Comentarios del trader previos a esta versión final</label>' +
+    '<label class="module-draft-label">Comentarios para generar la versión final</label>' +
     '<textarea class="module-draft-field correction-field" data-badge="' + _esc(badge) + '" data-card-id="' + _esc(cardId) + '">' + _esc(correction) + '</textarea>' +
     '<button class="btn-save-comment" onclick="saveCardField(\'' + _esc(badge) + '\',\'' + _esc(cardId) + '\',\'correction\',this)" style="margin-top:8px;">Guardar comentario</button>' +
   '</div>';
@@ -646,8 +646,7 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-general', g.badge);
       html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
     } else if (g.status === 'pendiente_final') {
-      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-general', g.badge);
-      html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
+      html += _pendingHistoryHtml(m1.correction || '', 'M1-general', g.badge);
     } else { html += _responseBlockHtml('notas sobre backtest'); }
   }
 
@@ -671,8 +670,7 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-quality', g.badge);
       html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
     } else if (g.status === 'pendiente_final') {
-      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-quality', g.badge);
-      html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
+      html += _pendingHistoryHtml(m1.correction || '', 'M1-quality', g.badge);
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -688,8 +686,7 @@ function _renderM1Group(g) {
       html += _correctionFieldHtml('M1-readiness', g.badge);
       html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
     } else if (g.status === 'pendiente_final') {
-      if (m1.correction) html += _pendingHistoryHtml(m1.correction, 'M1-readiness', g.badge);
-      html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
+      html += _pendingHistoryHtml(m1.correction || '', 'M1-readiness', g.badge);
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -720,8 +717,8 @@ function _renderM2Group(g) {
     var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
     var elbl = _estadoLbl[r.estado] || r.estado;
     var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
-    var pendingHtml = (g.status === 'pendiente_final' && r.correction) ? _pendingHistoryHtml(r.correction, r.id, g.badge) : '';
-    var additionalHtml = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(r.id, g.badge, r.additional_comment || '') : '';
+    var pendingHtml = (g.status === 'pendiente_final') ? _pendingHistoryHtml(r.correction || '', r.id, g.badge) : '';
+    var additionalHtml = (g.status === 'en_revision') ? _additionalCommentHtml(r.id, g.badge, r.additional_comment || '') : '';
     var traderHtml = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(r.comment) : '';
     html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
@@ -762,8 +759,8 @@ function _renderM3Group(g) {
     var accionCss = o.accion === 'si' ? 'obs-accion-si' : o.accion === 'resuelta' ? 'obs-accion-resuelta' : 'obs-accion-no';
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
     var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
-    var pendHtml3 = (g.status === 'pendiente_final' && o.correction) ? _pendingHistoryHtml(o.correction, o.id, g.badge) : '';
-    var addlHtml3 = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(o.id, g.badge, o.additional_comment || '') : '';
+    var pendHtml3 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(o.correction || '', o.id, g.badge) : '';
+    var addlHtml3 = (g.status === 'en_revision') ? _additionalCommentHtml(o.id, g.badge, o.additional_comment || '') : '';
     var traderHtml3 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(o.comment) : '';
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
@@ -812,8 +809,8 @@ function _renderM4Group(g) {
     }
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
     var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
-    var pendHtml4 = (g.status === 'pendiente_final' && a.correction) ? _pendingHistoryHtml(a.correction, a.id, g.badge) : '';
-    var addlHtml4 = (g.status === 'en_revision' || g.status === 'pendiente_final') ? _additionalCommentHtml(a.id, g.badge, a.additional_comment || '') : '';
+    var pendHtml4 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(a.correction || '', a.id, g.badge) : '';
+    var addlHtml4 = (g.status === 'en_revision') ? _additionalCommentHtml(a.id, g.badge, a.additional_comment || '') : '';
     var traderHtml4 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(a.comment) : '';
     html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
@@ -1140,7 +1137,9 @@ function _renderM5(group) {
       '</div>' +
       '<div class="m5-card-title">' + _esc(c.title || '') + '</div>' +
       '<div class="m5-card-desc">' + _esc(c.desc || '') + '</div>' +
-      _additionalCommentHtml(m5CardId, group.badge, c.additional_comment || '') +
+      (group.status === 'pendiente_final'
+        ? _pendingHistoryHtml(c.correction || '', m5CardId, group.badge)
+        : _additionalCommentHtml(m5CardId, group.badge, c.additional_comment || '')) +
     '</div>';
   }).join('');
 
@@ -1229,7 +1228,7 @@ function _initM5() {
   var group = badge && window._renderData
     ? window._renderData.groups.find(function(g) { return g.badge === badge; })
     : null;
-  var activo = group && group.status === 'activo' ? group : null;
+  var activo = group && (group.status === 'activo' || group.status === 'pendiente_final') ? group : null;
   _renderM5(activo);
 }
 
