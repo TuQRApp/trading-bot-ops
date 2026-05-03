@@ -460,6 +460,12 @@ async function handleDeleteGroup(request, env) {
 
     // Remove group from data.json
     data.groups.splice(idx, 1);
+    // Remove badge from any parent group's versions array
+    for (const pg of data.groups) {
+      if (Array.isArray(pg.versions) && pg.versions.includes(badge)) {
+        pg.versions = pg.versions.filter(b => b !== badge);
+      }
+    }
     await writeData(data, sha, env);
 
     return json({ ok: true, deleted, removedBadge: badge });

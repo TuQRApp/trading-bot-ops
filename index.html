@@ -468,9 +468,12 @@ body.uploading { padding-top: 42px; }
   padding: 9px 14px;
   border-bottom: 1px solid var(--border);
   transition: background 0.15s;
+  cursor: pointer;
+  border-left: 3px solid transparent;
 }
 .version-item:last-child { border-bottom: none; }
-.version-item:hover { background: rgba(30,45,110,0.03); }
+.version-item:hover { background: rgba(30,45,110,0.04); }
+.version-item.v-active { background: rgba(37,99,235,0.06); border-left-color: var(--nico); padding-left: 11px; }
 .version-item-num {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -923,14 +926,22 @@ function _claudeTimerClear(badge) {
 }
 
 function _renderFileRow(g, folders) {
-  // Resolve display data from latest version
   var allGroups = window._allGroups || [];
-  var dg = g; // display group
   var vCount = (g.versions && g.versions.length) || 1;
-  if (g.versions && g.versions.length > 1) {
-    var latestBadge = g.versions[g.versions.length - 1];
-    var latest = allGroups.find(function(x) { return x.badge === latestBadge; });
-    if (latest) dg = latest;
+  var latestBadge = g.versions && g.versions.length > 0
+    ? g.versions[g.versions.length - 1] : g.badge;
+  var latest = allGroups.find(function(x) { return x.badge === latestBadge; });
+
+  // Determine which version to display: selected or latest
+  var selectedVersions = window._selectedVersions || {};
+  var activeBadge = selectedVersions[g.badge];
+  var dg = latest || g;
+  var isOldVersion = false;
+  if (activeBadge && activeBadge !== latestBadge) {
+    var sel = allGroups.find(function(x) { return x.badge === activeBadge; });
+    if (sel) { dg = sel; isOldVersion = true; }
+  } else {
+    activeBadge = latestBadge;
   }
 
   var icon = _ftypeIcon(dg.ftype || g.ftype);
@@ -981,13 +992,12 @@ function _renderFileRow(g, folders) {
       var vName = vg ? vg.name : vbadge;
       var vDate = vg ? _fmtDate(vg.date) : '';
       var vNum = vi + 1;
-      var vLink = vg ? ('<a class="version-item-link" href="feedback.html?badge=' + vbadge + '">Ver →</a>') : '';
       var isCurrent = (vi === g.versions.length - 1) ? ' · <em style="font-size:9px;color:var(--trader);">actual</em>' : '';
-      vItems += '<div class="version-item">' +
+      var isActiveItem = (vbadge === activeBadge) ? ' v-active' : '';
+      vItems += '<div class="version-item' + isActiveItem + '" onclick="selectVersion(\'' + g.badge + '\',\'' + vbadge + '\',event)">' +
         '<span class="version-item-num">V' + vNum + '</span>' +
         '<span class="version-item-name">' + vName + '</span>' +
         '<span class="version-item-meta">' + vDate + isCurrent + '</span>' +
-        vLink +
         '</div>';
     }
     versionsHtml = '<div class="versions-dropdown" id="vdrop-' + g.badge + '">' +
@@ -1017,10 +1027,14 @@ function _renderFileRow(g, folders) {
       moveSelect +
       versionsBtn +
       newVersionBtn +
-      (dg.status === 'pending'
-        ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
-        : '<a class="btn-view-link" href="feedback.html?badge=' + dg.badge + '">Ver análisis →</a>') +
-      '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\',\'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
+      (isOldVersion
+        ? '<a class="btn-view-link" href="feedback.html?badge=' + dg.badge + '">Ver análisis →</a>'
+        : (dg.status === 'pending'
+            ? '<span class="btn-view-pending">Pendiente primer análisis Claude</span>'
+            : '<a class="btn-view-link" href="feedback.html?badge=' + dg.badge + '">Ver análisis →</a>')) +
+      (isOldVersion
+        ? '<button class="btn-delete" onclick="deleteVersion(\'' + g.badge + '\',\'' + dg.badge + '\',\'' + dg.name.replace(/'/g, "\\'") + '\')">Eliminar versión</button>'
+        : '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\',\'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>') +
     '</div>' +
   '</div>';
 }
@@ -1063,9 +1077,11 @@ function renderFileList(data) {
   var container = document.getElementById('files-list-container');
   var allGroups = (data.groups || []).slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
   window._allGroups = allGroups;
+  window._selectedVersions = window._selectedVersions || {};
   // Only show top-level groups (no version_of) in the main list
   var groups = allGroups.filter(function(g) { return !g.version_of; });
   var folders = data.folders || [];
+  window._allFolders = folders;
 
   document.getElementById('stat-grupos').textContent =
     groups.filter(function(g) { return g.status === 'activo'; }).length;
@@ -1415,6 +1431,40 @@ function deleteFolder(folderId) {
 }
 
 // ── Versioning ────────────────────────────────────────────────────────────────
+function selectVersion(parentBadge, vbadge, evt) {
+  if (evt) evt.stopPropagation();
+  document.querySelectorAll('.versions-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+  window._selectedVersions = window._selectedVersions || {};
+  window._selectedVersions[parentBadge] = vbadge;
+  var g = (window._allGroups || []).find(function(x) { return x.badge === parentBadge; });
+  if (!g) return;
+  var row = document.getElementById('row-' + parentBadge);
+  if (!row) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = _renderFileRow(g, window._allFolders || []);
+  row.replaceWith(tmp.firstChild);
+}
+
+function deleteVersion(parentBadge, vbadge, vname) {
+  if (!confirm('¿Eliminar la versión "' + vname + '"?\n\nSe borrará el análisis de esta versión. Esta acción no se puede deshacer.')) return;
+  fetch(WORKER + '/group', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ badge: vbadge })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      window._selectedVersions = window._selectedVersions || {};
+      delete window._selectedVersions[parentBadge];
+      loadFileList();
+    } else {
+      alert('Error al eliminar: ' + (res.error || 'desconocido'));
+    }
+  })
+  .catch(function(e) { alert('Error de red: ' + e.message); });
+}
+
 function toggleVersionsDropdown(badge, evt) {
   if (evt) evt.stopPropagation();
   var el = document.getElementById('vdrop-' + badge);
