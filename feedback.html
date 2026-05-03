@@ -277,19 +277,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .neg-role-badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(5,150,105,0.1);color:var(--trader);border:1px solid rgba(5,150,105,0.25);}
 .neg-role-prod{background:rgba(37,99,235,0.1);color:var(--nico);border-color:rgba(37,99,235,0.25);}
 .neg-role-shared{background:rgba(215,119,6,0.1);color:var(--shared);border-color:rgba(215,119,6,0.25);}
-.neg-ctx-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px;}
-.neg-ctx-table td{padding:7px 10px;border-bottom:1px solid var(--border);}
-.neg-ctx-table td:first-child{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;width:220px;}
-.neg-ctx-table td:last-child{color:var(--text);font-weight:600;}
-.neg-hint{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:8px 12px;border:1px dashed var(--border);border-radius:6px;margin-top:4px;}
-.neg-eval-list{display:flex;flex-direction:column;gap:12px;}
-.neg-eval-card{border:1px solid var(--border);border-left:3px solid var(--nico);border-radius:0 10px 10px 0;padding:16px 20px;}
-.neg-eval-card.neg-ev-ok{border-left-color:var(--trader);}
-.neg-eval-card.neg-ev-warn{border-left-color:var(--shared);}
-.neg-eval-card.neg-ev-bad{border-left-color:var(--gate);}
-.neg-eval-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
-.neg-eval-value{font-size:15px;font-weight:700;margin-bottom:4px;}
-.neg-eval-desc{font-size:12px;color:#4a5875;line-height:1.65;}
 .neg-decisions{display:flex;flex-direction:column;gap:12px;}
 .neg-decision-card{border:1px solid var(--border);border-radius:10px;padding:16px 20px;display:flex;gap:14px;align-items:flex-start;}
 .neg-decision-meta{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
@@ -424,47 +411,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 
   <!-- TAB 5: NEGOCIO — static -->
   <div id="tab-negocio" class="tab-panel">
-    <div class="last-updated" id="lu-negocio">
-      <span class="lu-label">Estado:</span>
-      <span>Sin evaluación — subir negocio_contexto.json</span>
-    </div>
-
-    <div class="neg-section">
-      <div class="neg-section-title">
-        Contexto del ciclo
-        <span class="neg-role-badge">Trader</span>
-      </div>
-      <div id="neg-ctx-empty">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Completa este archivo y súbelo como <strong>negocio_contexto.json</strong>:</div>
-          <button class="btn-export btn-sub" onclick="descargarPlantilla()" style="font-size:10px;">⬇ Descargar plantilla</button>
-        </div>
-        <pre class="arch-code">{
-  "periodo":                "AAAA-MM-DD / AAAA-MM-DD",
-  "capital_usd":            0,
-  "broker":                 "",
-  "comision_por_trade_usd": 0,
-  "spread_promedio_pips":   0,
-  "benchmark":              "ej: S&amp;P 500 mensual",
-  "notas":                  ""
-}</pre>
-      </div>
-      <div id="neg-ctx-content" style="display:none;"></div>
-    </div>
-
-    <div class="neg-section">
-      <div class="neg-section-title">
-        Evaluación comercial
-        <span class="neg-role-badge neg-role-prod">Producto</span>
-      </div>
-      <div class="module-empty-state" id="neg-eval-empty">
-        <div class="mes-icon">📊</div>
-        <div class="mes-title">Sin evaluación todavía</div>
-        <div class="mes-desc">Sube negocio_contexto.json para iniciar el análisis.</div>
-      </div>
-      <div class="neg-eval-list" id="neg-eval-list" style="display:none;"></div>
-    </div>
-
     <div class="neg-section">
       <div class="neg-section-title">
         Decisiones de ciclo
@@ -958,19 +904,6 @@ function scrollToQuality(id) {
   if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-function descargarPlantilla() {
-  var plantilla = {
-    periodo:"AAAA-MM-DD / AAAA-MM-DD", capital_usd:0, broker:"",
-    comision_por_trade_usd:0, spread_promedio_pips:0,
-    benchmark:"ej: S&P 500 mensual", notas:""
-  };
-  var blob = new Blob([JSON.stringify(plantilla, null, 2)], {type:'application/json'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'negocio_contexto.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
 
 // ── Trader comments ──────────────────────────────────────────────────────────
 function guardarComentario(btn) {
@@ -1479,14 +1412,6 @@ function _injectFileSrcBadges() {
 }
 
 function _initNegocio() {
-  if (document.querySelector('#neg-ctx-content *')) {
-    document.getElementById('neg-ctx-empty').style.display = 'none';
-    document.getElementById('neg-ctx-content').style.display = '';
-  }
-  if (document.querySelector('#neg-eval-list .neg-eval-card')) {
-    document.getElementById('neg-eval-empty').style.display = 'none';
-    document.getElementById('neg-eval-list').style.display = '';
-  }
   if (document.querySelector('#neg-decisions .neg-decision-card')) {
     document.getElementById('neg-dec-empty').style.display = 'none';
     document.getElementById('neg-decisions').style.display = '';
