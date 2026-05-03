@@ -651,12 +651,37 @@ SCHEMA = """
         ]
       },
       "metrics": [
+        "SINGLE INSTRUMENT (<=5): one QM card per key metric (WR, PF, DD, Sharpe, walk-forward, etc.)",
+        "MULTI INSTRUMENT (>5): MAX 8 QM cards total — use aggregate metrics only:",
         {
-          "id": "QM-01",
-          "label": "Metric name",
-          "value": "62.3%",
-          "status": "ok",
-          "note": "brief explanation"
+          "id": "QM-01", "label": "Instruments",
+          "value": "21 instruments",    "status": "ok",
+          "note": "US30 WR 55% PF 2.16 | NAS100 WR 58% PF 2.40 | GER40 WR 51% PF 1.90 | ... (all in one note)"
+        },
+        {
+          "id": "QM-02", "label": "Total Trades",
+          "value": "2100",              "status": "ok",
+          "note": "avg 100 per instrument"
+        },
+        {
+          "id": "QM-03", "label": "Avg Win Rate",
+          "value": "55.4%",            "status": "ok",
+          "note": "range min%-max% across instruments"
+        },
+        {
+          "id": "QM-04", "label": "Avg Profit Factor",
+          "value": "2.16",             "status": "ok",
+          "note": "range min-max"
+        },
+        {
+          "id": "QM-05", "label": "Worst Max Drawdown",
+          "value": "-9.2%",            "status": "warn",
+          "note": "instrument with worst DD"
+        },
+        {
+          "id": "QM-06", "label": "Walk-forward 70/30",
+          "value": "WR 55% -> 51%",   "status": "ok",
+          "note": "stable / moderate_overfit_risk / high_overfit_risk"
         }
       ]
     },
@@ -732,7 +757,11 @@ ANALYSIS_SYSTEM = [
             "Reference the live bot badges by name.\n"
             "- m1: Use type \"quality\" when CSV/backtest data is present. Use type \"empty\" when only .py files. "
             "For quality: last_updated must be ISO 8601 (e.g. 2026-05-03T04:30:00Z). "
-            "metrics[].status must be ok/warn/bad. Use pnl_stats from PRE-ANALYSIS FACTS directly.\n"
+            "metrics[].status must be ok/warn/bad. Use pnl_stats from PRE-ANALYSIS FACTS directly. "
+            "CRITICAL — token budget rule: if n_instruments > 5, use MAX 8 QM cards in m1 total. "
+            "Pack all per-instrument data into QM-01 note field as a compact pipe-separated list "
+            "(e.g. 'US30 WR 55% PF 2.16 | NAS100 WR 58% PF 2.40 | ...'). "
+            "Never generate one QM card per instrument — it exceeds the output token limit.\n"
             "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always \"pendiente\". comment always \"\".\n"
             "- m3: 5-8 observations. tipo must be one of: warn, error, info. comment always \"\".\n"
             "- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always \"\".\n"
@@ -974,7 +1003,7 @@ def build_finalize_user(group):
 def call_claude(system_blocks, user_content):
     msg = client.beta.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=8192,
+        max_tokens=16000,
         system=system_blocks,
         messages=[{"role": "user", "content": user_content}],
         betas=["prompt-caching-2024-07-31"],
