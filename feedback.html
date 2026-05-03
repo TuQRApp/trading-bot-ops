@@ -464,6 +464,7 @@ function _esc(s) {
 function _fmtTs(iso) {
   if (!iso) return '';
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
   const date = d.toISOString().slice(0,10);
   const hh = String(d.getUTCHours()).padStart(2,'0');
   const mm = String(d.getUTCMinutes()).padStart(2,'0');
@@ -511,26 +512,39 @@ function _correctionFieldHtml(cardId, badge) {
 }
 
 function _qmCardHtml(m) {
+  var name = m.name || m.label || '';
+  var statusToLight = {ok:'green', warn:'yellow', bad:'red', info:'blue'};
+  var light = m.light || statusToLight[m.status] || 'gray';
+  var target = m.target != null ? m.target : (m.note || '');
+  var comment = m.comment != null ? m.comment : '';
   return '<div class="qm-card">' +
     '<div class="qm-header">' +
-      '<span class="qm-name">' + _esc(m.name) + '</span>' +
-      '<div class="qm-light light-' + m.light + '"></div>' +
+      '<span class="qm-name">' + _esc(name) + '</span>' +
+      '<div class="qm-light light-' + light + '"></div>' +
     '</div>' +
     '<div class="qm-val">' + _esc(m.value) + '</div>' +
-    '<div class="qm-target">' + _esc(m.target) + '</div>' +
-    '<div class="qm-comment">' + _esc(m.comment) + '</div>' +
+    '<div class="qm-target">' + _esc(target) + '</div>' +
+    '<div class="qm-comment">' + _esc(comment) + '</div>' +
     '</div>';
 }
 
 function _scoreHtml(s) {
   var bulletEmoji = {ok:'✅', warn:'🟡', bad:'🔴'};
-  var bulletsHtml = s.bullets.map(function(b) {
+  var bulletsHtml = (s.bullets || []).map(function(b) {
     return (bulletEmoji[b.type] || '') + ' ' + _esc(b.text);
   }).join('<br>');
+  var numVal = parseFloat(s.valor || s.value || 0);
+  var maxVal = parseFloat(s.max || 10);
+  var displayVal = s.value != null ? s.value : (numVal + ' / ' + maxVal);
+  var title = s.title || s.label || '';
+  var ratio = maxVal > 0 ? numVal / maxVal : 0;
+  var colorBorder = s.color_border || (ratio >= 0.7 ? '#22c55e' : ratio >= 0.5 ? '#f59e0b' : '#ef4444');
+  var colorText   = s.color_text   || (ratio >= 0.7 ? '#16a34a' : ratio >= 0.5 ? '#d97706' : '#dc2626');
+  var colorBg     = s.color_bg     || (ratio >= 0.7 ? '#f0fdf4' : ratio >= 0.5 ? '#fffbeb' : '#fef2f2');
   return '<div class="overall-score" style="margin-top:20px;">' +
-    '<div class="score-circle" style="border-color:' + s.color_border + ';color:' + s.color_text + ';background:' + s.color_bg + ';">' + _esc(s.value) + '</div>' +
+    '<div class="score-circle" style="border-color:' + colorBorder + ';color:' + colorText + ';background:' + colorBg + ';">' + _esc(displayVal) + '</div>' +
     '<div>' +
-      '<div class="score-text-title">' + _esc(s.title) + '</div>' +
+      '<div class="score-text-title">' + _esc(title) + '</div>' +
       '<div class="score-text-sub">' + bulletsHtml + '</div>' +
     '</div>' +
     '</div>';
@@ -610,20 +624,27 @@ function _renderM1Group(g) {
   }
 
   else if (m1.type === 'quality') {
-    html += _fshHtml(g, m1.fsh_count);
+    html += _fshHtml(g, m1.fsh_count || '');
+    var luMeta = m1.last_updated_meta ? ' · ' + m1.last_updated_meta : '';
     html += '<div class="last-updated has-data"><span class="lu-label">Último análisis:</span>' +
-      '<span>' + _esc(_fmtTs(m1.last_updated) + ' · ' + m1.last_updated_meta) + '</span></div>';
-    var symBtns = m1.symbols.map(function(s) {
-      return '<button class="strat-btn" onclick="scrollToQuality(\'' + s.id + '\')">↓ ' + _esc(s.label) + '</button>';
-    }).join('');
-    html += '<div class="strategy-selector" style="margin-top:16px;">' + symBtns + '</div>';
-    m1.symbols.forEach(function(sym, idx) {
-      var mt = idx === 0 ? '16' : '24';
-      html += '<div class="fsh-label" style="margin-top:' + mt + 'px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">' + _esc(sym.label) + '</div>';
-      html += '<div id="quality-' + sym.id + '" class="quality-grid">';
-      sym.metrics.forEach(function(m) { html += _qmCardHtml(m); });
+      '<span>' + _esc(_fmtTs(m1.last_updated) + luMeta) + '</span></div>';
+    if (m1.symbols && m1.symbols.length) {
+      var symBtns = m1.symbols.map(function(s) {
+        return '<button class="strat-btn" onclick="scrollToQuality(\'' + s.id + '\')">↓ ' + _esc(s.label) + '</button>';
+      }).join('');
+      html += '<div class="strategy-selector" style="margin-top:16px;">' + symBtns + '</div>';
+      m1.symbols.forEach(function(sym, idx) {
+        var mt = idx === 0 ? '16' : '24';
+        html += '<div class="fsh-label" style="margin-top:' + mt + 'px;margin-bottom:10px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">' + _esc(sym.label) + '</div>';
+        html += '<div id="quality-' + sym.id + '" class="quality-grid">';
+        sym.metrics.forEach(function(m) { html += _qmCardHtml(m); });
+        html += '</div>';
+      });
+    } else if (m1.metrics && m1.metrics.length) {
+      html += '<div class="quality-grid" style="margin-top:16px;">';
+      m1.metrics.forEach(function(m) { html += _qmCardHtml(m); });
       html += '</div>';
-    });
+    }
     html += _scoreHtml(m1.score);
     if (g.status === 'en_revision') {
       html += _correctionFieldHtml('M1-quality', g.badge);
