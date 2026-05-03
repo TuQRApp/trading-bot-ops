@@ -275,10 +275,10 @@ def main():
 
     data = get_data()
     groups = data.get("groups", [])
-    active = [g for g in groups if g.get("status") == "activo"]
+    active = [g for g in groups if g.get("status") in ("activo", "en_revision")]
 
     if not active:
-        print("No active groups — nothing to update.")
+        print("No active or pending-review groups — nothing to update.")
         return
 
     changed = False

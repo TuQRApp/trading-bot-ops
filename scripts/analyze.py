@@ -19,6 +19,12 @@ from datetime import date
 import requests
 from anthropic import Anthropic
 
+try:
+    from market_context import build_macro_snapshot, generate_m5 as _generate_m5
+    _M5_AVAILABLE = True
+except Exception:
+    _M5_AVAILABLE = False
+
 WORKER_URL = os.environ.get("WORKER_URL", "https://trading-upload.nestragues.workers.dev")
 client = Anthropic()
 
@@ -649,6 +655,16 @@ def process_pending(group):
             card["tipo_label"] = TIPO_MAP.get(card.get("tipo", ""), card.get("tipo", ""))
 
     print(f"  -> FINAL: {len(group['m2'])} recs | {len(group['m3'])} obs | {len(group['m4'])} findings")
+
+    if _M5_AVAILABLE:
+        print("  Pass 4 — M5 market context...")
+        try:
+            macro = build_macro_snapshot()
+            group["m5"] = _generate_m5(group, macro)
+            print(f"  -> M5: {len(group['m5'].get('cards', []))} cards")
+        except Exception as e:
+            print(f"  [warn] M5 generation failed: {e}")
+
     return True
 
 
