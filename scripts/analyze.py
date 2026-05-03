@@ -356,6 +356,72 @@ def preprocess_csv(filename, content):
     return facts
 
 
+def preprocess_html(filename, content):
+    """
+    Extract trading statistics from an MT5 HTML backtest report.
+    Tries to parse the summary table and the trades table.
+    Falls back to stripping tags and returning the first 3000 chars of text.
+    """
+    import io
+    import re
+    import pandas as pd
+
+    facts = {"filename": filename, "source": "html_backtest"}
+
+    try:
+        tables = pd.read_html(io.StringIO(content), flavor="html.parser")
+
+        stats_table = None
+        trades_table = None
+
+        for t in tables:
+            text = t.to_string().lower()
+            # Stats table: narrow (≤4 cols), contains financial keywords
+            if t.shape[1] <= 4 and any(
+                kw in text for kw in ["profit factor", "drawdown", "total trades", "win rate", "profit"]
+            ):
+                stats_table = t
+            # Trades table: wide (>5 cols), many rows, has trade columns
+            if t.shape[0] > 5 and t.shape[1] > 5 and any(
+                kw in text for kw in ["profit", "type", "size", "ticket", "open time"]
+            ):
+                if trades_table is None or t.shape[0] > trades_table.shape[0]:
+                    trades_table = t
+
+        if stats_table is not None:
+            kv = {}
+            for _, row in stats_table.iterrows():
+                vals = [str(v).strip() for v in row if str(v).strip() not in ("nan", "")]
+                for i in range(0, len(vals) - 1, 2):
+                    kv[vals[i]] = vals[i + 1]
+            facts["summary_stats"] = kv
+            print(f"    [{filename}] HTML summary: {len(kv)} stats extracted")
+
+        if trades_table is not None:
+            pnl_col = next(
+                (c for c in trades_table.columns
+                 if str(c).lower() in {"profit", "pnl", "net profit", "gain"}),
+                None,
+            )
+            if pnl_col:
+                csv_text = trades_table.to_csv(index=False)
+                csv_facts = preprocess_csv(f"{filename}[trades]", csv_text)
+                if "pnl_stats" in csv_facts:
+                    facts["pnl_stats"] = csv_facts["pnl_stats"]
+                    facts["rows"] = csv_facts.get("rows", 0)
+                    print(f"    [{filename}] HTML trades: {facts['rows']} trades parsed from table")
+
+    except Exception as e:
+        # Fallback: strip tags, keep first 3000 chars of visible text
+        text = re.sub(r"<[^>]+>", " ", content)
+        text = re.sub(r"\s+", " ", text).strip()
+        facts["text_extract"] = text[:3000]
+        facts["extract_note"] = f"HTML table parsing failed — showing text extract ({e})"
+        print(f"    [{filename}] HTML fallback text extract ({e})")
+
+    return facts
+
+
 def preprocess_files(group_files, folder):
     """Run pre-analysis on all files before calling Claude."""
     results = []
@@ -368,6 +434,8 @@ def preprocess_files(group_files, folder):
             results.append(preprocess_python(f["name"], content))
         elif ext == "csv":
             results.append(preprocess_csv(f["name"], content))
+        elif ext == "html":
+            results.append(preprocess_html(f["name"], content))
     return results or None
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -461,7 +529,9 @@ ANALYSIS_SYSTEM = [
             "- If PRE-ANALYSIS FACTS are present: treat them as verified ground truth. "
             "Use pnl_stats directly as the basis for m1 metrics — do not recalculate or contradict them. "
             "If trade_clusters is present, use the insight to generate or strengthen m2/m3 recommendations about regime dependency. "
-            "Use complexity and magic_numbers from Python facts to strengthen m4 findings.\n"
+            "Use complexity and magic_numbers from Python facts to strengthen m4 findings. "
+            "If source='html_backtest': the file is an MT5 HTML report — use pnl_stats and summary_stats "
+            "exactly as you would CSV data. Use type 'quality' for m1 if pnl_stats is present.\n"
             "- If walk_forward is in pnl_stats: include it as a QM metric in m1 "
             "(label='Walk-forward 70/30', value='WR X% -> Y%', status matches verdict: "
             "stable=ok, moderate_overfit_risk=warn, high_overfit_risk=bad). "
@@ -767,10 +837,10 @@ def _prepare_file_block(fname, content):
     ext = fname.rsplit(".", 1)[-1].lower()
 
     if ext == "html":
-        # HTML backtest reports are JavaScript-heavy — useless as raw text.
-        # All useful metrics are already captured by preprocess_csv / preprocess_python.
-        print(f"    [{fname}] HTML skipped — stats extracted via pre-analysis")
-        return None
+        # Raw HTML is JavaScript-heavy — send only a placeholder.
+        # All useful stats are extracted by preprocess_html into PRE-ANALYSIS FACTS.
+        print(f"    [{fname}] HTML: placeholder only — stats extracted via pre-analysis")
+        return f"=== {fname} ===\n[MT5 HTML backtest report — statistics extracted in PRE-ANALYSIS FACTS]"
 
     if ext == "csv":
         # Raw CSV rows are redundant: preprocess_csv already computes all metrics.
