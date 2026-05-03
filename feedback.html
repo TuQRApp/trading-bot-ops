@@ -839,6 +839,7 @@ function toggleFileFilter(fshClass, fileId, btn) {
   _applyFileFilter();
   _updateExportBar();
   _initM5();
+  _initRevisionBar();
 }
 
 function _updateExportBar() {
@@ -1207,34 +1208,35 @@ function _initM5() {
 
 function _initRevisionBar() {
   if (!window._renderData) return;
-  var revGroups = window._renderData.groups.filter(function(g) { return g.status === 'en_revision'; });
 
-  // Top banner — never shown in revision step
+  // Only show the bar for the group currently being displayed
+  var selectedBtn = document.querySelector('.file-filter-btn.active');
+  var selectedBadge = selectedBtn ? selectedBtn.dataset.badge : null;
+  var activeGroup = selectedBadge
+    ? window._renderData.groups.find(function(g) { return g.badge === selectedBadge; })
+    : null;
+
   var topBanner = document.getElementById('revision-top-banner');
   if (topBanner) topBanner.style.display = 'none';
 
-  if (revGroups.length === 0) {
-    var bar0 = document.getElementById('revision-action-bar');
-    if (bar0) bar0.style.display = 'none';
+  var bar = document.getElementById('revision-action-bar');
+  if (!activeGroup || activeGroup.status !== 'en_revision') {
+    if (bar) bar.style.display = 'none';
     document.body.style.paddingBottom = '';
     return;
   }
 
-  // Bottom action bar
-  var bar = document.getElementById('revision-action-bar');
   var infoEl = document.getElementById('revision-info');
   var btnsEl = document.getElementById('revision-btns');
   bar.style.display = 'flex';
   btnsEl.innerHTML = '';
   infoEl.textContent = 'Revisa el feedback recibido en cada uno de los 4 módulos. Agrega tus comentarios y correcciones y presiona enviar cuando hayas terminado';
-  revGroups.forEach(function(g) {
-    var btn = document.createElement('button');
-    btn.className = 'btn-submit-review';
-    btn.dataset.badge = g.badge;
-    btn.textContent = 'Enviar revisión · ' + g.name;
-    btn.onclick = function() { submitReview(g.badge); };
-    btnsEl.appendChild(btn);
-  });
+  var btn = document.createElement('button');
+  btn.className = 'btn-submit-review';
+  btn.dataset.badge = activeGroup.badge;
+  btn.textContent = 'Enviar revisión · ' + activeGroup.name;
+  btn.onclick = function() { submitReview(activeGroup.badge); };
+  btnsEl.appendChild(btn);
   document.body.style.paddingBottom = '80px';
 }
 
