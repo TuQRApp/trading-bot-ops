@@ -908,6 +908,16 @@ ANALYSIS_SYSTEM = [
             "explaining the expected gap between backtest and live performance using the provided ranges. "
             "If live_data_available=False, add an m2 card recommending to upload live trades CSV. "
             "Reference the live bot badges by name.\n"
+            "- If PREVIOUS VERSION CONTEXT is present: this is a new version of an already-reviewed bot. "
+            "Do NOT re-flag issues that appear in the 'descartado' list — the trader consciously chose not to fix them. "
+            "For issues in the 'implementado' list: verify in the new code whether they were actually resolved; "
+            "if still present, flag it with higher priority. "
+            "For issues in the 'pendiente' list: check whether they persist and if so, escalate their priority. "
+            "Focus the analysis on what changed from the previous version, not on re-discovering the same findings.\n"
+            "- If TRADER PROFILE is present: use it to calibrate the analysis. "
+            "Reduce or strengthen card types with high discard rates (noise for this trader). "
+            "Improve depth in categories that are frequently corrected. "
+            "Adjust tone and detail level to match the trader's correction patterns.\n"
             "- m1: Use type \"quality\" when CSV/backtest data is present. Use type \"empty\" when only .py files. "
             "For quality: last_updated must be ISO 8601 (e.g. 2026-05-03T04:30:00Z). "
             "metrics[].status must be ok/warn/bad. Use pnl_stats from PRE-ANALYSIS FACTS directly. "
@@ -995,8 +1005,16 @@ TIPO_MAP = {
 }
 
 
-def build_analysis_user(files_text, date_str, preproc_facts=None, comparison=None):
+def build_analysis_user(files_text, date_str, preproc_facts=None, comparison=None,
+                        version_context=None, profile_hint=None):
     parts = [f"Today: {date_str}"]
+    if profile_hint:
+        parts.append("=== TRADER PROFILE ===\n" + profile_hint)
+    if version_context:
+        parts.append(
+            "=== PREVIOUS VERSION CONTEXT ===\n"
+            + json.dumps(version_context, ensure_ascii=True, indent=2)
+        )
     if preproc_facts:
         parts.append(
             "=== PRE-ANALYSIS FACTS (computed deterministically — verified, do not recalculate) ===\n"
@@ -1125,6 +1143,138 @@ def _build_comparison_block(current_group, all_groups, preproc_facts):
     }
 
 
+def _build_version_context(group, all_groups):
+    """
+    If this group is a new version of an existing bot, return the previous version's
+    final analysis summary so Claude can build on it instead of starting from scratch.
+    """
+    version_of = group.get("version_of")
+    if not version_of or not all_groups:
+        return None
+
+    prev = next((g for g in all_groups if g.get("badge") == version_of), None)
+    if not prev or prev.get("status") not in ("activo", "en_revision"):
+        return None
+
+    ctx = {
+        "previous_badge": version_of,
+        "previous_name":  prev.get("name", ""),
+    }
+
+    m1 = prev.get("m1", {})
+    if isinstance(m1, dict) and m1.get("type") == "quality":
+        ctx["previous_score"] = m1.get("score", {}).get("valor")
+
+    for module in ("m2", "m3", "m4"):
+        by_estado = {"implementado": [], "descartado": [], "pendiente": []}
+        for c in prev.get(module, []):
+            estado = c.get("estado", "pendiente")
+            if estado in by_estado:
+                by_estado[estado].append({"id": c["id"], "title": c["title"]})
+        ctx[f"{module}_estados"] = by_estado
+
+    implemented = sum(len(ctx[f"{m}_estados"]["implementado"]) for m in ("m2","m3","m4"))
+    discarded   = sum(len(ctx[f"{m}_estados"]["descartado"])   for m in ("m2","m3","m4"))
+    print(f"    Version context: {version_of} — {implemented} implemented, {discarded} discarded by trader")
+    return ctx
+
+
+def _update_trader_profile(data, group):
+    """
+    After each pendiente_final cycle, update root-level trader_profile with stats
+    extracted from the correction fields and card estados — BEFORE they are cleared.
+    """
+    profile = data.get("trader_profile") or {
+        "cycles":         0,
+        "m2_by_tipo":     {},   # tipo  -> {corrected, discarded, total}
+        "m4_by_categoria":{},   # cat   -> {corrected, total}
+        "correction_rates": [],
+    }
+
+    profile["cycles"] = profile.get("cycles", 0) + 1
+    total = corrected = 0
+
+    for card in group.get("m2", []):
+        tipo  = card.get("tipo", "other")
+        has_c = bool((card.get("correction") or "").strip())
+        total += 1
+        if has_c: corrected += 1
+        b = profile["m2_by_tipo"].setdefault(tipo, {"corrected": 0, "discarded": 0, "total": 0})
+        b["total"] += 1
+        if has_c:                          b["corrected"] += 1
+        if card.get("estado") == "descartado": b["discarded"] += 1
+
+    for card in group.get("m3", []):
+        total += 1
+        if (card.get("correction") or "").strip(): corrected += 1
+
+    for card in group.get("m4", []):
+        cat   = card.get("categoria", "other")
+        has_c = bool((card.get("correction") or "").strip())
+        total += 1
+        if has_c: corrected += 1
+        b = profile["m4_by_categoria"].setdefault(cat, {"corrected": 0, "total": 0})
+        b["total"] += 1
+        if has_c: b["corrected"] += 1
+
+    if total > 0:
+        profile["correction_rates"].append(round(corrected / total, 2))
+
+    profile["last_updated"] = date.today().isoformat()
+    data["trader_profile"]  = profile
+    print(f"    Profile updated: cycle {profile['cycles']}, "
+          f"correction rate {round(corrected/total*100) if total else 0}%")
+
+
+def _build_profile_hint(data):
+    """
+    Convert the raw trader_profile stats into a compact hint string for Pass 1.
+    Returns None if there are fewer than 2 cycles (not enough signal yet).
+    """
+    profile = data.get("trader_profile")
+    if not profile or profile.get("cycles", 0) < 2:
+        return None
+
+    lines = [f"Trader correction history ({profile['cycles']} completed cycles):"]
+
+    # M2 tipos with high discard rate — Claude is generating noise here
+    high_discard = []
+    for tipo, s in profile.get("m2_by_tipo", {}).items():
+        if s["total"] >= 3 and s["discarded"] / s["total"] >= 0.5:
+            high_discard.append(f"{tipo} ({round(s['discarded']/s['total']*100)}% discarded)")
+    if high_discard:
+        lines.append(f"- M2 tipos with high discard rate: {', '.join(high_discard)} "
+                     f"— reduce or only include when very strong evidence")
+
+    # M4 categories frequently corrected — depth is insufficient here
+    weak_cats = []
+    for cat, s in profile.get("m4_by_categoria", {}).items():
+        if s["total"] >= 3 and s["corrected"] / s["total"] >= 0.6:
+            weak_cats.append(cat)
+    if weak_cats:
+        lines.append(f"- M4 categories frequently corrected (improve depth): {', '.join(weak_cats)}")
+
+    # M4 categories rarely corrected — Claude's analysis is landing well here
+    accurate_cats = []
+    for cat, s in profile.get("m4_by_categoria", {}).items():
+        if s["total"] >= 3 and s["corrected"] / s["total"] <= 0.15:
+            accurate_cats.append(cat)
+    if accurate_cats:
+        lines.append(f"- M4 categories trader rarely corrects (keep this approach): {', '.join(accurate_cats)}")
+
+    # Overall correction rate as calibration signal
+    rates = profile.get("correction_rates", [])
+    if rates:
+        avg = round(sum(rates) / len(rates) * 100)
+        if avg >= 50:
+            lines.append(f"- High correction rate ({avg}%) — analyses are missing trader expectations; "
+                         f"be more thorough and specific")
+        elif avg <= 15:
+            lines.append(f"- Low correction rate ({avg}%) — analyses are well-calibrated to trader expectations")
+
+    return "\n".join(lines) if len(lines) > 1 else None
+
+
 def build_finalize_user(group):
     """Build a minimal payload with ONLY the corrected cards — not the full analysis."""
     trader_notes = (group.get("trader_notes") or "").strip()
@@ -1238,7 +1388,7 @@ def _prepare_file_block(fname, content):
     return f"=== {fname} ===\n{content}"
 
 
-def process_pending(group, all_groups=None):
+def process_pending(group, all_groups=None, data=None):
     print(f"  Generating analysis for {group['badge']} — {group['name']}")
 
     parts            = []
@@ -1317,11 +1467,20 @@ def process_pending(group, all_groups=None):
     # Live vs backtest comparison block
     comparison = _build_comparison_block(group, all_groups, preproc)
 
+    # Version continuity + trader profile
+    version_ctx  = _build_version_context(group, all_groups)
+    profile_hint = _build_profile_hint(data) if data else None
+
     # Pass 1 — Claude initial analysis
     print("  Pass 1 — Claude initial analysis...")
     analysis = call_claude(
         ANALYSIS_SYSTEM,
-        build_analysis_user("\n\n".join(parts), date.today().isoformat(), preproc, comparison),
+        build_analysis_user(
+            "\n\n".join(parts), date.today().isoformat(),
+            preproc, comparison,
+            version_context=version_ctx,
+            profile_hint=profile_hint,
+        ),
     )
     print(f"    -> {len(analysis.get('m2',[]))} recs | {len(analysis.get('m3',[]))} obs | {len(analysis.get('m4',[]))} findings")
 
@@ -1381,7 +1540,7 @@ def process_pending(group, all_groups=None):
     return True
 
 
-def process_pendiente_final(group):
+def process_pendiente_final(group, data=None):
     print(f"  Finalizing {group['badge']} — {group['name']}")
 
     trader_notes  = (group.get("trader_notes") or "").strip()
@@ -1390,6 +1549,13 @@ def process_pendiente_final(group):
         (card.get("correction") or "").strip()
         for card in group.get("m2", []) + group.get("m3", []) + group.get("m4", [])
     )
+
+    # Update trader profile BEFORE corrections are cleared — this is where the signal lives
+    if data:
+        try:
+            _update_trader_profile(data, group)
+        except Exception as e:
+            print(f"    [warn] Profile update failed: {e}")
 
     if trader_notes or has_corrections:
         updated = call_claude(FINALIZE_SYSTEM, build_finalize_user(group))
@@ -1442,7 +1608,7 @@ def main():
     for g in pending:
         print(f"\n[PENDING] {g['badge']} — {g['name']}")
         try:
-            if process_pending(g, groups):
+            if process_pending(g, groups, data):
                 changed = True
                 print(f"  -> {g['status']}")
         except Exception as e:
@@ -1452,7 +1618,7 @@ def main():
     for g in pendiente_final:
         print(f"\n[PENDIENTE_FINAL] {g['badge']} — {g['name']}")
         try:
-            if process_pendiente_final(g):
+            if process_pendiente_final(g, data):
                 changed = True
                 print("  -> activo")
         except Exception as e:
