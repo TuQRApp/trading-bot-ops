@@ -1681,10 +1681,12 @@ function _updateCompareBtn() {
 function openVersionCompare(badge) {
   var chain = _getActivoVersionChain(badge);
   if (chain.length < 2) return;
-  var vA = chain[chain.length - 2];
-  var vB = chain[chain.length - 1];
-  _renderCompareModal(vA, vB, chain);
-  document.getElementById('cmp-overlay').style.display = 'flex';
+  if (chain.length === 2) {
+    _downloadCompare(chain[0], chain[1], chain);
+  } else {
+    _showVersionSelector(chain);
+    document.getElementById('cmp-overlay').style.display = 'flex';
+  }
 }
 
 function closeCompareModal() {
@@ -1692,41 +1694,204 @@ function closeCompareModal() {
   if (overlay) overlay.style.display = 'none';
 }
 
-function _renderCompareModal(vA, vB, chain) {
-  var selEl = document.getElementById('cmp-vsel');
-  if (selEl) {
-    if (chain && chain.length > 2) {
-      var optHtml = function(list, selectedBadge) {
-        return list.map(function(v) {
-          var isLatest = v.badge === chain[chain.length - 1].badge;
-          return '<option value="' + _esc(v.badge) + '"' + (v.badge === selectedBadge ? ' selected' : '') + '>V' + v.vnum + (isLatest ? '★' : '') + ' — ' + _esc(v.group.name) + '</option>';
-        }).join('');
-      };
-      selEl.innerHTML = '<span class="cmp-vsel-label">DE</span>' +
-        '<select class="cmp-vselect" id="cmp-sel-a" onchange="_onCmpSelChange()">' + optHtml(chain, vA.badge) + '</select>' +
-        '<span class="cmp-vsel-label">→</span>' +
-        '<select class="cmp-vselect" id="cmp-sel-b" onchange="_onCmpSelChange()">' + optHtml(chain, vB.badge) + '</select>';
-    } else {
-      selEl.innerHTML = '<span class="cmp-vsel-label" style="font-size:12px;color:var(--text);font-weight:600;">V' + vA.vnum + ' → V' + vB.vnum + '★</span>';
-    }
-  }
-  document.getElementById('cmp-body').innerHTML = _buildCompareSections(vA.group, vB.group, vA.vnum, vB.vnum);
+function _showVersionSelector(chain) {
+  document.getElementById('cmp-vsel').innerHTML = '';
+  var optHtml = chain.map(function(v) {
+    var isLatest = v.badge === chain[chain.length - 1].badge;
+    return '<option value="' + _esc(v.badge) + '">V' + v.vnum + (isLatest ? '★' : '') + ' — ' + _esc(v.group.name) + '</option>';
+  }).join('');
+  var optHtmlB = chain.map(function(v, idx) {
+    var isLatest = v.badge === chain[chain.length - 1].badge;
+    return '<option value="' + _esc(v.badge) + '"' + (idx === chain.length - 1 ? ' selected' : '') + '>V' + v.vnum + (isLatest ? '★' : '') + ' — ' + _esc(v.group.name) + '</option>';
+  }).join('');
+  document.getElementById('cmp-body').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:16px;padding:4px 0;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span class="cmp-vsel-label" style="min-width:28px;">DE</span>' +
+        '<select class="cmp-vselect" id="cmp-sel-a" style="flex:1;">' + optHtml + '</select>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span class="cmp-vsel-label" style="min-width:28px;">A</span>' +
+        '<select class="cmp-vselect" id="cmp-sel-b" style="flex:1;">' + optHtmlB + '</select>' +
+      '</div>' +
+      '<button class="btn-export" style="align-self:flex-start;" onclick="_onDownloadFromSelector()">⬇ Descargar comparativo</button>' +
+    '</div>';
 }
 
-function _onCmpSelChange() {
+function _onDownloadFromSelector() {
   var selA = document.getElementById('cmp-sel-a');
   var selB = document.getElementById('cmp-sel-b');
-  if (!selA || !selB || !window._fullData) return;
+  if (!selA || !selB) return;
   var badgeA = selA.value, badgeB = selB.value;
-  if (badgeA === badgeB) return;
+  if (badgeA === badgeB) { alert('Seleccioná dos versiones distintas.'); return; }
   var full = window._fullData;
-  var gA = full.groups.find(function(g) { return g.badge === badgeA; });
-  var gB = full.groups.find(function(g) { return g.badge === badgeB; });
-  if (!gA || !gB) return;
   var chain = _getActivoVersionChain(badgeA);
-  var vnA = (chain.find(function(v) { return v.badge === badgeA; }) || { vnum: 1 }).vnum;
-  var vnB = (chain.find(function(v) { return v.badge === badgeB; }) || { vnum: 2 }).vnum;
-  document.getElementById('cmp-body').innerHTML = _buildCompareSections(gA, gB, vnA, vnB);
+  var vA = chain.find(function(v) { return v.badge === badgeA; });
+  var vB = chain.find(function(v) { return v.badge === badgeB; });
+  if (!vA || !vB) return;
+  closeCompareModal();
+  _downloadCompare(vA, vB, chain);
+}
+
+function _downloadCompare(vA, vB, chain) {
+  var isLatestVnum = chain[chain.length - 1].vnum;
+  var html = _generateCompareHtml(vA.group, vB.group, vA.vnum, vB.vnum, isLatestVnum);
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'comparativo-' + (vA.group.badge || 'v' + vA.vnum) + '-vs-v' + vB.vnum + '.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+function _generateCompareHtml(gA, gB, vnA, vnB, latestVnum) {
+  var lA = 'V' + vnA + (vnA === latestVnum ? '★' : '');
+  var lB = 'V' + vnB + (vnB === latestVnum ? '★' : '');
+  var today = new Date().toISOString().slice(0, 10);
+  var e = function(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+
+  var css = [
+    '*{margin:0;padding:0;box-sizing:border-box;}',
+    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6fb;color:#1a2757;padding:40px 24px 80px;}',
+    '.wrap{max-width:900px;margin:0 auto;}',
+    'h1{font-size:24px;font-weight:800;margin-bottom:4px;}',
+    '.meta{font-size:12px;color:#6b7a9e;margin-bottom:36px;font-family:monospace;}',
+    'h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7a9e;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #dde3f0;}',
+    '.section{margin-bottom:36px;}',
+    '.score-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;}',
+    '.score-val{font-family:monospace;font-size:26px;font-weight:700;}',
+    '.score-old{color:#6b7a9e;}',
+    '.delta-up{font-family:monospace;font-size:15px;font-weight:700;color:#059669;}',
+    '.delta-down{font-family:monospace;font-size:15px;font-weight:700;color:#ef4444;}',
+    '.delta-flat{font-family:monospace;font-size:15px;font-weight:700;color:#6b7a9e;}',
+    'table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #dde3f0;}',
+    'th{font-family:monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#6b7a9e;text-align:left;padding:8px 14px;background:#f8faff;border-bottom:1px solid #dde3f0;}',
+    'td{padding:12px 14px;border-bottom:1px solid #dde3f0;vertical-align:top;line-height:1.6;}',
+    'tr:last-child td{border-bottom:none;}',
+    '.badge{font-family:monospace;font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;display:inline-block;}',
+    '.badge-resolved{background:#f1f5f9;color:#6b7a9e;border:1px solid #dde3f0;}',
+    '.badge-new{background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.3);}',
+    '.badge-modified{background:rgba(245,158,11,0.1);color:#d97706;border:1px solid rgba(245,158,11,0.3);}',
+    '.badge-improved{background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.3);}',
+    '.badge-worsened{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);}',
+    '.st-pill{font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px;margin-left:4px;}',
+    '.st-ok{background:rgba(5,150,105,0.1);color:#059669;}',
+    '.st-warn{background:rgba(245,158,11,0.1);color:#d97706;}',
+    '.st-bad{background:rgba(239,68,68,0.1);color:#ef4444;}',
+    '.vbadge{font-family:monospace;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(30,45,110,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.25);white-space:nowrap;}',
+    '.card-title{font-size:14px;font-weight:700;color:#1a2757;}',
+    '.vlabel{font-family:monospace;font-size:10px;color:#6b7a9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}',
+    '.desc{font-size:13px;color:#4a5875;line-height:1.7;}',
+    '.diff-wrap{display:flex;flex-direction:column;gap:10px;}',
+    '.diff-block{padding:10px 12px;border-radius:6px;}',
+    '.diff-old{background:#f8faff;border-left:3px solid #dde3f0;}',
+    '.diff-new{background:#f0fdf4;border-left:3px solid rgba(5,150,105,0.5);}',
+    '.empty{color:#6b7a9e;font-size:13px;padding:16px 0;font-style:italic;}',
+    '@media print{body{background:#fff;padding:20px;}.section{page-break-inside:avoid;}}'
+  ].join('\n');
+
+  var buildM1 = function() {
+    var m1A = gA.m1, m1B = gB.m1;
+    if (!m1A || !m1B || m1A.type === 'empty' || m1B.type === 'empty') {
+      return '<p class="empty">Sin datos de backtest en una o ambas versiones.</p>';
+    }
+    var out = '';
+    var scoreA = m1A.score ? parseFloat(m1A.score.valor || 0) : null;
+    var scoreB = m1B.score ? parseFloat(m1B.score.valor || 0) : null;
+    if (scoreA !== null && scoreB !== null) {
+      var delta = Math.round((scoreB - scoreA) * 10) / 10;
+      var ds = (delta > 0 ? '+' : '') + delta;
+      var dcls = delta > 0 ? 'delta-up' : delta < 0 ? 'delta-down' : 'delta-flat';
+      var maxVal = m1A.score.max || 10;
+      out += '<div class="score-row">' +
+        '<span class="score-val score-old">' + scoreA + '</span>' +
+        '<span style="color:#aab;font-size:18px;">→</span>' +
+        '<span class="score-val">' + scoreB + '</span>' +
+        '<span style="font-family:monospace;font-size:12px;color:#6b7a9e;">/ ' + maxVal + '</span>' +
+        '<span class="' + dcls + '">' + ds + (delta > 0 ? ' ↑' : delta < 0 ? ' ↓' : '') + '</span>' +
+        '</div>';
+    }
+    var mA = _flatMetrics(m1A), mB = _flatMetrics(m1B);
+    var rank = {ok:2,warn:1,bad:0};
+    var changes = [];
+    mA.forEach(function(ma) {
+      var lbl = (ma.label||ma.name||'').toLowerCase();
+      var mb = mB.find(function(m){return m.id===ma.id;}) || mB.find(function(m){return (m.label||m.name||'').toLowerCase()===lbl;});
+      if (!mb) return;
+      var va = String(ma.value||''), vb = String(mb.value||'');
+      if (va===vb && ma.status===mb.status) return;
+      var imp = null;
+      if (ma.status && mb.status && ma.status!==mb.status) imp = (rank[mb.status]||1) > (rank[ma.status]||1);
+      changes.push({label:ma.label||ma.name, va:va, vb:vb, sa:ma.status, sb:mb.status, imp:imp});
+    });
+    if (!changes.length) {
+      if (scoreA === scoreB) out += '<p class="empty">Sin cambios en métricas.</p>';
+      return out;
+    }
+    var stPill = function(st) {
+      if (!st) return '';
+      return '<span class="st-pill st-' + e(st) + '">' + e(st) + '</span>';
+    };
+    out += '<table><thead><tr><th>Métrica</th><th>' + e(lA) + '</th><th>' + e(lB) + '</th><th></th></tr></thead><tbody>';
+    changes.forEach(function(c) {
+      var dir = c.imp===true ? '<span class="badge badge-improved">mejoró</span>' : c.imp===false ? '<span class="badge badge-worsened">empeoró</span>' : '';
+      out += '<tr><td style="font-weight:700;">' + e(c.label) + '</td><td>' + e(c.va) + stPill(c.sa) + '</td><td>' + e(c.vb) + stPill(c.sb) + '</td><td>' + dir + '</td></tr>';
+    });
+    out += '</tbody></table>';
+    return out;
+  };
+
+  var buildCards = function(listA, listB, title) {
+    if (!listA.length && !listB.length) return '<p class="empty">Sin datos.</p>';
+    var res = _matchCards(listA, listB);
+    var rows = [];
+    res.onlyA.forEach(function(c) { rows.push({type:'resolved', card:c, cardNew:null}); });
+    res.matched.forEach(function(pair) {
+      var dA = String(pair.cA.desc||pair.cA.text||''), dB = String(pair.cB.desc||pair.cB.text||'');
+      if (dA !== dB) rows.push({type:'modified', card:pair.cA, cardNew:pair.cB});
+    });
+    res.onlyB.forEach(function(c) { rows.push({type:'new', card:c, cardNew:null}); });
+    if (!rows.length) return '<p class="empty">Sin cambios.</p>';
+    var lmap = {resolved:'Resuelta', modified:'Modificada', new:'Nueva'};
+    var out = '<table><thead><tr><th style="width:90px;"></th><th style="width:90px;">Versión</th><th>Título y descripción</th></tr></thead><tbody>';
+    rows.forEach(function(row) {
+      var vLabel = row.type === 'resolved' ? lA : row.type === 'new' ? lB : '';
+      var content;
+      if (row.type === 'modified') {
+        var dA = String(row.card.desc||row.card.text||'');
+        var dB = String(row.cardNew.desc||row.cardNew.text||'');
+        content = '<div class="diff-wrap">' +
+          '<div class="diff-block diff-old"><div class="vlabel">' + e(lA) + '</div><div class="desc">' + e(dA) + '</div></div>' +
+          '<div class="diff-block diff-new"><div class="vlabel">' + e(lB) + '</div><div class="desc">' + e(dB) + '</div></div>' +
+          '</div>';
+      } else {
+        var d = String(row.card.desc||row.card.text||'');
+        content = '<div class="desc">' + e(d) + '</div>';
+      }
+      out += '<tr>' +
+        '<td><span class="badge badge-' + row.type + '">' + lmap[row.type] + '</span></td>' +
+        '<td>' + (vLabel ? '<span class="vbadge">' + e(vLabel) + '</span>' : '') + '</td>' +
+        '<td><div class="card-title" style="margin-bottom:8px;">' + e(row.card.title) + '</div>' + content + '</td>' +
+        '</tr>';
+    });
+    out += '</tbody></table>';
+    return out;
+  };
+
+  return '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n' +
+    '<title>Comparativo ' + e(gA.name) + ' ' + lA + ' → ' + lB + '</title>\n' +
+    '<style>' + css + '</style>\n</head>\n<body>\n<div class="wrap">\n' +
+    '<h1>Comparativo de versiones</h1>\n' +
+    '<div class="meta">Bot: ' + e(gA.name) + ' &nbsp;·&nbsp; ' + e(lA) + ' → ' + e(lB) + ' &nbsp;·&nbsp; Generado: ' + today + '</div>\n' +
+    '<div class="section"><h2>M1 — Calidad del Backtest</h2>' + buildM1() + '</div>\n' +
+    '<div class="section"><h2>M2 — Recomendaciones</h2>' + buildCards(gA.m2||[], gB.m2||[], 'M2') + '</div>\n' +
+    '<div class="section"><h2>M3 — Observaciones</h2>' + buildCards(gA.m3||[], gB.m3||[], 'M3') + '</div>\n' +
+    '<div class="section"><h2>M4 — Feedback de código</h2>' + buildCards(gA.m4||[], gB.m4||[], 'M4') + '</div>\n' +
+    '</div>\n</body>\n</html>';
 }
 
 function _titleSim(a, b) {
@@ -1782,121 +1947,6 @@ function _flatMetrics(m1) {
   return [];
 }
 
-function _buildCompareSections(gA, gB, vnA, vnB) {
-  var html = '';
-  html += '<div><div class="cmp-section-title">M1 — Calidad del Backtest</div>' + _buildM1Section(gA.m1, gB.m1, vnA, vnB) + '</div>';
-  html += '<div><div class="cmp-section-title">M2 — Recomendaciones</div>' + _buildCardsSection(gA.m2 || [], gB.m2 || [], vnA, vnB) + '</div>';
-  html += '<div><div class="cmp-section-title">M3 — Observaciones</div>' + _buildCardsSection(gA.m3 || [], gB.m3 || [], vnA, vnB) + '</div>';
-  html += '<div><div class="cmp-section-title">M4 — Feedback de código</div>' + _buildCardsSection(gA.m4 || [], gB.m4 || [], vnA, vnB) + '</div>';
-  return html;
-}
-
-function _buildM1Section(m1A, m1B) {
-  if (!m1A || !m1B || m1A.type === 'empty' || m1B.type === 'empty') {
-    return '<div class="cmp-empty">Sin datos de backtest en una o ambas versiones.</div>';
-  }
-  var html = '';
-  // Score
-  var scoreA = m1A.score ? parseFloat(m1A.score.valor || 0) : null;
-  var scoreB = m1B.score ? parseFloat(m1B.score.valor || 0) : null;
-  if (scoreA !== null && scoreB !== null) {
-    var delta = Math.round((scoreB - scoreA) * 10) / 10;
-    var deltaStr = (delta > 0 ? '+' : '') + delta;
-    var deltaCls = delta > 0 ? 'cmp-delta-up' : delta < 0 ? 'cmp-delta-down' : 'cmp-delta-flat';
-    var maxVal = (m1A.score.max || 10);
-    html += '<div class="cmp-score-row">' +
-      '<span class="cmp-score-val" style="color:var(--muted);">' + scoreA + '</span>' +
-      '<span style="color:var(--muted);font-size:18px;line-height:1;">→</span>' +
-      '<span class="cmp-score-val">' + scoreB + '</span>' +
-      '<span style="font-family:var(--font-mono);font-size:12px;color:var(--muted);">/ ' + maxVal + '</span>' +
-      '<span class="' + deltaCls + '">' + deltaStr + (delta > 0 ? ' ↑' : delta < 0 ? ' ↓' : '') + '</span>' +
-      '</div>';
-  }
-  // Metrics
-  var metricsA = _flatMetrics(m1A);
-  var metricsB = _flatMetrics(m1B);
-  var changes = [];
-  var rank = { ok: 2, warn: 1, bad: 0 };
-  metricsA.forEach(function(mA) {
-    var lA = (mA.label || mA.name || '').toLowerCase();
-    var mB = metricsB.find(function(m) { return m.id === mA.id; });
-    if (!mB) mB = metricsB.find(function(m) { return (m.label || m.name || '').toLowerCase() === lA; });
-    if (!mB) return;
-    var valA = String(mA.value || ''), valB = String(mB.value || '');
-    if (valA === valB && mA.status === mB.status) return;
-    var improved = null;
-    if (mA.status && mB.status && mA.status !== mB.status) {
-      improved = (rank[mB.status] || 1) > (rank[mA.status] || 1);
-    }
-    changes.push({ label: mA.label || mA.name, valA: valA, valB: valB, stA: mA.status, stB: mB.status, improved: improved });
-  });
-  if (!changes.length) {
-    if (scoreA === scoreB) html += '<div class="cmp-empty">Sin cambios en métricas.</div>';
-    return html;
-  }
-  html += '<table class="cmp-table" style="margin-top:10px;"><thead><tr><th>Métrica</th><th>V anterior</th><th>V actual</th><th></th></tr></thead><tbody>';
-  changes.forEach(function(c) {
-    var stPill = function(st) {
-      if (!st) return '';
-      return ' <span class="cmp-status-pill cmp-status-' + _esc(st) + '">' + _esc(st) + '</span>';
-    };
-    var dirBadge = c.improved === true ? '<span class="cmp-badge-improved">mejoró</span>'
-      : c.improved === false ? '<span class="cmp-badge-worsened">empeoró</span>' : '';
-    html += '<tr>' +
-      '<td style="font-weight:600;">' + _esc(c.label) + '</td>' +
-      '<td>' + _esc(c.valA) + stPill(c.stA) + '</td>' +
-      '<td>' + _esc(c.valB) + stPill(c.stB) + '</td>' +
-      '<td>' + dirBadge + '</td>' +
-      '</tr>';
-  });
-  html += '</tbody></table>';
-  return html;
-}
-
-function _buildCardsSection(listA, listB, vnA, vnB) {
-  if (!listA.length && !listB.length) return '<div class="cmp-empty">Sin datos.</div>';
-  var result = _matchCards(listA, listB);
-  var rows = [];
-  result.onlyA.forEach(function(c) {
-    rows.push({ type: 'resolved', card: c, cardNew: null });
-  });
-  result.matched.forEach(function(pair) {
-    var descA = String(pair.cA.desc || pair.cA.text || '');
-    var descB = String(pair.cB.desc || pair.cB.text || '');
-    if (descA !== descB) {
-      rows.push({ type: 'modified', card: pair.cA, cardNew: pair.cB });
-    }
-    // identical = persistent → excluded
-  });
-  result.onlyB.forEach(function(c) {
-    rows.push({ type: 'new', card: c, cardNew: null });
-  });
-  if (!rows.length) return '<div class="cmp-empty">Sin cambios.</div>';
-  var labelMap = { resolved: 'Resuelta', modified: 'Modificada', new: 'Nueva' };
-  var html = '<table class="cmp-table"><thead><tr><th style="width:85px;"></th><th>Card</th><th>Contenido</th></tr></thead><tbody>';
-  rows.forEach(function(row) {
-    var contentHtml;
-    if (row.type === 'modified') {
-      var max = 130;
-      var dA = String(row.card.desc || row.card.text || '');
-      var dB = String(row.cardNew.desc || row.cardNew.text || '');
-      contentHtml = '<div class="cmp-diff-col">' +
-        '<div><span class="cmp-diff-label">V' + vnA + '</span><div class="cmp-desc-excerpt">' + _esc(dA.slice(0, max) + (dA.length > max ? '…' : '')) + '</div></div>' +
-        '<div><span class="cmp-diff-label">V' + vnB + '★</span><div class="cmp-desc-excerpt" style="color:var(--text);">' + _esc(dB.slice(0, max) + (dB.length > max ? '…' : '')) + '</div></div>' +
-        '</div>';
-    } else {
-      var d = String(row.card.desc || row.card.text || '');
-      contentHtml = '<div class="cmp-desc-excerpt">' + _esc(d.slice(0, 160) + (d.length > 160 ? '…' : '')) + '</div>';
-    }
-    html += '<tr>' +
-      '<td><span class="cmp-badge-' + row.type + '">' + _esc(labelMap[row.type]) + '</span></td>' +
-      '<td><div class="cmp-card-title">' + _esc(row.card.title) + '</div></td>' +
-      '<td>' + contentHtml + '</td>' +
-      '</tr>';
-  });
-  html += '</tbody></table>';
-  return html;
-}
 
 // ── Bootstrap: fetch data.json and render ────────────────────────────────────
 function _renderFromData(data) {
