@@ -751,6 +751,7 @@ footer {
         <label>Nombre del grupo</label>
         <input type="text" id="upload-group-name" class="upload-input"
           placeholder="ej: Canal Fibonacci v2, OBV Bot v3…">
+        <span style="font-size:10px;color:var(--muted);">Solo necesario si subís un canal o múltiples archivos de un mismo bot</span>
       </div>
       <div class="upload-field">
         <label>Carpeta</label>
@@ -878,9 +879,9 @@ document.getElementById('upload-files-input').addEventListener('change', functio
 function _fmtDate(iso) {
   if (!iso) return '—';
   var d = new Date(iso);
-  return d.toISOString().slice(0,10) + ' · ' +
-    String(d.getUTCHours()).padStart(2,'0') + ':' +
-    String(d.getUTCMinutes()).padStart(2,'0');
+  var datePart = d.toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }); // YYYY-MM-DD
+  var timePart = d.toLocaleTimeString('en-GB', { timeZone: 'America/Santiago', hour: '2-digit', minute: '2-digit' }); // HH:MM
+  return datePart + ' · ' + timePart;
 }
 
 function _ftypeIcon(ftype) {
@@ -957,7 +958,7 @@ function _renderFileRow(g, folders) {
     revisionAlert =
       '<div class="revision-alert-row">' +
       '<span>El borrador está listo. <strong>Revisa cada módulo, escribe tus correcciones y envíalas.</strong> El ciclo no cierra sin tu validación.</span>' +
-      '<a href="feedback.html">Ir al análisis →</a>' +
+      '<a href="feedback.html?badge=' + dg.badge + '">Ir al análisis →</a>' +
       '</div>';
   } else if (dg.status === 'pendiente_final') {
     var elapsed2 = _claudeElapsed(dg.badge);

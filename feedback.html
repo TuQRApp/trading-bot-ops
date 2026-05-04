@@ -1372,14 +1372,32 @@ function _buildFileFilterBtns(skipAutoSelect) {
   }
 
   if (!skipAutoSelect) {
-    // Directly call toggleFileFilter to avoid opening version dropdown on auto-select
-    var firstItem = items.find(function(it) {
-      var fid = (!_filterNav) ? null : (currentId === UNFILED_ID ? null : currentId);
+    var urlBadge = new URLSearchParams(window.location.search).get('badge');
+    var targetItem = null;
+    if (urlBadge) {
+      targetItem = items.find(function(it) {
+        return it.activeBadge === urlBadge ||
+               it.parentGroup.badge === urlBadge ||
+               (it.parentGroup.versions && it.parentGroup.versions.indexOf(urlBadge) >= 0);
+      });
+    }
+    // If target lives in a folder and we're at root, navigate in first
+    if (targetItem && !_filterNav && targetItem.folderId) {
+      var targetFolder = folderMap[targetItem.folderId] || null;
+      if (targetFolder) {
+        _filterNav = targetFolder;
+        _buildFileFilterBtns(false);
+        return;
+      }
+    }
+    var autoItem = targetItem || items.find(function(it) {
+      var fid = _filterNav ? (currentId === UNFILED_ID ? null : currentId) : null;
       return it.folderId === fid;
     }) || items[0];
-    if (firstItem) {
-      var firstBtn = filterBar.querySelector('.file-filter-btn');
-      if (firstBtn) toggleFileFilter(firstItem.fshClass, firstItem.activeBadge, firstBtn);
+    if (autoItem) {
+      var autoBtn = filterBar.querySelector('.file-filter-btn[data-badge="' + autoItem.activeBadge + '"]')
+                 || filterBar.querySelector('.file-filter-btn');
+      if (autoBtn) toggleFileFilter(autoItem.fshClass, autoItem.activeBadge, autoBtn);
     }
   }
 }
