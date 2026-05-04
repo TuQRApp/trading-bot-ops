@@ -853,7 +853,6 @@ SCHEMA = """
       "tipo": "param",
       "tipo_label": "Parametro",
       "prioridad": "alta",
-      "estado": "pendiente",
       "title": "Concise title",
       "desc": "Detailed description of the problem and the proposed solution.",
       "comment": ""
@@ -909,10 +908,10 @@ ANALYSIS_SYSTEM = [
             "If live_data_available=False, add an m2 card recommending to upload live trades CSV. "
             "Reference the live bot badges by name.\n"
             "- If PREVIOUS VERSION CONTEXT is present: this is a new version of an already-reviewed bot. "
-            "Do NOT re-flag issues that appear in the 'descartado' list — the trader consciously chose not to fix them. "
-            "For issues in the 'implementado' list: verify in the new code whether they were actually resolved; "
-            "if still present, flag it with higher priority. "
-            "For issues in the 'pendiente' list: check whether they persist and if so, escalate their priority. "
+            "Cards in the 'revised' lists were corrected by the trader in the previous cycle — verify in the new code "
+            "whether the fix was actually applied; if resolved, do not re-flag; if still present, escalate priority. "
+            "Cards in the 'unrevised' lists were not corrected by the trader — check if they persist; "
+            "if so, maintain or escalate their priority. "
             "Focus the analysis on what changed from the previous version, not on re-discovering the same findings.\n"
             "- If TRADER PROFILE is present: use it to calibrate the analysis. "
             "Reduce or strengthen card types with high discard rates (noise for this trader). "
@@ -925,7 +924,7 @@ ANALYSIS_SYSTEM = [
             "Pack all per-instrument data into QM-01 note field as a compact pipe-separated list "
             "(e.g. 'US30 WR 55% PF 2.16 | NAS100 WR 58% PF 2.40 | ...'). "
             "Never generate one QM card per instrument — it exceeds the output token limit.\n"
-            "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. estado always \"pendiente\". comment always \"\".\n"
+            "- m2: 5-10 recommendations. tipo must be one of: param, logic, risk, data, meta. prioridad: alta/media/baja. comment always \"\".\n"
             "- m3: 5-8 observations. tipo must be one of: warn, error, info. comment always \"\".\n"
             "- m4: 5-10 code findings. categoria must be one of: bug, riesgo, ausencia, mejora. Use \\n for line breaks inside code/fix strings. comment always \"\".\n"
             "- Recommendations in m2 ordered alta -> media -> baja.\n"
@@ -1165,17 +1164,21 @@ def _build_version_context(group, all_groups):
     if isinstance(m1, dict) and m1.get("type") == "quality":
         ctx["previous_score"] = m1.get("score", {}).get("valor")
 
+    # Cards that were corrected by the trader (have non-empty comment = were revised)
     for module in ("m2", "m3", "m4"):
-        by_estado = {"implementado": [], "descartado": [], "pendiente": []}
+        revised   = []
+        unrevised = []
         for c in prev.get(module, []):
-            estado = c.get("estado", "pendiente")
-            if estado in by_estado:
-                by_estado[estado].append({"id": c["id"], "title": c["title"]})
-        ctx[f"{module}_estados"] = by_estado
+            entry = {"id": c["id"], "title": c["title"]}
+            if (c.get("comment") or "").strip():
+                revised.append(entry)
+            else:
+                unrevised.append(entry)
+        ctx[f"{module}_revised"]   = revised
+        ctx[f"{module}_unrevised"] = unrevised
 
-    implemented = sum(len(ctx[f"{m}_estados"]["implementado"]) for m in ("m2","m3","m4"))
-    discarded   = sum(len(ctx[f"{m}_estados"]["descartado"])   for m in ("m2","m3","m4"))
-    print(f"    Version context: {version_of} — {implemented} implemented, {discarded} discarded by trader")
+    revised_total = sum(len(ctx[f"{m}_revised"]) for m in ("m2","m3","m4"))
+    print(f"    Version context: {version_of} — {revised_total} cards revised by trader in previous cycle")
     return ctx
 
 
@@ -1201,8 +1204,7 @@ def _update_trader_profile(data, group):
         if has_c: corrected += 1
         b = profile["m2_by_tipo"].setdefault(tipo, {"corrected": 0, "discarded": 0, "total": 0})
         b["total"] += 1
-        if has_c:                          b["corrected"] += 1
-        if card.get("estado") == "descartado": b["discarded"] += 1
+        if has_c: b["corrected"] += 1
 
     for card in group.get("m3", []):
         total += 1

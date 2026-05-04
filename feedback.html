@@ -71,9 +71,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .badge-tipo-logic{color:#ec4899;border-color:rgba(236,72,153,0.3);background:rgba(236,72,153,0.08);}
 .badge-prio-alta{color:var(--gate);border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);}
 .badge-prio-media{color:var(--shared);border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08);}
-.badge-estado-pend{color:var(--muted);border-color:#c5d0e0;background:rgba(107,107,138,0.06);}
-.badge-estado-impl{color:var(--trader);border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08);}
-.badge-estado-desc{color:var(--gate);border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);}
+
 .rec-desc{font-size:13px;color:#4a5875;line-height:1.7;}
 .rec-response{background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:12px 14px;}
 .rec-response-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
@@ -229,8 +227,8 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .export-locked-msg{font-family:var(--font-mono);font-size:10px;color:#92400e;padding:5px 12px;border:1px solid rgba(234,88,12,0.3);border-radius:6px;background:rgba(234,88,12,0.06);}
 
 /* ── TRADER REVISION BLOCK ── */
-.trader-revision-block{margin-top:10px;padding:10px 14px;background:rgba(5,150,105,0.04);border:1px solid rgba(5,150,105,0.2);border-left:3px solid var(--trader);border-radius:6px;}
-.trader-revision-label{font-family:var(--font-mono);font-size:10px;color:var(--trader);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;}
+.trader-revision-block{margin-top:10px;padding:10px 14px;background:rgba(234,88,12,0.04);border:1px solid rgba(234,88,12,0.25);border-left:3px solid #ea580c;border-radius:6px;}
+.trader-revision-label{font-family:var(--font-mono);font-size:10px;color:#ea580c;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;}
 .trader-revision-text{font-size:12px;color:var(--text);line-height:1.55;}
 
 .btn-save-comment{font-family:var(--font-mono);font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid rgba(5,150,105,0.35);background:rgba(5,150,105,0.08);color:var(--trader);cursor:pointer;transition:all 0.2s;display:inline-block;margin-top:8px;}
@@ -328,8 +326,6 @@ footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-
 .revision-top-banner-badges{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
 .revision-top-banner-badge{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;background:rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.35);color:#b45309;}
 
-.module-comment-green{margin-top:20px;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 14px;background:rgba(16,185,129,0.05);}
-.module-comment-green-label{font-family:var(--font-mono);font-size:10px;font-weight:700;color:#059669;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
 .module-comment-field{width:100%;font-family:var(--font-display);font-size:12px;color:var(--text);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:8px 12px;background:rgba(0,0,0,0.2);outline:none;resize:vertical;min-height:60px;box-sizing:border-box;}
 .module-comment-field:focus{border-color:rgba(16,185,129,0.65);background:rgba(16,185,129,0.04);}
 .module-comment-field::placeholder{color:var(--muted);font-style:italic;}
@@ -509,7 +505,7 @@ function _fshHtml(g, count) {
 function _traderRevisionHtml(comment) {
   if (!comment) return '';
   return '<div class="trader-revision-block">' +
-    '<div class="trader-revision-label">💬 Comentario del Trader — revisión incorporada</div>' +
+    '<div class="trader-revision-label">✏️ Modificación previa del trader</div>' +
     '<div class="trader-revision-text">' + _esc(comment) + '</div>' +
     '</div>';
 }
@@ -577,13 +573,6 @@ function _pendingHistoryHtml(correction, cardId, badge) {
   '</div>';
 }
 
-function _additionalCommentHtml(cardId, badge, value) {
-  return '<div class="module-comment-green" style="margin-top:10px;">' +
-    '<label class="module-comment-green-label">🟢 Comentarios adicionales para el informe</label>' +
-    '<textarea class="module-comment-field" placeholder="Escribe comentarios adicionales para incluir en el informe…">' + _esc(value) + '</textarea>' +
-    '<button class="btn-save-comment" onclick="saveCardField(\'' + _esc(badge) + '\',\'' + _esc(cardId) + '\',\'additional_comment\',this)" style="margin-top:8px;">Guardar comentario</button>' +
-  '</div>';
-}
 
 function saveCardField(badge, cardId, field, btn) {
   var textarea = btn.previousElementSibling;
@@ -630,7 +619,7 @@ function _renderM1Group(g) {
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-general', g.badge);
     } else if (g.status === 'activo') {
-      html += _additionalCommentHtml('M1-general', g.badge, m1.additional_comment || '');
+      html += _traderRevisionHtml(m1.comment || '');
     } else { html += _responseBlockHtml('notas sobre backtest'); }
   }
 
@@ -662,7 +651,7 @@ function _renderM1Group(g) {
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-quality', g.badge);
     } else if (g.status === 'activo') {
-      html += _additionalCommentHtml('M1-quality', g.badge, m1.additional_comment || '');
+      html += _traderRevisionHtml(m1.comment || '');
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -679,7 +668,7 @@ function _renderM1Group(g) {
     } else if (g.status === 'pendiente_final') {
       html += _pendingHistoryHtml(m1.correction || '', 'M1-readiness', g.badge);
     } else if (g.status === 'activo') {
-      html += _additionalCommentHtml('M1-readiness', g.badge, m1.additional_comment || '');
+      html += _traderRevisionHtml(m1.comment || '');
     } else { html += _responseBlockHtml(g.name); }
   }
 
@@ -697,9 +686,6 @@ function _renderM1Group(g) {
 // ── M2 renderer ──────────────────────────────────────────────────────────────
 var _tipoCss   = {logic:'badge-tipo-logic', arch:'badge-tipo-arch', param:'badge-tipo-param', metodologia:'badge-tipo-logic'};
 var _tipoLabel = {logic:'Lógica del bot', arch:'Arquitectura', param:'Parámetro', metodologia:'Metodología'};
-var _estadoCss = {pendiente:'badge-estado-pend', implementado:'badge-estado-impl', descartado:'badge-estado-desc'};
-var _estadoLbl = {pendiente:'Pendiente', implementado:'Implementado', descartado:'Descartado'};
-
 function _renderM2Group(g) {
   var html = _fshHtml(g, g.m2.length + ' recomendaciones');
   g.m2.forEach(function(r) {
@@ -707,11 +693,8 @@ function _renderM2Group(g) {
     var tlbl = r.tipo_label || _tipoLabel[r.tipo] || r.tipo;
     var pcss = r.prioridad === 'alta' ? 'badge-prio-alta' : 'badge-prio-media';
     var plbl = r.prioridad === 'alta' ? 'Alta prioridad' : 'Media prioridad';
-    var ecss = _estadoCss[r.estado] || 'badge-estado-pend';
-    var elbl = _estadoLbl[r.estado] || r.estado;
     var correctionHtml = (g.status === 'en_revision') ? _correctionFieldHtml(r.id, g.badge) : '';
     var pendingHtml = (g.status === 'pendiente_final') ? _pendingHistoryHtml(r.correction || '', r.id, g.badge) : '';
-    var additionalHtml = (g.status === 'activo') ? _additionalCommentHtml(r.id, g.badge, r.additional_comment || '') : '';
     var traderHtml = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(r.comment) : '';
     html += '<div class="rec-card" data-id="' + _esc(r.id) + '">' +
       '<div class="rec-header">' +
@@ -720,11 +703,10 @@ function _renderM2Group(g) {
         '<div class="rec-badges">' +
           '<span class="badge ' + tcss + '">' + _esc(tlbl) + '</span>' +
           '<span class="badge ' + pcss + '">' + plbl + '</span>' +
-          '<span class="badge ' + ecss + '">' + elbl + '</span>' +
         '</div>' +
       '</div>' +
       '<div class="rec-desc">' + _esc(r.desc) + '</div>' +
-      correctionHtml + pendingHtml + additionalHtml + traderHtml +
+      correctionHtml + pendingHtml + traderHtml +
       '</div>';
   });
   return html;
@@ -753,7 +735,6 @@ function _renderM3Group(g) {
     var accionLbl = o.accion === 'si' ? 'Requiere acción' : o.accion === 'resuelta' ? 'Resuelta' : 'Solo observación';
     var corrHtml3 = (g.status === 'en_revision') ? _correctionFieldHtml(o.id, g.badge) : '';
     var pendHtml3 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(o.correction || '', o.id, g.badge) : '';
-    var addlHtml3 = (g.status === 'activo') ? _additionalCommentHtml(o.id, g.badge, o.additional_comment || '') : '';
     var traderHtml3 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(o.comment) : '';
     html += '<div class="obs-card" style="--obs-color:' + (o.color||'var(--border)') + '" data-origin="' + _esc(o.origin) + '" data-accion="' + _esc(o.accion||'') + '" data-id="' + _esc(o.id) + '">' +
       '<div class="obs-date-col">' +
@@ -767,7 +748,7 @@ function _renderM3Group(g) {
           '<span class="obs-tag ' + accionCss + '">' + accionLbl + '</span>' +
           '<span class="obs-context">' + _esc(o.context||'') + '</span>' +
         '</div>' +
-        corrHtml3 + pendHtml3 + addlHtml3 + traderHtml3 +
+        corrHtml3 + pendHtml3 + traderHtml3 +
       '</div>' +
       '</div>';
   });
@@ -803,7 +784,6 @@ function _renderM4Group(g) {
     var codeHtml = a.code ? '<div class="arch-code">' + _esc(a.code) + '</div>' : '';
     var corrHtml4 = (g.status === 'en_revision') ? _correctionFieldHtml(a.id, g.badge) : '';
     var pendHtml4 = (g.status === 'pendiente_final') ? _pendingHistoryHtml(a.correction || '', a.id, g.badge) : '';
-    var addlHtml4 = (g.status === 'activo') ? _additionalCommentHtml(a.id, g.badge, a.additional_comment || '') : '';
     var traderHtml4 = (g.status !== 'en_revision' && g.status !== 'pendiente_final') ? _traderRevisionHtml(a.comment) : '';
     html += '<div class="arch-card" data-file="' + _esc(g.badge) + '" data-categoria="' + _esc(a.categoria) + '" data-id="' + _esc(a.id) + '"' + idAttr + '>' +
       '<div class="arch-header">' +
@@ -811,7 +791,7 @@ function _renderM4Group(g) {
         '<span class="arch-title">' + _esc(a.title) + '</span>' +
       '</div>' +
       '<div class="arch-desc">' + _esc(a.desc) + '</div>' +
-      codeHtml + corrHtml4 + pendHtml4 + addlHtml4 + traderHtml4 +
+      codeHtml + corrHtml4 + pendHtml4 + traderHtml4 +
       '</div>';
   });
   return html;
@@ -1118,9 +1098,8 @@ function _renderM5(group) {
       '</div>' +
       '<div class="m5-card-title">' + _esc(c.title || '') + '</div>' +
       '<div class="m5-card-desc">' + _esc(c.desc || '') + '</div>' +
-      (group.status === 'en_revision' || group.status === 'pendiente_final'
-        ? _pendingHistoryHtml(c.correction || '', m5CardId, group.badge)
-        : _additionalCommentHtml(m5CardId, group.badge, c.additional_comment || '')) +
+      ((group.status === 'en_revision' || group.status === 'pendiente_final')
+        ? _pendingHistoryHtml(c.correction || '', m5CardId, group.badge) : '') +
     '</div>';
   }).join('');
 
