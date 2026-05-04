@@ -590,7 +590,7 @@
           "type": "py"
         }
       ],
-      "status": "pendiente_final",
+      "status": "activo",
       "version_of": "FILE-001",
       "m1": {
         "type": "empty",
@@ -608,8 +608,7 @@
           "estado": "pendiente",
           "title": "Riesgo por señal no considera las 3 ordenes abiertas simultaneamente",
           "desc": "calc_lot dimensiona el lote total como el 2% del equity sobre la distancia entry-SL de UNA sola posicion, pero se abren 3 ordenes limite con el mismo SL. Si las 3 se ejecutan, la exposicion real puede ser hasta 3 veces el riesgo calculado (6% del equity por simbolo). Se debe calcular el lote dividido de modo que el riesgo total de las 3 subposiciones sume exactamente el 2%, o bien reducir RISK_PCT a 0.02/3 = ~0.0067 por subposicion.",
-          "comment": "",
-          "correction": "No se debe hacer"
+          "comment": "Correccion marcada como 'No se debe hacer': hallazgo documentado para referencia pero no se implementara ninguna accion correctiva."
         },
         {
           "id": "R-02",
@@ -618,9 +617,8 @@
           "prioridad": "alta",
           "estado": "pendiente",
           "title": "LONG SL aplica spread incorrecto (deberia ser negativo)",
-          "desc": "En place_orders para LONG, el SL se calcula como fib(top, bot, LONG_SL) + spread. LONG_SL es -0.382, lo que coloca el SL por debajo del bot. Al sumarle spread el SL se desplaza hacia arriba (reduciendo la distancia real al entry), lo que sobredimensiona el lote y reduce el cushion de SL. El calculo correcto deberia ser fib(top, bot, LONG_SL) - spread para empujar el SL lejos del precio de entrada igual que se hace en SHORT.",
-          "comment": "",
-          "correction": "Se debe hacer"
+          "desc": "En place_orders para LONG, el SL se calcula como fib(top, bot, LONG_SL) + spread. LONG_SL es -0.382, lo que coloca el SL por debajo del bot. Al sumarle spread el SL se desplaza hacia arriba (reduciendo la distancia real al entry), lo que sobredimensiona el lote y reduce el cushion de SL. El calculo correcto es fib(top, bot, LONG_SL) - spread para empujar el SL lejos del precio de entrada, simetrico al tratamiento de SHORT. Esta correccion debe implementarse.",
+          "comment": "Correccion marcada como 'Se debe hacer': descripcion actualizada para enfatizar que la implementacion es obligatoria."
         },
         {
           "id": "R-03",
@@ -730,17 +728,15 @@
           "origin": "bot_canal_fib_v3 - copiaV2.py",
           "title": "67 bloques if con solo 2 try/except - fragilidad ante fallos de MT5",
           "desc": "El archivo tiene 67 bloques condicionales pero solo 2 bloques try/except. Funciones criticas como place_orders, manage_breakeven y calc_lot no tienen manejo de excepciones propio. Una desconexion transitoria de MT5 o un retorno None inesperado puede propagar una excepcion no controlada hasta el loop principal, causando un sleep(30) y potencialmente perdiendo señales o dejando ordenes parciales abiertas.",
-          "comment": "",
-          "correction": "No se debe hacer"
+          "comment": "Correccion marcada como 'No se debe hacer': hallazgo documentado para referencia pero no se implementara ninguna accion correctiva."
         },
         {
           "id": "OBS-002",
           "tipo": "warn",
           "origin": "bot_canal_fib_v3 - copiaV2.py",
           "title": "20 numeros magicos dispersos sin constantes nombradas",
-          "desc": "Se detectaron 20 valores literales numericos (1e-10, 0.001, 0.01, 0.02, 0.04, 0.1, 0.191, 0.382, 0.5, 0.618, 0.809, 0.9, 1.191, 1.382, 3, 3.5, 4, 5.0, 8, 13) diseminados en el codigo. Los niveles Fibonacci estan definidos como constantes globales para entry/SL/TP pero los mismos valores aparecen tambien hardcodeados en logica interna (ejemplo: el 0.001 y 0.1 en la validacion de comisiones en get_costos). Esto dificulta la auditoria y el ajuste de parametros.",
-          "comment": "",
-          "correction": "Se debe hacer"
+          "desc": "Se detectaron 20 valores literales numericos (1e-10, 0.001, 0.01, 0.02, 0.04, 0.1, 0.191, 0.382, 0.5, 0.618, 0.809, 0.9, 1.191, 1.382, 3, 3.5, 4, 5.0, 8, 13) diseminados en el codigo. Los niveles Fibonacci estan definidos como constantes globales para entry/SL/TP pero los mismos valores aparecen tambien hardcodeados en logica interna (ejemplo: el 0.001 y 0.1 en la validacion de comisiones en get_costos). Esto dificulta la auditoria y el ajuste de parametros. Esta observacion debe corregirse consolidando todos los literales en constantes nombradas.",
+          "comment": "Correccion marcada como 'Se debe hacer': descripcion actualizada para indicar que la consolidacion de constantes es obligatoria."
         },
         {
           "id": "OBS-003",
@@ -807,18 +803,16 @@
           "desc": "Para posiciones LONG, el SL se calcula sumando spread en lugar de restarlo. Dado que LONG_SL = -0.382, el SL ya esta por debajo del bot del canal. Sumar spread acerca el SL al precio de entrada, reduciendo el stop real y sobredimensionando el lote calculado por calc_lot.",
           "code": "# place_orders - LONG branch\nsl_px = fib(top, bot, LONG_SL) + spread  # BUG: spread sube el SL hacia entry",
           "fix": "# Correcto: alejar el SL del precio de entrada para LONG\nsl_px = fib(top, bot, LONG_SL) - spread",
-          "comment": "",
-          "correction": "No se debe hacer"
+          "comment": "Correccion marcada como 'No se debe hacer': hallazgo documentado para referencia pero no se implementara ninguna accion correctiva."
         },
         {
           "id": "H-02",
           "categoria": "bug",
           "title": "direction en log de cierres invertida para DEAL_TYPE_SELL",
-          "desc": "En registrar_cierres, la direccion se determina como LONG si d.type == mt5.DEAL_TYPE_SELL. Cuando una posicion LONG se cierra, el deal de cierre es de tipo SELL (venta para cerrar). Esto es correcto semanticamente pero puede confundir si se interpreta como la direccion del trade original. Sin embargo, para un SHORT que cierra con un deal BUY, se registraria como SHORT correctamente. La logica es funcionalmente invertida respecto a la convencion del bot (donde LONG = compra).",
+          "desc": "En registrar_cierres, la direccion se determina como LONG si d.type == mt5.DEAL_TYPE_SELL. Cuando una posicion LONG se cierra, el deal de cierre es de tipo SELL (venta para cerrar), y cuando una posicion SHORT se cierra, el deal es de tipo BUY. La logica actual invierte esta convencion respecto al bot, registrando incorrectamente la direccion del trade original. Debe corregirse para que DEAL_TYPE_BUY indique cierre de SHORT y DEAL_TYPE_SELL indique cierre de LONG.",
           "code": "\"direction\": \"LONG\" if d.type == mt5.DEAL_TYPE_SELL else \"SHORT\",",
           "fix": "# DEAL_TYPE_BUY cierra un SHORT (entry was sell), DEAL_TYPE_SELL cierra un LONG\n# Para registrar la direccion del trade original:\n\"direction\": \"SHORT\" if d.type == mt5.DEAL_TYPE_BUY else \"LONG\",",
-          "comment": "",
-          "correction": "Se debe hacer"
+          "comment": "Correccion marcada como 'Se debe hacer': descripcion actualizada para dejar claro que la correccion es obligatoria y se debe implementar."
         },
         {
           "id": "H-03",
@@ -905,7 +899,7 @@
       "category": "Live Bot | 3 instruments | MetaTrader5 | Fibonacci Channel Breakout M3",
       "summary": "Bot de trading en vivo para MT5 que opera XAUUSD, XAGUSD y BTCUSD en temporalidad M3 usando niveles de Fibonacci sobre un canal de 20 barras. Coloca 3 ordenes limite simultaneas (TP1/TP2/TP3 a 1/3 del lote cada una), gestiona breakeven automatico tras el primer TP, y cuenta con un circuit breaker de tres niveles (rachas, DD diario y DD total). Solo existe el archivo .py de ejecucion en vivo, sin resultados de backtest disponibles para evaluar calidad estadistica.",
       "trader_notes": "",
-      "revision_submitted": true,
+      "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
@@ -1718,5 +1712,57 @@
       "name": "Fibo",
       "parent_id": null
     }
-  ]
+  ],
+  "trader_profile": {
+    "cycles": 1,
+    "m2_by_tipo": {
+      "risk": {
+        "corrected": 2,
+        "discarded": 0,
+        "total": 6
+      },
+      "param": {
+        "corrected": 0,
+        "discarded": 0,
+        "total": 1
+      },
+      "logic": {
+        "corrected": 0,
+        "discarded": 0,
+        "total": 2
+      },
+      "data": {
+        "corrected": 0,
+        "discarded": 0,
+        "total": 1
+      },
+      "meta": {
+        "corrected": 0,
+        "discarded": 0,
+        "total": 2
+      }
+    },
+    "m4_by_categoria": {
+      "bug": {
+        "corrected": 2,
+        "total": 3
+      },
+      "riesgo": {
+        "corrected": 0,
+        "total": 3
+      },
+      "ausencia": {
+        "corrected": 0,
+        "total": 3
+      },
+      "mejora": {
+        "corrected": 0,
+        "total": 2
+      }
+    },
+    "correction_rates": [
+      0.19
+    ],
+    "last_updated": "2026-05-04"
+  }
 }
