@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Optimización — Fibonacci Channel Mean Reversion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:#0f0f0f;color:#d4d4d4;padding:24px 28px;font-size:13px;line-height:1.5}
+h1{font-size:17px;font-weight:600;margin-bottom:2px}
+h2{font-size:10px;font-weight:500;color:#444;text-transform:uppercase;
+    letter-spacing:.07em;margin-bottom:10px}
+.meta{color:#444;font-size:11px;margin-bottom:18px}
+.section{background:#131313;border:0.5px solid #1e1e1e;border-radius:9px;
+          padding:16px;margin-bottom:16px;overflow-x:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:18px}
+.kpi{background:#161616;border:0.5px solid #222;border-radius:8px;padding:12px 14px}
+.kl{display:block;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.kv{display:block;font-size:16px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{color:#3a3a3a;font-weight:400;text-align:left;padding:5px 8px;
+    border-bottom:0.5px solid #1e1e1e;white-space:nowrap}
+td{padding:4px 8px;border-bottom:0.5px solid #191919;white-space:nowrap}
+tr:hover td{background:#161616}
+.heatmap{border-collapse:separate;border-spacing:3px;margin-top:6px}
+.heatmap th{color:#555;font-size:10px;text-align:center;padding:3px 8px;border:none}
+.heatmap td{text-align:center;border-radius:4px;padding:6px 10px;cursor:default;
+             font-size:11px;font-weight:500;border:none;min-width:70px}
+.heatmap td span{display:block}
+.hm-label{background:transparent!important;color:#555;font-size:10px;
+           text-align:right!important;padding-right:8px!important}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.ok{background:rgba(74,222,128,0.15);color:#4ade80}
+.warn{background:rgba(248,113,113,0.15);color:#f87171}
+canvas{max-height:200px}
+</style>
+</head>
+<body>
+<h1>Walk-Forward Optimization — Fibonacci Channel Mean Reversion</h1>
+<div class="meta">
+  Generado: 2026-05-04 01:09:50 &nbsp;·&nbsp;
+  17 símbolos &nbsp;·&nbsp;
+  80 combinaciones testeadas &nbsp;·&nbsp;
+  Split IS/OOS: 75% / 25% &nbsp;·&nbsp;
+  Monte Carlo: 1,000 permutaciones
+</div>
+
+<!-- ── PARÁMETROS GANADORES ─────────────────────────────────────────── -->
+<div class="section">
+  <h2>Parámetros óptimos (mejor PF in-sample)</h2>
+  <div class="kpis">
+    <div class="kpi"><span class="kl">SM Threshold</span>
+      <span class="kv">0.3</span></div>
+    <div class="kpi"><span class="kl">Cooldown Bars</span>
+      <span class="kv">3</span></div>
+    <div class="kpi"><span class="kl">Min Tick Vol</span>
+      <span class="kv">50</span></div>
+    <div class="kpi"><span class="kl">PF In-Sample</span>
+      <span class="kv" style="color:#4ade80">4.51</span></div>
+    <div class="kpi"><span class="kl">PF Out-of-Sample</span>
+      <span class="kv" style="color:#4ade80">4.05</span></div>
+    <div class="kpi"><span class="kl">Degradación PF</span>
+      <span class="kv"><span class="badge ok">10.1%  ✓</span></span></div>
+    <div class="kpi"><span class="kl">WR IS / OOS</span>
+      <span class="kv">68.5% / 63.6%</span></div>
+    <div class="kpi"><span class="kl">MaxDD IS / OOS</span>
+      <span class="kv">2.4% / 2.9%</span></div>
+  </div>
+  <p style="font-size:11px;color:#444;margin-top:4px">
+    Gate de robustez: degradación de PF debe ser &lt; 25% para considerar los parámetros válidos.
+    <span class="badge ok">PASA ✓</span>
+  </p>
+</div>
+
+<!-- ── HEATMAP PF IN-SAMPLE ─────────────────────────────────────────── -->
+<div class="section">
+  <h2>Heatmap PF in-sample — SM Threshold × Cooldown Bars
+    (Min Tick Vol = 50, el del parámetro ganador) &nbsp;·&nbsp;
+    celda marcada = combinación ganadora</h2>
+  <table class="heatmap">
+    <thead><tr><th>SM \ CD</th><th>CD=1</th><th>CD=2</th><th>CD=3</th><th>CD=5</th></tr></thead>
+    <tbody><tr><td class='hm-label'>0.1</td><td style='background:rgb(59,153,60);' title='SM=0.1 CD=1 | PF=4.24 WR=67.3% DD=3.1%'><span>4.24</span></td><td style='background:rgb(59,153,60);' title='SM=0.1 CD=2 | PF=4.24 WR=67.2% DD=3.0%'><span>4.24</span></td><td style='background:rgb(59,153,60);' title='SM=0.1 CD=3 | PF=4.24 WR=67.2% DD=3.0%'><span>4.24</span></td><td style='background:rgb(84,134,60);' title='SM=0.1 CD=5 | PF=4.13 WR=66.7% DD=3.1%'><span>4.13</span></td></tr><tr><td class='hm-label'>0.2</td><td style='background:rgb(36,171,60);' title='SM=0.2 CD=1 | PF=4.34 WR=67.6% DD=3.0%'><span>4.34</span></td><td style='background:rgb(31,174,60);' title='SM=0.2 CD=2 | PF=4.36 WR=67.7% DD=3.0%'><span>4.36</span></td><td style='background:rgb(30,176,60);' title='SM=0.2 CD=3 | PF=4.37 WR=67.7% DD=3.0%'><span>4.37</span></td><td style='background:rgb(63,149,60);' title='SM=0.2 CD=5 | PF=4.22 WR=67.0% DD=3.0%'><span>4.22</span></td></tr><tr><td class='hm-label'>0.3</td><td style='background:rgb(8,192,60);' title='SM=0.3 CD=1 | PF=4.47 WR=68.4% DD=2.3%'><span>4.47</span></td><td style='background:rgb(0,199,60);' title='SM=0.3 CD=2 | PF=4.50 WR=68.6% DD=2.4%'><span>4.50</span></td><td style='background:rgb(0,200,60);border:2px solid #fff;' title='SM=0.3 CD=3 | PF=4.51 WR=68.5% DD=2.4%'><span>4.51</span></td><td style='background:rgb(8,193,60);' title='SM=0.3 CD=5 | PF=4.47 WR=68.2% DD=3.0%'><span>4.47</span></td></tr><tr><td class='hm-label'>0.4</td><td style='background:rgb(4,196,60);' title='SM=0.4 CD=1 | PF=4.48 WR=67.9% DD=3.0%'><span>4.48</span></td><td style='background:rgb(1,198,60);' title='SM=0.4 CD=2 | PF=4.50 WR=68.0% DD=3.0%'><span>4.50</span></td><td style='background:rgb(8,192,60);' title='SM=0.4 CD=3 | PF=4.47 WR=67.8% DD=3.0%'><span>4.47</span></td><td style='background:rgb(19,185,60);' title='SM=0.4 CD=5 | PF=4.42 WR=67.6% DD=3.0%'><span>4.42</span></td></tr><tr><td class='hm-label'>0.5</td><td style='background:rgb(219,27,60);' title='SM=0.5 CD=1 | PF=3.52 WR=63.6% DD=5.9%'><span>3.52</span></td><td style='background:rgb(219,27,60);' title='SM=0.5 CD=2 | PF=3.52 WR=63.6% DD=5.9%'><span>3.52</span></td><td style='background:rgb(232,17,60);' title='SM=0.5 CD=3 | PF=3.47 WR=63.2% DD=6.0%'><span>3.47</span></td><td style='background:rgb(255,0,60);' title='SM=0.5 CD=5 | PF=3.37 WR=62.5% DD=6.2%'><span>3.37</span></td></tr></tbody>
+  </table>
+</div>
+
+<!-- ── TOP 10 COMBINACIONES ─────────────────────────────────────────── -->
+<div class="section">
+  <h2>Top 10 combinaciones por PF in-sample</h2>
+  <table>
+    <thead><tr>
+      <th>SM</th><th>CD</th><th>TV</th>
+      <th colspan="4" style="color:#4ade80">── In-Sample ──────────────────</th>
+      <th colspan="4" style="color:#60a5fa">── Out-of-Sample ──────────────</th>
+      <th>Degr PF</th>
+    </tr><tr>
+      <th></th><th></th><th></th>
+      <th>Trades</th><th>WR</th><th>PF</th><th>DD</th>
+      <th>Trades</th><th>WR</th><th>PF</th><th>DD</th>
+      <th></th>
+    </tr></thead>
+    <tbody><tr style='background:#1a2a1a;'><td>★ 0.3</td><td>3.0</td><td>50.0</td><td>486.0</td><td style='color:#4ade80'>68.5%</td><td style='color:#4ade80'>4.51</td><td>2.4%</td><td>140.0</td><td style='color:#4ade80'>63.6%</td><td style='color:#4ade80'>4.05</td><td>2.9%</td><td style='color:#4ade80'>10.1%</td></tr><tr style=''><td>0.3</td><td>2.0</td><td>50.0</td><td>490.0</td><td style='color:#4ade80'>68.6%</td><td style='color:#4ade80'>4.50</td><td>2.4%</td><td>141.0</td><td style='color:#4ade80'>62.4%</td><td style='color:#4ade80'>3.79</td><td>2.9%</td><td style='color:#4ade80'>15.8%</td></tr><tr style=''><td>0.4</td><td>2.0</td><td>50.0</td><td>300.0</td><td style='color:#4ade80'>68.0%</td><td style='color:#4ade80'>4.50</td><td>3.0%</td><td>83.0</td><td style='color:#4ade80'>61.4%</td><td style='color:#4ade80'>3.69</td><td>5.0%</td><td style='color:#4ade80'>18.1%</td></tr><tr style=''><td>0.4</td><td>1.0</td><td>50.0</td><td>302.0</td><td style='color:#4ade80'>67.9%</td><td style='color:#4ade80'>4.48</td><td>3.0%</td><td>85.0</td><td style='color:#4ade80'>62.4%</td><td style='color:#4ade80'>3.84</td><td>5.0%</td><td style='color:#4ade80'>14.4%</td></tr><tr style=''><td>0.4</td><td>2.0</td><td>100.0</td><td>268.0</td><td style='color:#4ade80'>67.5%</td><td style='color:#4ade80'>4.48</td><td>3.0%</td><td>79.0</td><td style='color:#4ade80'>60.8%</td><td style='color:#4ade80'>3.64</td><td>5.0%</td><td style='color:#4ade80'>18.8%</td></tr><tr style=''><td>0.4</td><td>2.0</td><td>150.0</td><td>243.0</td><td style='color:#4ade80'>66.7%</td><td style='color:#4ade80'>4.47</td><td>3.0%</td><td>70.0</td><td style='color:#4ade80'>61.4%</td><td style='color:#4ade80'>3.84</td><td>5.0%</td><td style='color:#4ade80'>14.0%</td></tr><tr style=''><td>0.3</td><td>5.0</td><td>50.0</td><td>469.0</td><td style='color:#4ade80'>68.2%</td><td style='color:#4ade80'>4.47</td><td>3.0%</td><td>137.0</td><td style='color:#4ade80'>62.8%</td><td style='color:#4ade80'>3.87</td><td>2.3%</td><td style='color:#4ade80'>13.4%</td></tr><tr style=''><td>0.3</td><td>1.0</td><td>50.0</td><td>494.0</td><td style='color:#4ade80'>68.4%</td><td style='color:#4ade80'>4.47</td><td>2.3%</td><td>143.0</td><td style='color:#4ade80'>62.9%</td><td style='color:#4ade80'>3.89</td><td>2.9%</td><td style='color:#4ade80'>13.0%</td></tr><tr style=''><td>0.4</td><td>1.0</td><td>100.0</td><td>270.0</td><td style='color:#4ade80'>67.4%</td><td style='color:#4ade80'>4.47</td><td>3.1%</td><td>81.0</td><td style='color:#4ade80'>61.7%</td><td style='color:#4ade80'>3.79</td><td>5.0%</td><td style='color:#4ade80'>15.0%</td></tr><tr style=''><td>0.4</td><td>3.0</td><td>50.0</td><td>298.0</td><td style='color:#4ade80'>67.8%</td><td style='color:#4ade80'>4.47</td><td>3.0%</td><td>82.0</td><td style='color:#4ade80'>63.4%</td><td style='color:#4ade80'>4.12</td><td>5.0%</td><td style='color:#4ade80'>7.7%</td></tr></tbody>
+  </table>
+</div>
+
+<!-- ── WALK-FORWARD POR SÍMBOLO ──────────────────────────────────────── -->
+<div class="section">
+  <h2>Walk-Forward por símbolo — parámetros ganadores (ordenado por retorno OOS)</h2>
+  <table>
+    <thead><tr>
+      <th>Símbolo</th>
+      <th colspan="5" style="color:#4ade80">── In-Sample (75%) ────────────────────────</th>
+      <th colspan="5" style="color:#60a5fa">── Out-of-Sample (25%) ─────────────────────</th>
+      <th>Degr PF</th>
+    </tr><tr>
+      <th></th>
+      <th>Trades</th><th>WR</th><th>PF</th><th>DD</th><th>Ret</th>
+      <th>Trades</th><th>WR</th><th>PF</th><th>DD</th><th>Ret</th>
+      <th></th>
+    </tr></thead>
+    <tbody><tr><td>BTCUSD</td><td>51</td><td>60.8%</td><td>3.72</td><td>2.3%</td><td>+91.8%</td><td>19</td><td style='color:#4ade80'>68.4%</td><td style='color:#4ade80'>4.59</td><td>2.9%</td><td style='color:#4ade80'>+32.3%</td><td style='color:#4ade80'>-23.2%</td></tr><tr><td>UK100</td><td>30</td><td>80.0%</td><td>4.24</td><td>2.8%</td><td>+50.7%</td><td>12</td><td style='color:#4ade80'>83.3%</td><td style='color:#4ade80'>10.63</td><td>2.3%</td><td style='color:#4ade80'>+24.8%</td><td style='color:#4ade80'>-150.7%</td></tr><tr><td>XAUUSD</td><td>40</td><td>67.5%</td><td>5.54</td><td>2.1%</td><td>+93.1%</td><td>14</td><td style='color:#4ade80'>57.1%</td><td style='color:#4ade80'>3.79</td><td>2.1%</td><td style='color:#4ade80'>+19.1%</td><td style='color:#f87171'>31.7%</td></tr><tr><td>XBRUSD</td><td>20</td><td>80.0%</td><td>9.23</td><td>2.0%</td><td>+49.0%</td><td>10</td><td style='color:#4ade80'>70.0%</td><td style='color:#4ade80'>6.35</td><td>2.3%</td><td style='color:#4ade80'>+18.8%</td><td style='color:#f87171'>31.2%</td></tr><tr><td>USTEC</td><td>36</td><td>58.3%</td><td>3.82</td><td>3.4%</td><td>+54.4%</td><td>6</td><td style='color:#4ade80'>100.0%</td><td style='color:#4ade80'>inf</td><td>0.0%</td><td style='color:#4ade80'>+18.6%</td><td style='color:#4ade80'>-inf%</td></tr><tr><td>DE40</td><td>23</td><td>73.9%</td><td>7.43</td><td>2.0%</td><td>+53.6%</td><td>10</td><td style='color:#4ade80'>60.0%</td><td style='color:#4ade80'>4.15</td><td>2.1%</td><td style='color:#4ade80'>+14.4%</td><td style='color:#f87171'>44.2%</td></tr><tr><td>US30</td><td>26</td><td>61.5%</td><td>3.99</td><td>5.3%</td><td>+40.9%</td><td>12</td><td style='color:#4ade80'>50.0%</td><td style='color:#4ade80'>2.67</td><td>4.3%</td><td style='color:#4ade80'>+11.1%</td><td style='color:#f87171'>33.1%</td></tr><tr><td>XAGUSD</td><td>29</td><td>62.1%</td><td>3.13</td><td>4.4%</td><td>+36.5%</td><td>8</td><td style='color:#4ade80'>62.5%</td><td style='color:#4ade80'>3.29</td><td>1.6%</td><td style='color:#4ade80'>+10.1%</td><td style='color:#4ade80'>-4.9%</td></tr><tr><td>IT40</td><td>18</td><td>66.7%</td><td>2.89</td><td>3.0%</td><td>+19.6%</td><td>6</td><td style='color:#4ade80'>66.7%</td><td style='color:#4ade80'>4.08</td><td>1.3%</td><td style='color:#4ade80'>+8.6%</td><td style='color:#4ade80'>-41.2%</td></tr><tr><td>JP225</td><td>26</td><td>65.4%</td><td>5.45</td><td>2.4%</td><td>+26.1%</td><td>6</td><td style='color:#4ade80'>83.3%</td><td style='color:#4ade80'>9.42</td><td>0.9%</td><td style='color:#4ade80'>+8.0%</td><td style='color:#4ade80'>-72.7%</td></tr><tr><td>HK50</td><td>25</td><td>64.0%</td><td>3.16</td><td>2.8%</td><td>+32.3%</td><td>3</td><td style='color:#4ade80'>100.0%</td><td style='color:#4ade80'>inf</td><td>0.0%</td><td style='color:#4ade80'>+7.6%</td><td style='color:#4ade80'>-inf%</td></tr><tr><td>US2000</td><td>25</td><td>68.0%</td><td>4.88</td><td>2.2%</td><td>+44.1%</td><td>6</td><td style='color:#4ade80'>50.0%</td><td style='color:#4ade80'>2.18</td><td>2.3%</td><td style='color:#4ade80'>+4.5%</td><td style='color:#f87171'>55.3%</td></tr><tr><td>XTIUSD</td><td>18</td><td>83.3%</td><td>9.59</td><td>1.3%</td><td>+40.5%</td><td>4</td><td style='color:#4ade80'>50.0%</td><td style='color:#4ade80'>2.43</td><td>1.2%</td><td style='color:#4ade80'>+3.4%</td><td style='color:#f87171'>74.6%</td></tr><tr><td>US500</td><td>29</td><td>69.0%</td><td>4.87</td><td>2.6%</td><td>+54.2%</td><td>4</td><td style='color:#4ade80'>50.0%</td><td style='color:#4ade80'>2.56</td><td>1.1%</td><td style='color:#4ade80'>+3.4%</td><td style='color:#f87171'>47.4%</td></tr><tr><td>ETHUSD</td><td>54</td><td>74.1%</td><td>5.01</td><td>1.3%</td><td>+37.6%</td><td>10</td><td style='color:#4ade80'>60.0%</td><td style='color:#4ade80'>2.35</td><td>1.1%</td><td style='color:#4ade80'>+3.4%</td><td style='color:#f87171'>53.0%</td></tr><tr><td>F40</td><td>10</td><td>90.0%</td><td>18.30</td><td>1.3%</td><td>+25.2%</td><td>3</td><td style='color:#4ade80'>33.3%</td><td style='color:#4ade80'>1.05</td><td>2.3%</td><td style='color:#4ade80'>+0.1%</td><td style='color:#f87171'>94.2%</td></tr><tr><td>ES35</td><td>26</td><td>65.4%</td><td>2.88</td><td>3.4%</td><td>+30.3%</td><td>7</td><td style='color:#f87171'>28.6%</td><td style='color:#f87171'>0.79</td><td>4.3%</td><td style='color:#f87171'>-1.4%</td><td style='color:#f87171'>72.7%</td></tr></tbody>
+  </table>
+</div>
+
+<!-- ── MONTE CARLO ───────────────────────────────────────────────────── -->
+<div class="section">
+  <h2>Monte Carlo — 1,000 permutaciones del orden de trades (parámetros ganadores, todos los símbolos)</h2>
+  <p style="font-size:11px;color:#444;margin-bottom:12px">
+    Pregunta: si el orden de los trades hubiera sido distinto, ¿cuál sería el resultado?
+    Evalúa si las métricas son robustas o dependientes de secuencias afortunadas.
+  </p>
+  
+        <div class="kpis" style="margin-bottom:14px">
+          <div class="kpi"><span class="kl">PF p5 / p50 / p95</span>
+            <span class="kv">4.05 / 4.05 / 4.05</span></div>
+          <div class="kpi"><span class="kl">MaxDD p50 / p95</span>
+            <span class="kv" style="color:#f87171">3.4% / 6.2%</span></div>
+          <div class="kpi"><span class="kl">Retorno p5 / p50 / p95</span>
+            <span class="kv">186.7% / 186.7% / 186.7%</span></div>
+        </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div><div style="font-size:10px;color:#555;margin-bottom:6px">Distribución Profit Factor</div>
+      <canvas id="mcPF" style="max-height:180px"></canvas></div>
+    <div><div style="font-size:10px;color:#555;margin-bottom:6px">Distribución Max Drawdown %</div>
+      <canvas id="mcDD" style="max-height:180px"></canvas></div>
+    <div><div style="font-size:10px;color:#555;margin-bottom:6px">Distribución Retorno %</div>
+      <canvas id="mcRet" style="max-height:180px"></canvas></div>
+  </div>
+</div>
+
+<script>
+function histogram(data, bins=30) {
+  if (!data.length) return {labels:[], counts:[]};
+  const mn=Math.min(...data), mx=Math.max(...data), w=(mx-mn)/bins;
+  const labels=[]; const counts=new Array(bins).fill(0);
+  for(let i=0;i<bins;i++) labels.push((mn+i*w).toFixed(1));
+  data.forEach(v=>{ const b=Math.min(Math.floor((v-mn)/w),bins-1); counts[b]++; });
+  return {labels, counts};
+}
+function mkChart(id, data, color, xLabel) {
+  const h=histogram(data);
+  new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{labels:h.labels,datasets:[{data:h.counts,backgroundColor:color,borderRadius:2}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#444',font:{size:9},maxTicksLimit:8},grid:{color:'#1a1a1a'},
+                title:{display:true,text:xLabel,color:'#444',font:{size:9}}},
+               y:{ticks:{color:'#444',font:{size:9}},grid:{color:'#1a1a1a'}}}}
+  });
+}
+mkChart('mcPF',  [4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05, 4.05],  'rgba(74,222,128,0.6)',  'Profit Factor');
+mkChart('mcDD',  [4.7, 2.6, 1.8, 3.4, 2.6, 4.4, 3.1, 1.9, 2.9, 3.8, 3.5, 4.4, 3.8, 3.1, 3.9, 2.4, 3.6, 3.4, 3.7, 2.5, 2.8, 2.2, 5.7, 8.6, 3.5, 3.0, 2.6, 3.1, 3.2, 6.1, 4.0, 2.5, 2.8, 3.5, 4.5, 3.3, 7.4, 2.3, 3.0, 4.4, 4.9, 2.2, 3.5, 2.2, 3.6, 3.1, 3.8, 4.7, 2.9, 4.1, 3.8, 4.9, 2.8, 5.3, 2.5, 4.3, 4.9, 2.9, 3.6, 4.0, 4.6, 2.3, 3.1, 3.1, 1.9, 2.6, 2.2, 2.7, 3.1, 3.4, 3.1, 5.7, 3.7, 2.6, 3.6, 7.1, 2.7, 2.8, 5.3, 3.4, 3.2, 2.7, 6.6, 2.5, 3.0, 4.5, 3.1, 2.7, 3.4, 5.4, 3.5, 2.9, 3.2, 3.8, 4.3, 2.4, 2.8, 3.0, 3.2, 2.2, 4.8, 4.1, 2.6, 3.8, 2.8, 5.3, 6.5, 3.2, 3.1, 2.9, 7.5, 2.7, 2.6, 3.9, 3.3, 2.1, 2.1, 3.4, 3.7, 2.6, 3.7, 4.6, 3.4, 4.0, 3.0, 3.4, 2.8, 2.6, 4.3, 2.2, 3.8, 4.2, 4.1, 3.4, 4.9, 3.8, 2.9, 2.9, 4.1, 3.1, 3.6, 4.3, 2.7, 5.0, 3.3, 3.0, 3.5, 5.6, 3.1, 3.3, 3.1, 3.9, 2.0, 3.9, 3.8, 3.8, 2.5, 3.2, 3.6, 2.5, 2.2, 3.0, 3.2, 3.7, 4.5, 2.3, 3.7, 3.8, 4.6, 3.7, 4.1, 4.1, 2.8, 8.3, 3.6, 3.7, 3.2, 4.1, 3.8, 2.9, 6.5, 4.9, 2.5, 2.4, 4.6, 2.3, 4.4, 6.2, 3.5, 5.4, 3.2, 2.5, 3.3, 6.3, 3.9, 3.1, 4.6, 3.7, 4.0, 2.5, 3.6, 3.5, 3.2, 4.9, 4.1, 3.1, 3.3, 4.0, 3.0, 4.0, 3.5, 3.7, 5.0, 4.8, 3.5, 2.0, 3.4, 2.9, 3.9, 2.8, 2.7, 4.8, 3.4, 4.2, 3.0, 3.0, 2.9, 1.8, 3.9, 3.7, 3.9, 2.9, 3.1, 4.3, 5.3, 3.6, 4.2, 3.0, 3.9, 4.8, 4.2, 4.5, 3.2, 2.1, 2.9, 4.2, 3.2, 8.5, 4.9, 5.9, 6.9, 7.0, 3.4, 5.2, 2.3, 2.7, 2.9, 4.0, 5.9, 4.7, 3.0, 3.0, 4.8, 3.8, 2.9, 4.6, 2.7, 6.4, 2.9, 1.9, 2.3, 3.5, 3.7, 3.0, 4.3, 5.2, 5.9, 3.1, 2.4, 6.1, 2.9, 5.4, 5.4, 4.6, 2.6, 3.3, 3.2, 3.9, 4.7, 4.7, 2.6, 2.6, 6.0, 3.5, 5.6, 4.4, 3.2, 4.9, 4.2, 3.7, 3.0, 3.2, 6.9, 3.2, 2.7, 3.4, 2.8, 2.8, 4.3, 2.8, 3.7, 8.7, 2.7, 3.4, 3.8, 3.5, 5.3, 4.9, 3.2, 2.5, 4.9, 4.5, 4.8, 3.4, 2.4, 4.3, 3.2, 2.6, 4.0, 4.1, 3.6, 5.2, 2.8, 4.0, 3.7, 3.9, 3.2, 3.5, 3.6, 4.5, 5.2, 2.6, 4.3, 5.6, 2.2, 3.3, 2.6, 6.6, 3.7, 3.7, 3.6, 2.6, 2.6, 2.7, 3.0, 3.9, 2.4, 3.6, 3.1, 2.6, 3.7, 3.5, 6.7, 3.9, 2.4, 2.6, 3.6, 2.5, 2.2, 2.6, 3.0, 6.8, 4.6, 2.6, 2.3, 3.8, 7.4, 3.8, 3.3, 3.1, 3.1, 3.9, 4.2, 2.3, 4.7, 3.6, 5.2, 1.6, 5.9, 2.9, 3.1, 4.0, 2.5, 3.1, 3.4, 4.4, 4.6, 2.6, 3.8, 2.9, 2.9, 4.9, 2.6, 3.3, 3.8, 4.3, 2.8, 3.2, 2.9, 3.4, 3.8, 4.0, 3.3, 6.4, 4.1, 3.0, 3.8, 2.7, 4.2, 2.7, 2.8, 2.9, 3.0, 3.0, 4.2, 4.0, 2.8, 3.0, 2.7, 3.3, 2.6, 3.3, 3.0, 4.8, 3.9, 4.1, 4.5, 7.4, 2.8, 3.8, 2.1, 2.3, 4.9, 2.9, 4.0, 2.9, 4.0, 2.4, 2.8, 5.1, 2.2, 2.9, 5.3, 6.3, 2.5, 3.6, 5.8, 3.0, 2.9, 4.0, 3.1, 4.4, 3.7, 2.3, 3.4, 2.8, 3.6, 3.6, 4.3, 2.6, 2.7, 5.0, 4.5, 4.6, 5.4, 3.5, 3.5, 9.4, 2.7, 3.6, 3.2, 2.5, 4.9, 3.7, 3.0, 5.4, 3.8, 3.1, 3.2, 3.1, 4.5, 5.1, 3.4, 2.6, 2.4, 3.1, 4.4, 4.2, 5.0, 2.5],  'rgba(248,113,113,0.6)', 'Max Drawdown %');
+mkChart('mcRet', [186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7, 186.7], 'rgba(96,165,250,0.6)',  'Retorno %');
+</script>
+</body></html>
