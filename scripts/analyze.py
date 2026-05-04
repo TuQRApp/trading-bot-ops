@@ -392,7 +392,7 @@ def preprocess_csv(filename, content):
     return facts
 
 
-HTML_LARGE_THRESHOLD = 5 * 1024 * 1024   # 5 MB — above this, skip full DOM parse
+HTML_LARGE_THRESHOLD = 30_000            # 30 KB — above this, skip pandas.read_html (too slow)
 HTML_HEAD_BYTES      = 200_000           # read only first 200 KB for large files
 
 SKIP_EXTENSIONS = frozenset({
@@ -496,6 +496,105 @@ def _aggregate_card_instruments(instruments):
             for i in instruments
         ],
     }
+
+
+def _extract_per_symbol_summary(content):
+    """
+    Extract per-symbol aggregates from the first <table> in a custom HTML backtest report.
+    Targets reports like "Fibonacci Channel Breakout — Backtest por Símbolo" where the
+    first table has columns: Símbolo | Trades | WR | PF | Max DD | ... | Retorno | P&L
+
+    Returns list of dicts (one per instrument) or None. No pandas, no DOM parse.
+    """
+    import re
+    tag_re = re.compile(r"<[^>]+>")
+
+    table_m = re.search(r"(?s)<table[^>]*>(.*?)</table>", content, re.IGNORECASE)
+    if not table_m:
+        return None
+
+    header = None
+    rows = []
+    for row in re.split(r"</tr>", table_m.group(1), flags=re.IGNORECASE):
+        cells_raw = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.DOTALL | re.IGNORECASE)
+        cells = [tag_re.sub("", c).replace("\xa0", " ").replace("&nbsp;", " ").strip()
+                 for c in cells_raw]
+        cells = [c for c in cells if c]
+        if not cells:
+            continue
+        if header is None:
+            cl = [c.lower() for c in cells]
+            if any(k in cl for k in ("símbolo", "simbolo", "symbol")):
+                header = cells
+            continue
+        if header and len(cells) >= 3:
+            rows.append(dict(zip(header, cells)))
+
+    if not rows:
+        return None
+
+    # Build per_instrument list with normalised keys
+    result = []
+    for r in rows:
+        sym = r.get("Símbolo") or r.get("Simbolo") or r.get("Symbol", "")
+        if not sym:
+            continue
+        n  = _parse_numeric(r.get("Trades", ""))
+        wr = _parse_numeric(r.get("WR", ""))
+        pf = _parse_numeric(r.get("PF", ""))
+        dd = _parse_numeric(r.get("Max DD", "") or r.get("MaxDD", ""))
+        ret = _parse_numeric(r.get("Retorno", "") or r.get("Return", ""))
+        pnl = _parse_numeric(r.get("P&L", "") or r.get("PnL", ""))
+        entry = {"symbol": sym}
+        if n   is not None: entry["n_trades"]      = int(n)
+        if wr  is not None: entry["win_rate_pct"]  = round(wr, 2)
+        if pf  is not None: entry["profit_factor"] = round(pf, 3)
+        if dd  is not None: entry["max_dd_pct"]    = round(dd, 2)
+        if ret is not None: entry["return_pct"]    = round(ret, 2)
+        if pnl is not None: entry["pnl_usd"]       = round(pnl, 2)
+        result.append(entry)
+
+    return result or None
+
+
+def _extract_kpi_block(content):
+    """
+    Extract global KPI values and params from custom HTML reports.
+    Handles .kpi/.kl/.kv pattern and a plain-text params line.
+    Returns dict or None.
+    """
+    import re
+    tag_re = re.compile(r"<[^>]+>")
+    result = {}
+
+    # .kpi blocks: <span class="kl">Label</span> <span class="kv">Value</span>
+    for m in re.finditer(r'(?s)class="kpi"[^>]*>(.*?)</div>', content, re.IGNORECASE):
+        block = m.group(1)
+        kl_m = re.search(r'class="kl"[^>]*>(.*?)</span>', block, re.IGNORECASE | re.DOTALL)
+        kv_m = re.search(r'class="kv"[^>]*>(.*?)</span>', block, re.IGNORECASE | re.DOTALL)
+        if kl_m and kv_m:
+            k = tag_re.sub("", kl_m.group(1)).strip()
+            v = tag_re.sub("", kv_m.group(1)).strip()
+            if k and v:
+                result[k] = v
+
+    # params line: plain text after stripping tags from a <p class="params"> element
+    params_m = re.search(r'(?s)class="params"[^>]*>(.*?)</p>', content, re.IGNORECASE)
+    if params_m:
+        txt = tag_re.sub(" ", params_m.group(1)).replace("\xa0", " ").replace("&nbsp;", " ")
+        txt = re.sub(r"\s+", " ", txt).strip()
+        if txt:
+            result["_params"] = txt
+
+    # meta line
+    meta_m = re.search(r'(?s)class="meta"[^>]*>(.*?)</p>', content, re.IGNORECASE)
+    if meta_m:
+        txt = tag_re.sub(" ", meta_m.group(1)).replace("\xa0", " ").replace("&nbsp;", " ")
+        txt = re.sub(r"\s+", " ", txt).strip()
+        if txt:
+            result["_meta"] = txt
+
+    return result or None
 
 
 def _extract_trades_html(content):
@@ -719,7 +818,37 @@ def preprocess_html(filename, content):
         except Exception as e:
             print(f"    [{filename}] standard MT5 extraction failed: {e}")
 
-    # ── Path 2: pandas.read_html (small files only) ───────────────────────────
+    # ── Path 1c: per-symbol summary table (regex, any file size) ─────────────
+    if "pnl_stats" not in facts and "per_instrument" not in facts:
+        try:
+            per_inst = _extract_per_symbol_summary(content)
+            if per_inst:
+                facts["per_instrument"] = per_inst
+                n_pos = sum(1 for r in per_inst if r.get("return_pct", 0) > 0)
+                print(f"    [{filename}] per-symbol summary: {len(per_inst)} instruments "
+                      f"({n_pos} positive, lightweight extractor)")
+                kpis = _extract_kpi_block(content)
+                if kpis:
+                    facts["kpis"] = kpis
+                # Build aggregate pnl_stats from summary rows
+                wrs = [r["win_rate_pct"] for r in per_inst if "win_rate_pct" in r]
+                pfs = [r["profit_factor"] for r in per_inst if "profit_factor" in r]
+                dds = [r["max_dd_pct"] for r in per_inst if "max_dd_pct" in r]
+                total_n = sum(r.get("n_trades", 0) for r in per_inst)
+                if wrs:
+                    facts["pnl_stats"] = {
+                        "total_trades":  total_n,
+                        "n_instruments": len(per_inst),
+                        "win_rate_pct":  round(sum(wrs) / len(wrs), 2),
+                        "profit_factor": round(sum(pfs) / len(pfs), 3) if pfs else None,
+                        "max_drawdown":  round(min(dds), 2) if dds else None,
+                        "note": "aggregated from per-symbol summary table",
+                    }
+                return facts
+        except Exception as e:
+            print(f"    [{filename}] per-symbol summary extraction failed: {e}")
+
+    # ── Path 2: pandas.read_html (small files only, ≤30 KB) ──────────────────
     if len(content) <= HTML_LARGE_THRESHOLD:
         try:
             tables = pd.read_html(io.StringIO(content), flavor="html.parser")
@@ -1365,10 +1494,16 @@ def _prepare_file_block(fname, content):
         return None
 
     if ext == "html":
-        # Raw HTML is JavaScript-heavy — send only a placeholder.
-        # All useful stats are extracted by preprocess_html into PRE-ANALYSIS FACTS.
-        print(f"    [{fname}] HTML: placeholder only — stats extracted via pre-analysis")
-        return f"=== {fname} ===\n[MT5 HTML backtest report — statistics extracted in PRE-ANALYSIS FACTS]"
+        # Strip <style> and <script> blocks so Claude sees actual data, not CSS.
+        # Useful data (summary tables, KPIs, params) is near the top; truncate after.
+        import re as _re
+        stripped = _re.sub(r"(?s)<style[^>]*>.*?</style>", "", content, flags=_re.IGNORECASE)
+        stripped = _re.sub(r"(?s)<script[^>]*>.*?</script>", "", stripped, flags=_re.IGNORECASE)
+        stripped = _re.sub(r"\s{3,}", "\n", stripped).strip()
+        if len(stripped) > MAX_CHARS_PER_FILE:
+            stripped = stripped[:MAX_CHARS_PER_FILE] + f"\n... [truncated at {MAX_CHARS_PER_FILE} chars — full stats in PRE-ANALYSIS FACTS]"
+        print(f"    [{fname}] HTML: stripped+truncated to {len(stripped)} chars (CSS/JS removed)")
+        return f"=== {fname} ===\n{stripped}"
 
     if ext == "csv":
         # Raw CSV rows are redundant: preprocess_csv already computes all metrics.
