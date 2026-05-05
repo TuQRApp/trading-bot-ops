@@ -1483,7 +1483,7 @@
           "type": "py"
         }
       ],
-      "status": "pendiente_final",
+      "status": "activo",
       "version_of": null,
       "m1": {
         "type": "empty",
@@ -1510,8 +1510,7 @@
           "prioridad": "alta",
           "title": "demo_mode=False en codigo fuente — cuenta real activa por defecto",
           "desc": "El parametro 'demo_mode' esta establecido en False directamente en CONFIG. Cualquier ejecucion accidental del script opera en cuenta real sin confirmacion adicional. Se recomienda invertir el default a True y requerir un argumento de linea de comandos (p.ej. --real) o variable de entorno para habilitar operaciones reales, ademas de mostrar una confirmacion interactiva al arrancar.",
-          "comment": "",
-          "correction": "No es necesario"
+          "comment": "El trader indico que este riesgo no es necesario atender. Se conserva el contenido original sin cambios sustantivos."
         },
         {
           "id": "R-03",
@@ -1665,11 +1664,10 @@
           "id": "H-01",
           "categoria": "bug",
           "title": "risk_pct duplicado en CONFIG — segunda entrada silenciosamente sobreescribe la primera",
-          "desc": "El diccionario CONFIG define 'risk_pct': 0.02 dos veces. En Python un dict literal con clave duplicada conserva solo el ultimo valor, pero si el desarrollador cambia una y no la otra el bot opera con riesgo incorrecto sin advertencia alguna.",
+          "desc": "El diccionario CONFIG define 'risk_pct': 0.02 dos veces. En Python un dict literal con clave duplicada conserva solo el ultimo valor, pero si el desarrollador cambia una y no la otra el bot opera con riesgo incorrecto sin advertencia alguna. El trader confirma que esta correccion debe aplicarse.",
           "code": "CONFIG = {\n    ...\n    'risk_pct' : 0.02,   # <-- primera definicion (seccion Riesgo)\n    ...\n    'max_positions' : 6,\n    'risk_pct' : 0.02,   # <-- segunda definicion (seccion Bot) — pisa a la anterior\n    ...\n}",
           "fix": "# Eliminar la entrada duplicada y dejar una sola con comentario claro:\nCONFIG = {\n    ...\n    # Riesgo por operacion (2% del equity)\n    'risk_pct': 0.02,\n    ...\n}",
-          "comment": "",
-          "correction": "Debe aplicarse"
+          "comment": "El trader confirmo que esta correccion debe aplicarse. Se enfatiza la necesidad de eliminar la clave duplicada para evitar riesgo incorrecto silencioso."
         },
         {
           "id": "H-02",
@@ -1768,7 +1766,7 @@
       "category": "Bot en vivo | 8 instrumentos | MT5 IC Markets | OBV + MACD Divergencia + ADX multitemporal",
       "summary": "Bot de trading en vivo que opera 8 instrumentos (indices europeos, XTIUSD, XAUUSD, BTCUSD) en MT5 usando doble divergencia OBV+MACD en M5 filtrada por sesgo ADX en H1 y confirmacion ADX en M15. Incluye backtest interno, circuit breaker multinivel, gestion de riesgo dinamica con lot sizing via order_calc_profit y reporte HTML completo. No se proveen resultados de backtest ni datos CSV, por lo que no hay metricas de calidad disponibles para evaluar el rendimiento historico.",
       "trader_notes": "",
-      "revision_submitted": true,
+      "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
@@ -1991,27 +1989,27 @@
     }
   ],
   "trader_profile": {
-    "cycles": 4,
+    "cycles": 5,
     "m2_by_tipo": {
       "risk": {
-        "corrected": 2,
+        "corrected": 3,
         "discarded": 0,
-        "total": 19
+        "total": 24
       },
       "param": {
         "corrected": 0,
         "discarded": 0,
-        "total": 4
+        "total": 5
       },
       "logic": {
         "corrected": 0,
         "discarded": 0,
-        "total": 7
+        "total": 10
       },
       "data": {
         "corrected": 0,
         "discarded": 0,
-        "total": 6
+        "total": 7
       },
       "meta": {
         "corrected": 0,
@@ -2021,28 +2019,29 @@
     },
     "m4_by_categoria": {
       "bug": {
-        "corrected": 2,
-        "total": 8
+        "corrected": 3,
+        "total": 12
       },
       "riesgo": {
         "corrected": 0,
-        "total": 9
+        "total": 12
       },
       "ausencia": {
         "corrected": 0,
-        "total": 9
+        "total": 11
       },
       "mejora": {
         "corrected": 0,
-        "total": 7
+        "total": 9
       }
     },
     "correction_rates": [
       0.19,
       0,
       0,
-      0
+      0,
+      0.07
     ],
-    "last_updated": "2026-05-04"
+    "last_updated": "2026-05-05"
   }
 }
