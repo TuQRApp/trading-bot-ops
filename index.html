@@ -1251,6 +1251,11 @@ async function startUpload() {
   if (!groupName) { alert('Escribe un nombre para el grupo.'); return; }
   if (!selectedFolderCheck) { alert('Selecciona una carpeta para el grupo. Si no hay carpetas todavía, crea una con el botón "+ Nueva".'); return; }
   if (!files || files.length === 0) { alert('Selecciona al menos un archivo.'); return; }
+  var oversized = Array.from(files).filter(function(f) { return f.size > 10 * 1024 * 1024; });
+  if (oversized.length > 0) {
+    alert('Archivo demasiado grande (máx 10 MB):\n' + oversized.map(function(f) { return '• ' + f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)'; }).join('\n') + '\n\nLos archivos HTML de resultados no necesitan subirse — solo sube el .py y los .csv.');
+    return;
+  }
 
   var btn = document.getElementById('upload-btn');
   btn.disabled = true;

@@ -131,9 +131,12 @@ async function handleUpload(request, env) {
     if (!file || !folder) return json({ error: 'file and folder are required' }, 400);
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    let fileBinary = '';
-    for (let i = 0; i < bytes.length; i++) fileBinary += String.fromCharCode(bytes[i]);
-    const base64 = btoa(fileBinary);
+    if (bytes.length > 10 * 1024 * 1024) return json({ error: 'Archivo demasiado grande (máx 10 MB). Los archivos HTML de resultados no necesitan subirse — solo sube el .py y los .csv.' }, 413);
+    let base64 = '';
+    const CHUNK = 8192;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      base64 += btoa(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
+    }
     const path = ROOT + '/' + folder + '/' + file.name;
 
     // Check if file already exists (need SHA to update)
