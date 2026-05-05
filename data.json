@@ -1468,6 +1468,514 @@
       }
     },
     {
+      "id": "fsh-d",
+      "fsh_class": "fsh-d",
+      "name": "Adx Test 4 may",
+      "badge": "FILE-004",
+      "icon": "🐍",
+      "ftype": "py",
+      "folder": "Adx Test 4 may",
+      "folder_id": "f1777949366061",
+      "date": "2026-05-05T02:55:13.940Z",
+      "files": [
+        {
+          "name": "obv_macd_adx_bot_final_v2.py",
+          "type": "py"
+        }
+      ],
+      "status": "activo",
+      "version_of": null,
+      "m1": {
+        "type": "empty",
+        "last_updated": "2026-05-05T00:00:00Z",
+        "last_updated_meta": "obv_macd_adx_bot_final_v2.py",
+        "empty_title": "Sin datos de backtest disponibles",
+        "empty_desc": "El archivo contiene la funcion backtest() y toda la logica de simulacion, pero no se proporcionaron resultados exportados (CSV, HTML de MT5 o pnl_stats). Para evaluar la calidad de la estrategia es necesario ejecutar el backtest con 60 dias de datos sobre los 8 instrumentos y subir el reporte HTML generado o un CSV con los trades.",
+        "empty_trigger": "obv_macd_adx_bot_final_v2.py"
+      },
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "risk_pct definido dos veces en CONFIG — la segunda pisara a la primera silenciosamente",
+          "desc": "En el diccionario CONFIG la clave 'risk_pct' aparece en dos posiciones distintas: primero como 0.02 en la seccion Riesgo y luego de nuevo como 0.02 en la seccion Bot. Python mantiene solo el ultimo valor, pero si alguna de las dos se cambia sin ver la otra el bot puede operar con un riesgo diferente al esperado sin ningun aviso. Eliminar la duplicacion y dejar una unica entrada documentada.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "demo_mode=False en codigo fuente — cuenta real activa por defecto",
+          "desc": "El parametro 'demo_mode' esta establecido en False directamente en CONFIG. Cualquier ejecucion accidental del script opera en cuenta real sin confirmacion adicional. Se recomienda invertir el default a True y requerir un argumento de linea de comandos (p.ej. --real) o variable de entorno para habilitar operaciones reales, ademas de mostrar una confirmacion interactiva al arrancar.",
+          "comment": "El trader indico que este riesgo no es necesario atender. Se conserva el contenido original sin cambios sustantivos."
+        },
+        {
+          "id": "R-03",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Divergencia simple equivale a divergencia doble — filtro de calidad anulado",
+          "desc": "En detectar_doble_divergencia() el bloque de divergencia simple (solo OBV o solo MACD confirman) asigna señal.iloc[i] = 1 o -1, exactamente igual que la doble divergencia. El comentario en el codigo dice 'media señal' pero en la practica genera la misma señal de entrada. Esto duplica el numero de trades y elimina el filtro de calidad que justifica el nombre del bot. Usar un valor intermedio (p.ej. 0.5) o una columna separada para distinguirlas y filtrarlas en construir_señales().",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "max_positions=6 en CONFIG pero el print de arranque dice max 3 posiciones",
+          "desc": "Al inicio de __main__ se imprime '... max 3 posiciones ...' mientras CONFIG['max_positions'] es 6. El bot utilizara el valor de CONFIG (6 posiciones abiertas simultaneamente), pero el operador lee 3 en pantalla. Con apalancamiento 100x y 6 posiciones al 2% de riesgo cada una el riesgo conjunto puede superar el 12% de la cuenta en un escenario adverso correlacionado. Corregir el print o reducir max_positions a 3.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Backtest no simula costos por instrumento — usa un unico par spread/commission",
+          "desc": "La funcion backtest() recibe spread y commission como escalares y los descuenta igual para todos los instrumentos. Sin embargo get_costos_reales() devuelve valores muy distintos (BTCUSD spread 12 USD vs indices 5 USD). El backtest global no refleja los costos reales por simbolo, lo que sobreestima el rendimiento en activos de alto spread. Pasar un diccionario de costos a backtest() y aplicar el costo especifico de cada trade segun el simbolo.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Calculo de PnL en backtest con division por ATR relativo puede ser impreciso en activos volatiles",
+          "desc": "El calculo pnl_usd = pnl_pct / (sl_mult * atr_v / entrada) * cap_r normaliza el PnL por ATR en terminos de precio relativo. En activos como BTCUSD donde el precio puede moverse 5-10% en una sesion, esta aproximacion puede diferir significativamente del PnL real en dolares calculado por MT5 con order_calc_profit. Se recomienda almacenar y usar directamente el valor en USD del SL calculado para escalar el capital arriesgado.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "max_hold_bars=24 velas M5 es muy corto para divergencias en activos lentos",
+          "desc": "El timeout de 24 velas M5 (2 horas) cierra trades antes de que el movimiento de divergencia se desarrolle completamente, especialmente en DE40 o SE30 con menor liquidez en determinadas sesiones. Muchos trades de divergencia requieren 4-8 horas para alcanzar el TP. Considerar aumentar a 48-96 barras (4-8h) o hacer el timeout dependiente del ATR: cerrar solo si el precio no avanza al menos 0.5*ATR en la direccion esperada tras 24 barras.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "baja",
+          "title": "bars_m5=150 puede ser insuficiente para el lookback de divergencias",
+          "desc": "Con obv_lookback=40 barras y swing_bars=3 a cada lado, la deteccion de divergencias necesita al menos 2*(40+3)=86 barras utiles tras el calculo de indicadores (que consumen ~26 barras iniciales de NaN). Con 150 barras totales el margen efectivo es de unas 38 barras, lo que limita severamente las divergencias detectables en tiempo real. Aumentar bars_m5 a 250-300 para dar mas contexto al detector.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Calculo del Sharpe con equity continuo infla el ratio al reducir la desviacion estandar artificialmente",
+          "desc": "El factor de anualizacion sqrt(525600/5) asume trading continuo M5 las 24h durante 252 dias, incluyendo barras sin trades donde el equity permanece plano. Esas barras planas reducen la desviacion estandar de los retornos e inflan el Sharpe resultante. Para estrategias basadas en divergencias con pocos trades diarios el Sharpe calculado puede ser 3-5 veces superior al real. Calcular el Sharpe sobre los retornos individuales de cada trade en lugar de sobre la curva de equity bar a bar.",
+          "comment": ""
+        },
+        {
+          "id": "R-21",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Sin control de correlacion entre instrumentos: hasta 5 LONGs en indices europeos simultaneos",
+          "desc": "5 de los 8 simbolos son indices europeos altamente correlacionados (STOXX50, DE40, NETH25, SE30, UK100). El limite max_positions=6 no impide abrir 5 posiciones largas en todos ellos a la vez, lo que equivale en la practica a una sola apuesta concentrada con riesgo efectivo cercano al 10% del equity en un mismo factor de mercado. Definir un limite de posiciones por grupo de activos correlacionados.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "72 bloques if con 20 numeros magicos dispersos dificultan calibracion y mantenimiento",
+          "desc": "El analisis de complejidad detecta 72 bloques if y 20 numeros magicos (0.003, 0.1, 0.4, 0.6, 0.7, 0.8, etc.) distribuidos en el codigo. Valores como 0.4 en el escalado de OBV en el grafico, 0.8 en el margen libre o 1e-8 como guardia de division estan embebidos sin constantes nombradas. Esto hace que un ajuste de parametros requiera buscar manualmente todas las ocurrencias.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "CircuitBreaker usa datetime.utcnow() (deprecado en Python 3.12+)",
+          "desc": "Los metodos nuevo_dia(), registrar_resultado() y puede_operar() usan datetime.utcnow() que esta deprecado desde Python 3.12 y sera eliminado en futuras versiones. La mezcla con datetime.now(timezone.utc) en otras partes del codigo introduce inconsistencias de zona horaria que pueden causar errores sutiles en el calculo de duraciones de pausa. Reemplazar todos los datetime.utcnow() por datetime.now(timezone.utc).",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "detectar_cierres_cb usa magic hardcodeado 20250201 distinto del CONFIG['magic'] 20260001",
+          "desc": "En detectar_cierres_cb() la linea 'if d.magic != CONFIG.get(\"magic\", 20250201)' tiene un valor por defecto 20250201 que difiere del magic real del bot (20260001). Si por algun motivo CONFIG no tuviera la clave 'magic', el circuit breaker ignoraria todos los deals del bot y nunca registraria perdidas consecutivas, dejando el CB inutilizado.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "info",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "Estado JSON llama a cb.puede_operar() una segunda vez al final del ciclo — doble llamada a mt5.account_info()",
+          "desc": "Al construir el JSON de estado al final del ciclo principal, se invoca cb.puede_operar(log) nuevamente. Esta funcion llama internamente a mt5.account_info() y puede emitir mensajes de log. Esto genera una segunda consulta MT5 y potencialmente un segundo mensaje de pausa por ciclo. Guardar el resultado de puede_operar() en una variable y reutilizarla.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "NETH25 y SE30 tienen muy baja liquidez fuera de horario europeo — sin filtro de sesion",
+          "desc": "El bot opera 24/7 segun el estado JSON, pero NETH25 (AEX) y SE30 (OMX) tienen horarios de mercado restringidos (tipicamente 08:00-16:30 CE T). Operar con datos de baja liquidez fuera de horario puede generar spreads extremos y señales falsas. Se recomienda agregar un filtro de sesion por instrumento que evite abrir posiciones fuera del horario principal del mercado correspondiente.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "El reporte HTML embebe imagenes en base64 — archivos de varios MB para 8 instrumentos",
+          "desc": "Cada instrumento genera 4 graficos en base64 (equity, drawdown, PnL diario, chart M5). Con 8 instrumentos el HTML resultante puede superar los 20-30 MB, lo que lo hace lento de abrir en navegadores y dificil de compartir. Considerar guardar las imagenes como archivos PNG separados y referenciarlas con rutas relativas, o reducir el DPI de 130 a 90.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "get_signal_live busca señales en las ultimas 4 barras con un loop hacia atras — puede tomar señal obsoleta",
+          "desc": "El bucle 'for k in range(-4, -1)' busca la primera señal distinta de cero en las ultimas 3-4 barras cerradas. Si una divergencia se detecto hace 3 barras (15 minutos en M5) pero el precio ya se movio significativamente, la señal es obsoleta y la entrada al precio actual puede tener un riesgo muy diferente al calculado. Limitar la busqueda a la ultima barra cerrada (-2) o añadir una comprobacion de que el precio actual no se haya desviado mas de 0.5*ATR desde la barra de la señal.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "Solo 6 bloques try para 1178 lineas con 16 loops y llamadas MT5 — errores de red no capturados",
+          "desc": "El analisis de complejidad registra 72 bloques if, 16 loops y solo 6 bloques try en 1178 lineas. Funciones criticas como descargar(), abrir_orden() y cerrar_timeout() realizan multiples llamadas a la API de MT5 que pueden fallar por perdida de conexion, timeout o cuenta desconectada. La ausencia de manejo de excepciones granular significa que un error de red en mitad de un ciclo puede dejar posiciones abiertas sin gestion o detener el bot completamente sin registro del motivo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "title": "Numeros magicos 0.8 y 0.12 en logica de riesgo no documentados en CONFIG",
+          "desc": "El valor 0.8 se usa como umbral de margen libre (posiblemente 'no operar si el margen libre es menor al 80% del margen requerido') y 0.12 aparece en algun calculo de riesgo acumulado, pero ninguno de los dos esta definido como constante nombrada en CONFIG ni documentado con comentario. Si el broker cambia los requisitos de margen o el operador quiere ajustar estos umbrales, debe localizar las ocurrencias manualmente entre 72 bloques if, con riesgo de modificar el umbral equivocado.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "risk_pct duplicado en CONFIG — segunda entrada silenciosamente sobreescribe la primera",
+          "desc": "El diccionario CONFIG define 'risk_pct': 0.02 dos veces. En Python un dict literal con clave duplicada conserva solo el ultimo valor, pero si el desarrollador cambia una y no la otra el bot opera con riesgo incorrecto sin advertencia alguna. El trader confirma que esta correccion debe aplicarse.",
+          "code": "CONFIG = {\n    ...\n    'risk_pct' : 0.02,   # <-- primera definicion (seccion Riesgo)\n    ...\n    'max_positions' : 6,\n    'risk_pct' : 0.02,   # <-- segunda definicion (seccion Bot) — pisa a la anterior\n    ...\n}",
+          "fix": "# Eliminar la entrada duplicada y dejar una sola con comentario claro:\nCONFIG = {\n    ...\n    # Riesgo por operacion (2% del equity)\n    'risk_pct': 0.02,\n    ...\n}",
+          "comment": "El trader confirmo que esta correccion debe aplicarse. Se enfatiza la necesidad de eliminar la clave duplicada para evitar riesgo incorrecto silencioso."
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "magic de fallback en detectar_cierres_cb es 20250201, distinto del magic real 20260001",
+          "desc": "Si CONFIG no contiene la clave 'magic' (p.ej. por un typo), el circuit breaker filtra deals por el magic incorrecto y nunca registra perdidas, dejando el CB completamente inoperativo en cuenta real.",
+          "code": "if d.magic != CONFIG.get(\"magic\", 20250201):  # fallback incorrecto",
+          "fix": "# Usar el magic real como fallback, o mejor aun, acceder directamente sin fallback\nif d.magic != CONFIG[\"magic\"]:  # KeyError intencional si falta la clave",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "bug",
+          "title": "Divergencia simple genera señal identica a la doble — filtro de calidad anulado",
+          "desc": "El bloque 'elif precio_ll and (obv_hl or macd_hl): señales.iloc[i] = 1' asigna exactamente el mismo valor que la doble divergencia. El comentario dice 'igual entramos' lo que confirma que la distincion entre simple y doble fue eliminada intencionalmente pero dejando el codigo confuso y el filtro sin efecto.",
+          "code": "if precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1   # doble divergencia\nelif precio_ll and (obv_hl or macd_hl):\n    señales.iloc[i] = 1   # misma señal — filtro anulado",
+          "fix": "# Opcion A: eliminar el elif para exigir doble divergencia estricta\nif precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1\n\n# Opcion B: usar columna separada para distinguir calidad\nif precio_ll and obv_hl and macd_hl:\n    señales.iloc[i] = 1      # doble: alta calidad\nelif precio_ll and (obv_hl or macd_hl):\n    señales_simple.iloc[i] = 1  # simple: baja calidad, filtrar en construir_señales()",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "demo_mode=False por defecto — ejecucion accidental opera en cuenta real",
+          "desc": "El script puede ejecutarse en cuenta real con un simple 'python obv_macd_adx_bot_final_v2.py' sin ninguna confirmacion adicional. Con 6 posiciones maximas al 2% y apalancamiento 100x el riesgo de ruina es significativo ante un error de configuracion.",
+          "code": "\"demo_mode\": False,  # cuenta real — activo por defecto",
+          "fix": "# Cambiar default a True y requerir confirmacion explicita:\n\"demo_mode\": True,   # siempre demo por defecto\n\n# En run_bot(), antes de conectar:\nif not CONFIG['demo_mode']:\n    confirm = input('CUENTA REAL — escriba CONFIRMAR para continuar: ')\n    if confirm != 'CONFIRMAR':\n        sys.exit(0)",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "riesgo",
+          "title": "Print de arranque indica max 3 posiciones pero CONFIG['max_positions']=6",
+          "desc": "El operador ve '| max 3 posiciones |' al arrancar el bot y puede creer que el riesgo maximo conjunto es el 6% del equity, cuando en realidad puede llegar al 12% con 6 posiciones abiertas. En instrumentos correlacionados como STOXX50 y DE40 esto puede producir un drawdown conjunto muy superior al esperado.",
+          "code": "print(\"🔴 CUENTA REAL | 2% riesgo/trade | máx 3 posiciones | SL 1.5×ATR | TP 3×ATR\")\n# CONFIG['max_positions'] = 6  <-- inconsistencia",
+          "fix": "print(f\"🔴 CUENTA REAL | {CONFIG['risk_pct']*100:.0f}% riesgo/trade | \"\n      f\"máx {CONFIG['max_positions']} posiciones | \"\n      f\"SL {CONFIG['sl_mult']}×ATR | TP {CONFIG['tp_mult']}×ATR\")",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "riesgo",
+          "title": "datetime.utcnow() deprecado en Python 3.12+ causa advertencias y sera eliminado",
+          "desc": "CircuitBreaker usa datetime.utcnow() en nuevo_dia(), puede_operar() y registrar_resultado(). Desde Python 3.12 esta funcion emite DeprecationWarning y sera eliminada en Python 3.14. La mezcla con datetime.now(timezone.utc) en otras partes puede causar comparaciones incorrectas de offsets.",
+          "code": "ahora  = datetime.utcnow()   # en puede_operar()\nhoy = datetime.utcnow().date()  # en nuevo_dia()\nself.pausa_hasta = datetime.utcnow() + timedelta(...)  # en registrar_resultado()",
+          "fix": "from datetime import datetime, timezone\n\nahora  = datetime.now(timezone.utc)\nhoy = datetime.now(timezone.utc).date()\nself.pausa_hasta = datetime.now(timezone.utc) + timedelta(...)",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "ausencia",
+          "title": "Sin filtro de sesion horaria para indices europeos con horario restringido",
+          "desc": "NETH25 y SE30 operan tipicamente entre las 08:00 y 16:30 CET. Fuera de ese horario los spreads se disparan y el volumen (tick_volume) es artificialmente bajo, lo que puede generar divergencias OBV falsas. No hay ninguna comprobacion de horario antes de abrir ordenes.",
+          "code": "# En run_bot(), la señal se evalua y la orden se abre sin comprobacion de horario:\nfor sym in CONFIG[\"symbols\"]:\n    sig, estado = get_signal_live(sym)\n    if sig != 0:\n        señales_activas.append((sym, sig, estado))",
+          "fix": "HORARIOS = {\n    'NETH25': (8, 16),   # UTC\n    'SE30'  : (8, 16),\n    'STOXX50': (7, 21),\n    'DE40'  : (7, 21),\n    'UK100' : (8, 16),\n}\n\ndef en_horario(sym):\n    h = datetime.now(timezone.utc).hour\n    inicio, fin = HORARIOS.get(sym, (0, 23))\n    return inicio <= h < fin\n\n# Filtrar antes de evaluar señal:\nfor sym in CONFIG['symbols']:\n    if not en_horario(sym):\n        continue\n    sig, estado = get_signal_live(sym)",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "ausencia",
+          "title": "Sin correlacion entre instrumentos — riesgo concentrado en indices europeos",
+          "desc": "5 de los 8 instrumentos son indices europeos (STOXX50, DE40, NETH25, SE30, UK100) altamente correlacionados entre si. El circuit breaker limita posiciones totales pero no detecta que 5 LONGs en indices europeos simultaneos equivalen practicamente a una sola apuesta apalancada. No existe ninguna restriccion de correlacion ni de concentracion sectorial.",
+          "code": "# No existe ninguna logica de correlacion en run_bot():\nfor sym, sig, estado in señales_activas:\n    if n_pos >= CONFIG['max_positions']:\n        break\n    resultado = abrir_orden(sym, sig, precio, atr_v, log)",
+          "fix": "# Agrupar simbolos por clase de activo y limitar posiciones por grupo:\nGRUPOS = {\n    'indices_eu': ['STOXX50','DE40','NETH25','SE30','UK100'],\n    'energia'   : ['XTIUSD'],\n    'metales'   : ['XAUUSD'],\n    'cripto'    : ['BTCUSD'],\n}\nMAX_POR_GRUPO = {'indices_eu': 2, 'energia': 1, 'metales': 1, 'cripto': 1}\n\n# Verificar antes de abrir cada orden cuantas posiciones hay en el mismo grupo",
+          "comment": ""
+        },
+        {
+          "id": "H-09",
+          "categoria": "mejora",
+          "title": "get_signal_live busca señal en las ultimas 4 barras — riesgo de entrada con señal obsoleta",
+          "desc": "El bucle 'for k in range(-4, -1)' puede usar una divergencia detectada hace 15 minutos. En ese tiempo el precio pudo moverse mas de 1*ATR, haciendo que el SL calculado con el ATR actual sea incorrecto y que la relacion riesgo/recompensa real difiera del objetivo 1:2.",
+          "code": "for k in range(-4, -1):\n    if len(señales_m5) + k >= 0:\n        v = int(señales_m5.iloc[k])\n        if v != 0:\n            sig = v\n            break",
+          "fix": "# Usar solo la ultima barra cerrada (-2):\nsig = int(señales_m5.iloc[-2]) if len(señales_m5) >= 2 else 0\n\n# Opcionalmente, añadir validacion de precio:\nprecio_señal = float(m5['Close'].iloc[-2])\nprecio_actual = float(m5['Close'].iloc[-1])\natr_actual = float(m5['atr'].iloc[-1])\nif abs(precio_actual - precio_señal) > 0.5 * atr_actual:\n    sig = 0  # señal demasiado vieja, precio se movio",
+          "comment": ""
+        },
+        {
+          "id": "H-10",
+          "categoria": "mejora",
+          "title": "Sharpe annualizado con factor sqrt(525600/5) asume equity continuo en M5 — sobreestima Sharpe",
+          "desc": "El calculo de Sharpe usa pct_change() sobre la curva de equity completa (incluyendo barras sin trades donde el equity no cambia). Las barras planas reducen artificialmente la desviacion estandar e inflan el Sharpe. El factor de anularizacion de 525600/5 asume 252 dias de 24h de trading continuo, lo que es incorrecto para indices europeos con horario restringido.",
+          "code": "dr    = equity.pct_change().dropna()\nsharpe= dr.mean() / dr.std() * np.sqrt(525_600/5) if dr.std() > 0 else 0",
+          "fix": "# Calcular Sharpe sobre retornos de trades individuales, no del equity continuo:\nif not trades.empty:\n    trade_returns = trades['pnl_usd'] / CONFIG['capital_ini']\n    n_trades_anio = len(trades) / (CONFIG['days_back'] / 252)\n    sharpe = (trade_returns.mean() / trade_returns.std() * np.sqrt(n_trades_anio)\n              if trade_returns.std() > 0 else 0)\nelse:\n    sharpe = 0",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "Solo 6 bloques try en 1178 lineas: llamadas MT5 sin captura de excepciones pueden dejar posiciones huerfanas",
+          "desc": "Funciones como abrir_orden() y cerrar_timeout() ejecutan mt5.order_send() y mt5.positions_get() sin bloque try/except propio. Un timeout de red o una desconexion de MT5 en mitad de abrir_orden() puede enviar la orden al broker pero fallar al leer el resultado, dejando una posicion real abierta sin registro interno y sin SL/TP asignados desde el lado del bot.",
+          "code": "# En abrir_orden() (sin try/except):\nresult = mt5.order_send(request)\nif result.retcode != mt5.TRADE_RETCODE_DONE:\n    log.error(...)\n    return False\n# Si mt5.order_send() lanza OSError por conexion, el except no existe",
+          "fix": "def abrir_orden(sym, direccion, precio, atr_v, log):\n    try:\n        result = mt5.order_send(request)\n        if result is None:\n            log.error(f'{sym}: order_send devolvio None — posible desconexion')\n            return False\n        if result.retcode != mt5.TRADE_RETCODE_DONE:\n            log.error(f'{sym}: retcode {result.retcode}')\n            return False\n        return True\n    except Exception as exc:\n        log.exception(f'{sym}: excepcion inesperada en abrir_orden: {exc}')\n        return False",
+          "comment": ""
+        }
+      ],
+      "versions": [
+        "FILE-004"
+      ],
+      "category": "Bot en vivo | 8 instrumentos | MT5 IC Markets | OBV + MACD Divergencia + ADX multitemporal",
+      "summary": "Bot de trading en vivo que opera 8 instrumentos (indices europeos, XTIUSD, XAUUSD, BTCUSD) en MT5 usando doble divergencia OBV+MACD en M5 filtrada por sesgo ADX en H1 y confirmacion ADX en M15. Incluye backtest interno, circuit breaker multinivel, gestion de riesgo dinamica con lot sizing via order_calc_profit y reporte HTML completo. No se proveen resultados de backtest ni datos CSV, por lo que no hay metricas de calidad disponibles para evaluar el rendimiento historico.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Sesión del 5 de mayo con VIX en ascenso moderado, eventos macro de alto impacto en USD y AUD ya activos, y posicionamiento institucional alcista en XAU y EUR que favorece setups de continuación si el ADX confirma tendencia.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "ISM PMI y JOLTS USD: pausar bot 10:00 ET",
+            "desc": "A las 10:00 ET de hoy se publican ISM Services PMI (forecast 53.7) y JOLTS Job Openings (forecast 6.86M) simultáneamente. Estos datos mueven índices europeos y XAUUSD con fuerza en M5. Se recomienda activar el circuit breaker manual o pausar el bot entre 09:50 y 10:15 ET para evitar entradas en señales falsas generadas por el spike de volatilidad. Reanudar solo cuando el spread vuelva a niveles normales y el ADX en H1 haya absorbido el movimiento.",
+            "horizonte": "now",
+            "correction": "No tener en cuenta"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "VIX en alza: reducir tamaño de lote",
+            "desc": "El VIX subió de 16.99 a 18.29 (+1.30), señal de incremento de volatilidad implícita en renta variable. Para una estrategia basada en divergencias OBV+MACD en M5, un VIX en expansión aumenta los falsos cruces y señales prematuras. Se recomienda reducir el lot sizing dinámico en un 20-25% en instrumentos de índices europeos (GER40, etc.) hasta que el VIX estabilice por debajo de 17. El régimen sigue siendo 'normal' pero la tendencia es al alza, vigilar si supera 20.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "Datos de empleo CAD y USD: viernes 08:30 ET",
+            "desc": "El viernes 8 de mayo a las 08:30 ET se publican Employment Change CAD, Unemployment Rate CAD y Average Hourly Earnings USD de forma simultánea. Este triple evento genera volatilidad cruzada que puede afectar índices y XAUUSD. Programar pausa automática del bot entre 08:20 y 08:50 ET del viernes. Adicionalmente, BOE Gov Bailey habla a las 08:20 ET del mismo día, lo que puede impactar instrumentos correlacionados con GBP. Verificar que el circuit breaker multinivel esté activo ese día.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "XAUUSD: COT institucional muy alcista",
+            "desc": "El posicionamiento especulativo neto en XAU es +153.504 contratos con longs en 204.559 vs shorts en 51.055, sesgo fuertemente alcista al 28 de abril. Esto respaldo estructural institucional favorece setups de divergencia alcista OBV+MACD en M5 con confirmación ADX en H1. Si el ADX H1 supera 25 con DI+ dominante, priorizar entradas long en XAUUSD sobre otros instrumentos. El sesgo macro apoya la dirección; mantener lot sizing en rango normal o ligeramente elevado para este instrumento específico.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "BTCUSD: Fear and Greed en recuperación",
+            "desc": "El índice Crypto Fear and Greed subió de 40 a 50 (Neutral), indicando recuperación del sentimiento desde zona de miedo. Esta transición de miedo a neutralidad es históricamente favorable para setups de divergencia alcista en BTCUSD. Sin datos de funding rate disponibles, no se puede confirmar si hay crowding de longs, por lo que se debe operar con tamaño conservador. Activar el bot en BTCUSD solo si el ADX M15 confirma momentum y el ADX H1 muestra sesgo direccional claro. Evitar operar en rango si ADX H1 está por debajo de 20.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "EUR COT levemente alcista: contexto limitado",
+            "desc": "El posicionamiento neto en EUR es apenas +2.339 contratos (longs 192.030 vs shorts 189.691), prácticamente neutral con leve sesgo alcista. Esto no provee un viento de cola institucional significativo para índices europeos como el GER40. El bot debe confiar principalmente en la señal técnica OBV+MACD con filtro ADX sin asumir apoyo macro fuerte en EUR. Las tasas del BCE no están disponibles esta semana para calcular el diferencial vs Fed Funds, lo que añade incertidumbre al sesgo EUR. Mantener configuración estándar de riesgo para instrumentos europeos.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-05T02:58:37Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 18.29,
+            "prev": 16.99,
+            "change": 1.3,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 50,
+            "label": "Neutral",
+            "prev": 40
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Cash Rate",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "4.35%",
+              "previous": "4.10%"
+            },
+            {
+              "event": "RBA Monetary Policy Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Rate Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Press Conference",
+              "currency": "AUD",
+              "date": "2026-05-05T01:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "ISM Services PMI",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "53.7",
+              "previous": "54.0"
+            },
+            {
+              "event": "JOLTS Job Openings",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "6.86M",
+              "previous": "6.88M"
+            },
+            {
+              "event": "Employment Change q/q",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "5.4%",
+              "previous": "5.4%"
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-05-08T08:20:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Employment Change",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "11.6K",
+              "previous": "14.1K"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "6.7%",
+              "previous": "6.7%"
+            },
+            {
+              "event": "Average Hourly Earnings m/m",
+              "currency": "USD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158637",
+              "date": "2026-03"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": 2339,
+              "long": 192030,
+              "short": 189691,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -109383,
+              "long": 100712,
+              "short": 210095,
+              "bias": "bearish",
+              "date": "2026-04-28"
+            },
+            "XAU": {
+              "net": 153504,
+              "long": 204559,
+              "short": 51055,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-05T02:58:37Z"
+        }
+      }
+    },
+    {
       "id": "fsh-e",
       "fsh_class": "fsh-e",
       "name": "Vela liquidez apertura",
@@ -1483,21 +1991,461 @@
           "type": "py"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
       "m1": {
         "type": "empty",
-        "last_updated": null,
-        "empty_title": "Vela liquidez apertura — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
+        "last_updated": "2026-05-05T00:00:00Z",
+        "last_updated_meta": "backtest_canal_fib.py",
+        "empty_title": "Sin datos de backtest ejecutado",
+        "empty_desc": "El archivo proporcionado es el script Python del backtest, no un reporte de resultados. Para obtener metricas reales (Win Rate, Profit Factor, Max Drawdown, Sharpe) es necesario ejecutar el script con MT5 activo y adjuntar los CSV generados (canal_fib_XAUUSD.csv, canal_fib_XAGUSD.csv, canal_fib_BTCUSD.csv) o el HTML de salida canal_fib_backtest.html.",
         "empty_trigger": "backtest_canal_fib.py"
       },
-      "m2": [],
-      "m3": [],
-      "m4": [],
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Lookahead bias parcial: canal calculado incluye la barra de señal",
+          "desc": "La ventana del canal se define como df.iloc[i-CANAL_LENGTH:i], lo que excluye correctamente la barra i. Sin embargo, la señal de entrada se dispara cuando c_high >= entry_short o c_low <= entry_long usando los valores HIGH/LOW de la barra i completa, es decir datos que aun no estan disponibles al comienzo de esa barra en tiempo real. En mercados como BTCUSD M3 esto puede generar entradas fantasmas en barras con grandes mechas. La solucion es usar el close de la barra anterior (i-1) para determinar si el precio rozo el nivel, y ejecutar la entrada al open de la barra siguiente (i+1).",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Avance de indice fijo (i += CANAL_LENGTH) ignora trades solapados",
+          "desc": "Tras registrar un trade, el bucle avanza i += CANAL_LENGTH (20 barras) independientemente de cuantas barras tardo realmente en resolverse el trade. Si el trade duro 80 barras y el canal siguiente se forma en la barra 21, se pierde esa señal. Alternativamente, si el trade se resolvio en 5 barras, el salto de 20 es excesivo. Se recomienda guardar el indice de cierre del trade y avanzar desde ahi: i = j + 1 (siendo j el indice donde se cerro la posicion).",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Capital compuesto sin limite de drawdown maximo: riesgo de ruina",
+          "desc": "El riesgo del 2% se aplica sobre el capital actual en cada trade, lo que en una racha negativa produce un efecto de Kelly inverso: los lotes bajan pero el capital continua erosionandose sin ningun mecanismo de pausa. No hay logica de circuit-breaker (ej. detener operaciones si el DD supera 15-20%). Se recomienda agregar una variable MAX_DD_STOP = 0.15 y detener el backtest (y el bot en vivo) si (capital_ini - capital) / capital_ini > MAX_DD_STOP.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Discrepancia entre RISK_PCT (2%) y HTML generado (muestra 2.5%)",
+          "desc": "La constante RISK_PCT = 0.02 fue comentada como 'corregido desde 2.5%', pero en la funcion build_html el texto hardcodeado dice 'Riesgo 2.5% compuesto' en la fila de costos (costos-row) y en el subtitulo del HTML. Esto genera un reporte engañoso que no refleja el parametro real usado en el calculo. Corregir ambas cadenas: reemplazar '2.5%' por f'{RISK_PCT*100:.1f}%' para que el HTML sea siempre consistente con la constante.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Ventana de simulacion de 200 barras puede cerrar trades por timeout sin registrarlo",
+          "desc": "El bucle interno recorre hasta min(i+200, n) barras. Si ninguno de los TPs ni el SL se activa dentro de ese rango, el trade queda con result='OPEN' y se descarta sin registrar. En BTCUSD M3, 200 barras = 10 horas, lo que puede ser insuficiente para targets amplios en niveles Fibonacci extendidos (1.382 SL vs -0.382). Considera aumentar el limite a 500 o registrar los trades OPEN con su pnl flotante al cierre de ventana para analisis de slippage temporal.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "CANAL_LENGTH = 20 sin validacion segun volatilidad del instrumento",
+          "desc": "Un canal de 20 barras M3 (60 minutos) puede ser adecuado para XAUUSD pero resulta estrecho para BTCUSD donde la volatilidad es estructuralmente mayor. La misma longitud de canal produce niveles Fibonacci muy proximos en activos de baja volatilidad y muy amplios en cripto, distorsionando el ratio riesgo/beneficio. Considera parametrizar CANAL_LENGTH por simbolo: {'XAUUSD': 20, 'XAGUSD': 20, 'BTCUSD': 30}.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "title": "Solo 180 dias de datos: muestra insuficiente para BTCUSD M3",
+          "desc": "Con PERIOD_DAYS = 180 y avance de i += 20 tras cada trade, la cantidad maxima teorica de trades por instrumento es aproximadamente 180*480/20 = 4320, pero los filtros de sesion y la condicion de señal reducen eso drasticamente. Para XAGUSD con sesion limitada a horas 1-12, el numero de trades puede caer por debajo de MIN_TRADES = 5. Se recomienda ampliar a 365 dias y revisar si el historial disponible en IC Markets M3 lo permite.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "title": "Sin walk-forward ni separacion train/test",
+          "desc": "El backtest corre sobre los 180 dias completos sin ninguna separacion entre periodo de optimizacion y periodo de validacion. Los niveles Fibonacci usados (1.191, 0.809, 0.618, 0.382, -0.191, -0.382) son fijos pero elegidos por el autor: si fueron seleccionados observando el mismo periodo, hay riesgo de sobreajuste. Implementar un walk-forward 70/30 (primeros 126 dias para señal, ultimos 54 para validacion) permitiria detectar degradacion de performance.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Multiples numeros magicos sin constantes nombradas aumentan riesgo de inconsistencia",
+          "desc": "El archivo contiene al menos 20 numeros magicos detectados (0.191, 0.382, 0.618, 0.809, 1.191, 1.382, entre otros) dispersos en el codigo sin estar asignados a constantes nombradas. Si un nivel Fibonacci se ajusta en un lugar (por ejemplo en fib_price) pero no se actualiza en otro punto donde se usa directamente como literal (por ejemplo en la logica de condicion de entrada o en build_html), los calculos quedaran desincronizados silenciosamente. Se recomienda definir un diccionario central FIB_LEVELS = {'tp1': 0.618, 'tp2': 0.809, ...} y referenciar unicamente esas constantes en todo el script.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib.py",
+          "title": "Spread aplicado en precio sin convertir a USD para el costo real",
+          "desc": "La variable spread_price contiene la diferencia ask-bid en unidades del instrumento (ej. 0.25 para XAUUSD). Se resta/suma directamente a los niveles de entrada y TP, lo cual es correcto para el slippage de precio. Sin embargo, en calc_metricas el costo_rt se calcula como spread_usd + comm_usd * 2, sumando el spread en precio con la comision en USD, lo que mezcla unidades incompatibles. El spread en USD real deberia ser spread_price * lot * contract_size, no spread_price a secas.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib.py",
+          "title": "La logica de resultado BREAKEVEN puede clasificar mal trades ganadores parciales",
+          "desc": "Un trade clasifica como 'WIN' si tps_hit[0] es True y no es un breakeven puro. Pero si el TP1 se activa, el SL se mueve a entry (breakeven), y luego el precio alcanza TP2 pero no TP3, el resultado es WIN con 2/3 parciales. Si solo alcanza TP1 y luego cierra en breakeven, es BREAKEVEN. Esta logica es correcta en concepto pero el calculo de Win Rate excluye los BREAKEVEN del denominador (total = wins + losses), por lo que el WR reportado es artificialmente alto ya que los BE son trades sin perdida que no se contabilizan.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib.py",
+          "title": "pnl_usd usa tick_value estatico que puede ser incorrecto para XAGUSD",
+          "desc": "La funcion pnl_usd calcula el PnL via ticks * trade_tick_value, pero trade_tick_value en MT5 puede variar segun el precio actual del instrumento para metales cotizados en USD (especialmente XAGUSD). Si el tipo de cambio del margen cambia durante el periodo de backtest, el valor por tick puede estar desactualizado. La alternativa mas robusta seria usar order_calc_profit (como se hace en calc_lot) tambien para calcular el PnL de cada cierre parcial.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "info",
+          "origin": "backtest_canal_fib.py",
+          "title": "Filtro de sesion por hora UTC sin ajuste DST para mercados europeos",
+          "desc": "SESSION_HOURS usa horas UTC fijas (1-12 para metales, 14-22 para BTC). En verano (DST europeo/americano), la sesion de Londres abre a las 7:00 UTC en lugar de las 8:00, lo que puede incluir o excluir barras relevantes. Para un periodo de 180 dias que cruza el cambio de horario de marzo, el filtro no es homogeneo. Considerar usar pytz para convertir a hora del exchange antes de filtrar.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "backtest_canal_fib.py",
+          "title": "El reporte HTML embebe todas las imagenes en base64 dentro del archivo",
+          "desc": "Para 3 simbolos con 4 graficos cada uno (equity, dd, mensual, pie), el HTML puede superar los 15-20 MB segun la cantidad de trades. Esto hace el archivo lento de abrir en el navegador y puede causar problemas en sistemas con poca RAM. Considerar guardar los PNG como archivos separados y referenciarlos con rutas relativas, o reducir el DPI de 130 a 90 para graficos secundarios.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib.py",
+          "title": "Un solo bloque try/except en todo el archivo (42 if-blocks, 8 loops)",
+          "desc": "La complejidad ciclomatica es alta (42 bloques if) y solo existe 1 bloque try/except, ubicado en get_costos_reales para el historial de deals. El bucle principal de backtest, calc_lot y pnl_usd no tienen manejo de excepciones. Si mt5.order_calc_profit devuelve None de forma inesperada o info.trade_tick_size es 0 por un simbolo mal configurado, el script puede fallar silenciosamente o producir resultados erroneos sin aviso.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "warn",
+          "origin": "backtest_canal_fib.py",
+          "title": "Alta complejidad ciclomatica (42 bloques if, 8 loops) con un solo bloque try/except aumenta superficie de fallos silenciosos",
+          "desc": "Los pre-analysis facts confirman 42 bloques if y 8 loops frente a solo 1 bloque try/except. La densidad de ramas no cubiertas por manejo de errores es muy alta. En particular, funciones criticas como pnl_usd y calc_lot realizan divisiones (por tick_size, por sl_dist) y llamadas a MT5 que pueden retornar None o cero sin que ningun mecanismo lo capture. Esto no esta cubierto por ninguna observacion existente con el enfoque de cobertura de excepciones por funcion individual.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "info",
+          "origin": "backtest_canal_fib.py",
+          "title": "Niveles 0.12 y 3.5 no corresponden a ratios Fibonacci estandar y no estan documentados",
+          "desc": "Entre los numeros magicos detectados aparecen 0.12 y 3.5, que no forman parte de la serie Fibonacci clasica (0.236, 0.382, 0.5, 0.618, 0.786, 1.272, 1.618). Su origen y proposito no estan documentados en el codigo. Si corresponden a margenes de tolerancia o multiplicadores de lote, deben nombrarse explicitamente (ej. TOLERANCIA_ENTRADA = 0.12). Si son niveles de extension, deben justificarse con evidencia estadistica sobre el conjunto de datos usado.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "Texto hardcodeado '2.5%' en HTML no refleja RISK_PCT real",
+          "desc": "En build_html, la fila de costos muestra 'Riesgo 2.5% compuesto' aunque RISK_PCT = 0.02. El reporte siempre mostrara el valor incorrecto independientemente del parametro configurado.",
+          "code": "# costos-row en build_html:\n<span>🎯 Riesgo/trade: <b>2.5% compuesto</b></span>",
+          "fix": "# Reemplazar por f-string con la constante:\n<span>🎯 Riesgo/trade: <b>{RISK_PCT*100:.1f}% compuesto</b></span>",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "direction SHORT: exit_px = sl_px pero sl_px > entry_px, PnL de fallback sera negativo mal calculado",
+          "desc": "En calc_lot, cuando entry_px > sl_px se asigna ORDER_TYPE_BUY y exit_px = sl_px. Para SHORT, entry_px < sl_px (SL esta por encima de la entrada), por lo que entry_px > sl_px es falso: entra al else y asigna ORDER_TYPE_SELL con exit_px = sl_px. order_calc_profit retornara un valor negativo (perdida) cuyo abs() es correcto. Sin embargo, si falla y entra al fallback manual, sl_ticks se calcula con abs(exit_px - entry_px) / tick_s siendo exit_px = sl_px, lo que esta bien. El bug real es que exit_px en el else se asigna al mismo sl_px que en el if, lo que hace identico el calculo para ambas ramas del condicional: la variable order_type es la unica que diferencia, y si order_calc_profit falla, el fallback es identico para ambas direcciones.",
+          "code": "if entry_px > sl_px:\n    order_type = mt5.ORDER_TYPE_BUY\n    exit_px    = sl_px\nelse:\n    order_type = mt5.ORDER_TYPE_SELL\n    exit_px    = sl_px  # identico al if",
+          "fix": "# El fallback manual no depende de order_type, solo de la distancia.\n# Simplificar y documentar que exit_px = sl_px es correcto en ambos casos.\n# Agregar assertion para detectar sl_dist <= 0 antes de llamar a order_calc_profit:\nassert sl_dist > 0, f'SL igual a entry en {symbol}'",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "Condicion de señal usa HIGH/LOW de la barra actual completa (lookahead bias)",
+          "desc": "La señal de entrada se evalua con c_high y c_low de la barra i, que es la barra que se esta 'formando'. En un backtest bar-by-bar real, al inicio de la barra solo se conoce el open. Usar el high/low implica que la señal se activa con informacion futura dentro de la misma barra.",
+          "code": "c_high  = float(bar['high'])   # desconocido al open de la barra\nc_low   = float(bar['low'])\nif c_high >= entry_short and c_close < lvl_top:\n    direction = 'SHORT'",
+          "fix": "# Evaluar señal al cierre de barra i-1 y ejecutar al open de barra i:\nprev = df.iloc[i-1]\nif float(prev['high']) >= entry_short and float(prev['close']) < lvl_top:\n    direction = 'SHORT'\n# entry_px = float(df.iloc[i]['open'])  # ejecucion al open de la siguiente barra",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "Sin limite de drawdown maximo: posible ruina total en backtest y en vivo",
+          "desc": "El capital compuesto sin circuit-breaker permite que el capital caiga a valores cercanos a cero en una racha larga de perdidas consecutivas. No existe ninguna condicion que detenga el backtest o alerte al usuario.",
+          "code": "capital += pnl_neto  # sin verificacion posterior",
+          "fix": "MAX_DD_STOP = 0.20  # 20% de drawdown maximo\nif capital < capital_ini * (1 - MAX_DD_STOP):\n    print(f'  ⛔ Circuit breaker activado: capital ${capital:.2f}')\n    break",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "riesgo",
+          "title": "Avance i += CANAL_LENGTH puede saltar señales validas o solapar trades",
+          "desc": "Despues de registrar un trade, el indice avanza exactamente 20 barras sin considerar cuantas barras tardo el trade en cerrarse. Si el trade se cerro en la barra j (j > i+20), el bucle saltara a i+20, que esta dentro del periodo del trade aun activo.",
+          "code": "i += CANAL_LENGTH  # siempre 20, independiente de j (cierre del trade)",
+          "fix": "# Guardar el indice de cierre y avanzar desde ahi:\nclosure_idx = j if 'j' in dir() else i + 1\ni = closure_idx + 1",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "ausencia",
+          "title": "Sin validacion de capital minimo para continuar operando",
+          "desc": "Si el capital cae por debajo del margen minimo para abrir 1 lote minimo (info.volume_min), calc_lot devolvera volume_min de todas formas, pero el riesgo real en USD sera mayor que el RISK_PCT configurado, rompiendo la logica de gestion de capital.",
+          "code": "lot = calc_lot(symbol, entry_px, sl_px, capital)\n# No hay verificacion de capital minimo antes de calc_lot",
+          "fix": "MIN_CAPITAL = 500.0  # umbral minimo operativo\nif capital < MIN_CAPITAL:\n    print(f'  ⚠️ Capital insuficiente (${capital:.2f}), deteniendo {symbol}')\n    break\nlot = calc_lot(symbol, entry_px, sl_px, capital)",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "ausencia",
+          "title": "Sin walk-forward: no hay validacion out-of-sample",
+          "desc": "El backtest evalua los 180 dias completos sin reservar un periodo de prueba. Los niveles Fibonacci y parametros del canal no tienen evidencia de generalizacion fuera del periodo observado.",
+          "code": "# run() llama directamente a backtest(df, ...) con todos los datos\ndf_trades, cap_fin = backtest(df, sym, spread_price, comm_usd, CAPITAL_INI)",
+          "fix": "# Dividir en 70% train / 30% test:\nsplit = int(len(df) * 0.70)\ndf_train = df.iloc[:split]\ndf_test  = df.iloc[split:]\ndf_trades_train, _ = backtest(df_train, sym, spread_price, comm_usd, CAPITAL_INI)\ndf_trades_test,  _ = backtest(df_test,  sym, spread_price, comm_usd, CAPITAL_INI)",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "mejora",
+          "title": "Mezcla de unidades en metrica costo_rt (precio + USD)",
+          "desc": "calc_metricas calcula costo_rt = spread_usd + comm_usd * 2, donde spread_usd es realmente spread en unidades de precio del instrumento (ej. 0.25 para XAUUSD), no dolares. La suma es dimensionalmente incorrecta y el valor mostrado en el reporte HTML no tiene interpretacion financiera valida.",
+          "code": "# En calc_metricas:\n'costo_rt': round(spread_usd + comm_usd * 2, 4),\n# spread_usd es en precio, comm_usd en USD/lote",
+          "fix": "# Reportar por separado y no sumarlos:\n'spread_precio': round(spread_usd, 6),   # unidades del instrumento\n'comm_rt_usd'  : round(comm_usd * 2, 4), # USD por lote round-trip\n# En el HTML mostrar ambos con sus unidades correctas",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "Division potencial por cero en pnl_usd si trade_tick_size es 0 o None",
+          "desc": "La funcion pnl_usd calcula ticks = precio_diff / info.trade_tick_size. Si el simbolo esta mal configurado en MT5 y trade_tick_size retorna 0 o None, se producira una ZeroDivisionError o TypeError que no esta capturada por ningun try/except, ya que el unico bloque existente esta en get_costos_reales. Dado que pnl_usd se llama dentro del bucle principal de backtest, un fallo aqui aborta toda la simulacion sin guardar los trades ya procesados.",
+          "code": "ticks = abs(exit_px - entry_px) / info.trade_tick_size  # sin guardia",
+          "fix": "tick_s = getattr(info, 'trade_tick_size', None)\nif not tick_s or tick_s <= 0:\n    raise ValueError(f'trade_tick_size invalido para {symbol}: {tick_s}')\nticks = abs(exit_px - entry_px) / tick_s",
+          "comment": ""
+        }
+      ],
       "versions": [
         "FILE-005"
-      ]
+      ],
+      "category": "Backtest | 3 instrumentos | MT5 IC Markets | Canal Fibonacci M3 TPs parciales",
+      "summary": "Script de backtest sobre XAUUSD, XAGUSD y BTCUSD en M3 que detecta rupturas de canal de 20 barras y coloca entradas en niveles Fibonacci extendidos (1.191 / -0.191) con 3 TPs parciales (1/3 cada uno) y breakeven en TP1. Descarga spread y comision real desde MT5 en tiempo real y calcula el lote via order_calc_profit con capital compuesto al 2% de riesgo. No hay datos CSV de resultados adjuntos, por lo que no se pueden reportar metricas numericas concretas; el analisis es exclusivamente estructural.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Volatilidad moderada en ascenso con VIX en 18.29, eventos macro clave en USD hoy y posicionamiento institucional alcista en XAU favorecen operativa selectiva; pausa recomendada en ventanas de datos.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "ISM y JOLTS USD disparan volatilidad a las 10:00 ET",
+            "desc": "Hoy a las 10:00 ET se publican ISM Services PMI (53.7 esperado) y JOLTS Job Openings (6.86M esperado). Estos dos eventos simultaneos sobre USD pueden generar spreads extremos y velas falsas en XAUUSD y XAGUSD en M3. Detener el bot al menos 10 minutos antes (09:50 ET) y reactivarlo 15 minutos despues de la publicacion (10:15 ET) una vez el spread regrese a niveles normales. BTCUSD tambien puede reaccionar por correlacion con sentimiento de riesgo.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "VIX sube 7.6%: spreads ampliados en metales",
+            "desc": "El VIX paso de 16.99 a 18.29, un incremento del 7.6% en una sola sesion. Aunque el regimen sigue siendo normal, la aceleracion indica nerviosismo creciente. En XAUUSD y XAGUSD el spread real descargado desde MT5 probablemente este elevado en apertura. Verificar que el calculo de lote via order_calc_profit absorbe el spread actual antes de cada entrada. Si el costo de spread supera el 15% del TP1 calculado, omitir la senal.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "Salarios horarios USD el viernes amenazan a XAU",
+            "desc": "El 8 de mayo a las 08:30 ET se publican Average Hourly Earnings m/m (0.3% esperado vs 0.2% anterior) junto con empleo canadiense. Un dato de salarios superior al esperado refuerza expectativas hawkish de la Fed, lo que presionaria a la baja a XAUUSD. Programar pausa automatica del bot desde las 08:20 ET hasta las 08:50 ET el viernes. Revisar el nivel de canal de 20 barras antes de reactivar para evitar entrar en canal invalidado.",
+            "horizonte": "48h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "COT XAU: institucionales fuertemente alcistas",
+            "desc": "El ultimo reporte CFTC del 28 de abril muestra net long en XAU de 153,504 contratos (longs 204,559 vs shorts 51,055), sesgo institucional marcadamente alcista. Esto valida que las rupturas al alza del canal de 20 barras en XAUUSD tienen respaldo de flujo institucional. Priorizar senales de compra sobre senales de venta en XAUUSD durante esta semana. En caso de ruptura bajista del canal, reducir tamano de lote al 50% del calculo estandar como cautela.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "Crypto Fear & Greed sube a 50: BTC en zona neutra favorable",
+            "desc": "El indice de Fear & Greed crypto paso de 40 (miedo) a 50 (neutral), indicando reduccion de presion vendedora en BTC. Sin datos de funding rate disponibles, operar BTCUSD con la estrategia estandar pero mantener el breakeven activo en TP1 con disciplina estricta. La transicion de miedo a neutral suele preceder movimientos direccionales de mayor amplitud, lo que favorece capturas de TP2 y TP3. Vigilar si el indice supera 55 en las proximas 24h como confirmacion de momentum.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "NFP marzo y CPI: contexto macro de fondo",
+            "desc": "El ultimo NFP de marzo reporta 158,637K empleos y el CPI index se ubica en 330.213, senales de mercado laboral solido con inflacion aun elevada. Este contexto mantiene a la Fed en postura restrictiva, lo que limita el potencial alcista de XAUUSD en el mediano plazo a pesar del sesgo COT positivo. El bot no requiere ajuste por este dato hoy, pero el equipo debe considerar que el canal Fibonacci puede mostrar rangos mas comprimidos si el USD recupera fuerza en la semana.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-05T03:25:56Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 18.29,
+            "prev": 16.99,
+            "change": 1.3,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 50,
+            "label": "Neutral",
+            "prev": 40
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Cash Rate",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "4.35%",
+              "previous": "4.10%"
+            },
+            {
+              "event": "RBA Monetary Policy Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Rate Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Press Conference",
+              "currency": "AUD",
+              "date": "2026-05-05T01:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "ISM Services PMI",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "53.7",
+              "previous": "54.0"
+            },
+            {
+              "event": "JOLTS Job Openings",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "6.86M",
+              "previous": "6.88M"
+            },
+            {
+              "event": "Employment Change q/q",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "5.4%",
+              "previous": "5.4%"
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-05-08T08:20:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Employment Change",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "11.6K",
+              "previous": "14.1K"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "6.7%",
+              "previous": "6.7%"
+            },
+            {
+              "event": "Average Hourly Earnings m/m",
+              "currency": "USD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158637",
+              "date": "2026-03"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": 2339,
+              "long": 192030,
+              "short": 189691,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -109383,
+              "long": 100712,
+              "short": 210095,
+              "bias": "bearish",
+              "date": "2026-04-28"
+            },
+            "XAU": {
+              "net": 153504,
+              "long": 204559,
+              "short": 51055,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-05T03:25:56Z"
+        }
+      }
     }
   ],
   "folders": [
