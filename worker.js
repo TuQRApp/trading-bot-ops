@@ -39,8 +39,10 @@ export default {
     if (pathname === '/group'   && method === 'DELETE') return handleDeleteGroup(request, env);
     if (pathname === '/folder'  && method === 'POST')   return handleCreateFolder(request, env);
     if (pathname === '/folder'  && method === 'DELETE') return handleDeleteFolder(request, env);
-    if (pathname === '/dispatch-m5' && method === 'POST') return handleDispatchM5(request, env);
-    if (pathname === '/status'      && method === 'GET')  return handleGetStatus(env);
+    if (pathname === '/dispatch-m5'   && method === 'POST') return handleDispatchM5(request, env);
+    if (pathname === '/status'        && method === 'GET')  return handleGetStatus(env);
+    if (pathname === '/chat'          && method === 'POST') return handleChat(request, env);
+    if (pathname === '/generate-spec' && method === 'POST') return handleGenerateSpec(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -552,4 +554,397 @@ async function handleDispatchM5(request, env) {
   } catch (e) {
     return json({ error: e.message }, 500);
   }
+}
+
+// ── /chat  POST — streaming proxy a Claude API ───────────────────────────────
+// Body   : { messages, context }
+// Context: { bots_activos, market_context, trader_profile, manual, spec_actual }
+// Response: SSE text/event-stream (Claude format, el cliente parsea delta.text)
+
+async function handleChat(request, env) {
+  if (!env.ANTHROPIC_API_KEY)
+    return json({ error: 'ANTHROPIC_API_KEY no configurado en el Worker' }, 500);
+  try {
+    const body = await request.json();
+    const { messages = [], context = {} } = body;
+    const system = buildChatSystem(context);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key'        : env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type'     : 'application/json',
+      },
+      body: JSON.stringify({
+        model     : 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system,
+        messages  : normalizeMessages(messages),
+        stream    : true,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      return json({ error: 'Claude API: ' + err }, res.status);
+    }
+    return new Response(res.body, {
+      headers: {
+        ...CORS,
+        'Content-Type' : 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── /generate-spec  POST — un pass de generacion de spec ────────────────────
+// Body: { pass, spec, context, chat_history, generated_spec? }
+// pass: 'pass1' (Claude genera) | 'pass2' (Claude critica) | 'pass3' (GPT-4o MT5)
+
+async function handleGenerateSpec(request, env) {
+  try {
+    const body = await request.json();
+    const { pass, spec = {}, context = {}, generated_spec = null } = body;
+
+    if (pass === 'pass1') {
+      if (!env.ANTHROPIC_API_KEY)
+        return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+      const system  = buildPass1System(context);
+      const userMsg = buildPass1User(spec, context);
+      const result  = await claudeJsonCall(system, userMsg, env, 4096);
+      return json(result);
+    }
+
+    if (pass === 'pass2') {
+      if (!env.ANTHROPIC_API_KEY)
+        return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+      const system  = buildPass2System(context);
+      const userMsg = buildPass2User(generated_spec || spec);
+      const result  = await claudeJsonCall(system, userMsg, env, 2048);
+      return json(result);
+    }
+
+    if (pass === 'pass3') {
+      if (!env.OPENAI_API_KEY)
+        return json({ error: 'OPENAI_API_KEY no configurado' }, 500);
+      const system  = buildPass3System();
+      const userMsg = buildPass3User(generated_spec || spec);
+      const result  = await gptJsonCall(system, userMsg, env);
+      return json(result);
+    }
+
+    return json({ error: 'pass invalido — usar pass1, pass2 o pass3' }, 400);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// ── Context builders ─────────────────────────────────────────────────────────
+
+function buildBotsText(bots) {
+  if (!Array.isArray(bots) || !bots.length) return 'Sin bots activos.';
+  return bots.map(g => {
+    const m1      = g.m1 || {};
+    const metrics = Array.isArray(m1.metrics) ? m1.metrics : [];
+    const wr = (metrics.find(m => m.label && /win/i.test(m.label))?.value) || '—';
+    const pf = (metrics.find(m => m.label && /profit/i.test(m.label))?.value) || '—';
+    return `${g.badge} — ${g.name}\n  ${g.category || ''}\n  WR: ${wr} | PF: ${pf}\n  ${g.summary || ''}`;
+  }).join('\n\n');
+}
+
+function buildM5Text(mc) {
+  if (!mc) return 'Sin contexto de mercado disponible.';
+  const lines = [`Fecha: ${mc.date || '?'}`];
+  if (mc.vix?.value)                lines.push(`VIX: ${mc.vix.value} (${mc.vix.regime})`);
+  if (mc.fear_greed_crypto?.value)  lines.push(`Fear & Greed crypto: ${mc.fear_greed_crypto.value} — ${mc.fear_greed_crypto.label}`);
+  if (mc.binance?.funding_bias)     lines.push(`BTC funding: ${mc.binance.funding_bias}`);
+  const cards = (mc.bots_context || mc.cards || []).slice(0, 6);
+  cards.forEach(c => lines.push(`[${c.tipo || c.type || 'info'}] ${c.title}: ${c.desc}`));
+  return lines.join('\n');
+}
+
+function buildProfileText(tp) {
+  if (!tp || (tp.cycles || 0) < 2) return 'Perfil sin ciclos suficientes (menos de 2 ciclos completados).';
+  const lines = [`Ciclos completados: ${tp.cycles}`];
+  if (tp.tipos) {
+    Object.entries(tp.tipos).forEach(([tipo, rates]) => {
+      const pct = Math.round((rates.descartado || 0) * 100);
+      lines.push(`  ${tipo}: ${pct}% descarte historico`);
+    });
+  }
+  return lines.join('\n');
+}
+
+function buildSpecText(spec) {
+  if (!spec) return 'Sin spec definida.';
+  const labels = {
+    'instrumentos': 'Instrumento(s)',
+    'sesion'      : 'Sesion operativa',
+    'm5'          : 'Influencia M5',
+    'duracion'    : 'Duracion',
+    'tf-entrada'  : 'TF de entrada',
+    'tf-apoyo'    : 'TFs de apoyo',
+    'senal'       : 'Tipo de senal',
+    'ejecucion'   : 'Tipo de ejecucion',
+    'tp'          : 'Toma de ganancias',
+    'sl'          : 'Stop Loss',
+    'timeout'     : 'Timeout',
+    'riesgo'      : 'Riesgo por trade (%)',
+    'maxpos'      : 'Posiciones max',
+    'cb'          : 'Circuit Breaker',
+  };
+  return Object.entries(spec)
+    .map(([k, v]) => `${labels[k] || k}: ${v}`)
+    .join('\n');
+}
+
+function buildManualCtxText(manual = []) {
+  return manual.map(m => {
+    if (m.type === 'image') return `[Imagen de referencia adjunta: ${m.name}]`;
+    if (m.type === 'note')  return `[Nota del trader]: ${m.content || ''}`;
+    const content = (m.content || '').slice(0, 6000);
+    return `[Archivo: ${m.name}]\n${content}`;
+  }).join('\n\n---\n\n');
+}
+
+// ── System prompts ───────────────────────────────────────────────────────────
+
+function buildChatSystem(context) {
+  const botsText    = buildBotsText(context.bots_activos);
+  const m5Text      = buildM5Text(context.market_context);
+  const profileText = buildProfileText(context.trader_profile);
+  const manualText  = buildManualCtxText(context.manual || []);
+  const specText    = buildSpecText(context.spec_actual);
+
+  return `Sos un asistente experto en diseno de bots de trading para IC Markets MT5 en Python.
+Tu rol es guiar al trader para definir las 14 dimensiones de su nueva estrategia.
+Sos conciso y practico. Una o dos preguntas por turno, no mas.
+
+=== BOTS YA ACTIVOS ===
+${botsText}
+
+=== CONTEXTO DE MERCADO HOY (M5) ===
+${m5Text}
+
+=== PERFIL DEL TRADER ===
+${profileText}
+
+=== ESTADO ACTUAL DE LA SPEC (lo que ya definio el trader) ===
+${specText}
+
+${manualText ? '=== CONTEXTO ADICIONAL ADJUNTO ===\n' + manualText : ''}
+
+=== REGLAS INVIOLABLES ===
+- Nunca sugerir scalping (< 5 min): el spread de IC Markets Raw elimina el margen
+- Nunca sugerir dependencias de datos externos en tiempo real durante el loop del bot
+- Nunca sugerir senales que requieran precision sub-segundo (loop MT5 Python es 20-30s)
+- Si el instrumento + TF + logica de entrada se superpone con un bot activo, decirlo explicitamente
+- El SL debe ser al menos 3x el spread tipico del instrumento
+- Plataforma objetivo: Python + MetaTrader5 lib, loop poll, cuenta real IC Markets Raw
+- Para las dimensiones con valor PENDIENTE: guiar al trader para definirlas
+- Para las dimensiones con valor NO_CONSIDERAR: no volver a preguntar por ellas`;
+}
+
+function buildPass1System(context) {
+  const botsText = buildBotsText(context.bots_activos);
+  const m5Text   = buildM5Text(context.market_context);
+
+  return `Sos un quant analyst senior especializado en bots de trading para IC Markets MT5 Python.
+Tu tarea: generar una spec completa y realista a partir de las dimensiones definidas por el trader.
+
+BOTS ACTIVOS (no duplicar sin valor diferencial claro):
+${botsText}
+
+MERCADO HOY:
+${m5Text}
+
+REGLAS:
+- Para dimensiones PENDIENTE: proponé el valor mas razonable dado el contexto del trader
+- Para dimensiones NO_CONSIDERAR: omitilas de la spec final (no incluirlas)
+- No incluyas scalping ni dependencias de APIs externas en tiempo real
+- El SL debe ser >= 3x el spread tipico del instrumento
+- Todo implementable en MT5 Python con loop de 20-30 segundos
+
+Responde SOLO con JSON valido sin markdown ni texto adicional:
+{
+  "name": "nombre corto del bot (maximo 40 caracteres)",
+  "summary": "2-3 oraciones densas: que hace, como, diferencial respecto a bots activos",
+  "spec": {
+    "instrumentos"   : "...",
+    "sesion"         : "...",
+    "m5_rol"         : "...",
+    "duracion"       : "...",
+    "tf_entrada"     : "...",
+    "tf_apoyo"       : "...",
+    "senal"          : "...",
+    "ejecucion"      : "...",
+    "tp"             : "...",
+    "sl"             : "...",
+    "timeout"        : "...",
+    "riesgo_pct"     : "...",
+    "max_posiciones" : "...",
+    "circuit_breaker": "..."
+  },
+  "warnings": [],
+  "critical": []
+}`;
+}
+
+function buildPass1User(spec, context) {
+  const manualText = buildManualCtxText(context.manual || []);
+  return `Dimensiones definidas por el trader:\n${buildSpecText(spec)}${manualText ? '\n\nContexto adicional:\n' + manualText : ''}\n\nGenera la spec completa en JSON.`;
+}
+
+function buildPass2System(context) {
+  const botsText = buildBotsText(context.bots_activos);
+  return `Sos un QA auditor de estrategias de trading para IC Markets MT5.
+Auditas una spec generada por un analista y buscas problemas reales.
+
+BOTS ACTIVOS DEL TRADER:
+${botsText}
+
+COSTOS REALES IC MARKETS RAW (referencia):
+- XAUUSD  : spread ~$0.12/pip + comision $3.50/lote/lado
+- XAGUSD  : spread ~$0.02/pip + comision $3.50/lote/lado
+- BTCUSD  : spread ~$15 + comision $5.00/lote/lado
+- Forex major: spread 0.1-0.3 pips + comision $3.50/lote/lado
+- Indices : spread 0.5-2 puntos segun instrumento
+
+AUDITORIA — cheques obligatorios:
+1. Duplicacion: mismo instrumento + TF similar + logica de entrada similar a un bot activo
+2. R:R no viable: SL menor a 3x spread, o TP imposible de alcanzar antes del timeout
+3. Senal irrealizable: requiere datos no disponibles en MT5 o precision sub-segundo
+4. Circuit breaker ausente o mal calibrado para el perfil de riesgo
+5. Costo total (spread + comision RT) que comprometa la rentabilidad con el sizing propuesto
+
+Responde SOLO con JSON valido sin markdown:
+{
+  "warnings": ["advertencias — aspectos a revisar pero no bloqueantes"],
+  "critical": ["problemas graves que deben resolverse antes de codificar el bot"]
+}`;
+}
+
+function buildPass2User(generatedSpec) {
+  return `Spec a auditar:\n${JSON.stringify(generatedSpec, null, 2)}`;
+}
+
+function buildPass3System() {
+  return `You are a Python engineer specialized in MetaTrader 5 API development.
+Review a trading bot strategy spec for MT5 Python implementation feasibility.
+
+MT5 Python constraints:
+- OHLCV data via copy_rates_from_pos / copy_rates_range
+- Polling loop: typically 20-30 seconds per cycle
+- Order types: BUY/SELL (market), BUY_LIMIT/SELL_LIMIT/BUY_STOP/SELL_STOP (pending)
+- No native order book, no tick-by-tick streaming in Python
+- order_calc_profit for P&L estimation, order_calc_margin for margin check
+- history_deals_get for trade history, positions_get for open positions
+- Magic number to identify bot orders
+
+Check these specific points:
+1. Are all required indicators implementable with pandas/numpy/ta-lib in the polling loop?
+2. Can the entry signal be detected reliably within a 20-30 second polling interval?
+3. Any known MT5 API race conditions or timing issues with this signal/order approach?
+4. Is the order placement type (limit/market) appropriate for this signal latency?
+5. Any complexity that significantly increases implementation bug risk?
+
+Respond ONLY with valid JSON, no markdown, no text outside JSON:
+{
+  "mt5_notes": ["specific MT5 implementation notes and recommendations"],
+  "warnings" : ["implementation concerns that may cause bugs"],
+  "feasible" : true
+}`;
+}
+
+function buildPass3User(generatedSpec) {
+  return `Strategy spec to review for MT5 implementation:\n${JSON.stringify(generatedSpec, null, 2)}`;
+}
+
+// ── Claude non-streaming call — espera JSON en la respuesta ─────────────────
+
+async function claudeJsonCall(system, userMsg, env, maxTokens = 2048) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key'        : env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type'     : 'application/json',
+    },
+    body: JSON.stringify({
+      model     : 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system,
+      messages  : [{ role: 'user', content: userMsg }],
+    }),
+  });
+  if (!res.ok) throw new Error('Claude API HTTP ' + res.status + ': ' + await res.text());
+  const resp = await res.json();
+  const text = resp.content?.[0]?.text || '';
+  try {
+    const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    return JSON.parse(clean);
+  } catch (e) {
+    return { raw_response: text, parse_error: e.message };
+  }
+}
+
+// ── GPT-4o non-streaming call — usa response_format: json_object ─────────────
+
+async function gptJsonCall(system, userMsg, env) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + env.OPENAI_API_KEY,
+      'Content-Type' : 'application/json',
+    },
+    body: JSON.stringify({
+      model          : 'gpt-4o',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: userMsg },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error('OpenAI API HTTP ' + res.status + ': ' + await res.text());
+  const resp = await res.json();
+  const text = resp.choices?.[0]?.message?.content || '{}';
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return { raw_response: text, parse_error: e.message };
+  }
+}
+
+// ── normalizeMessages ────────────────────────────────────────────────────────
+// Convierte el historial de chat al formato Claude API (alternating user/assistant).
+
+function normalizeMessages(messages) {
+  if (!Array.isArray(messages) || !messages.length) return [];
+
+  const normalized = messages.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: typeof m.content === 'string'
+      ? [{ type: 'text', text: m.content }]
+      : Array.isArray(m.content)
+        ? m.content
+        : [{ type: 'text', text: String(m.content) }],
+  }));
+
+  // Claude requiere que el primer mensaje sea del user
+  while (normalized.length && normalized[0].role !== 'user') normalized.shift();
+
+  // Fusionar mensajes consecutivos del mismo rol
+  const merged = [];
+  for (const msg of normalized) {
+    if (merged.length && merged[merged.length - 1].role === msg.role) {
+      merged[merged.length - 1].content.push({ type: 'text', text: '\n' }, ...msg.content);
+    } else {
+      merged.push({ role: msg.role, content: [...msg.content] });
+    }
+  }
+
+  return merged;
 }
