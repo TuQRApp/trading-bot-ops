@@ -872,32 +872,606 @@
           "type": "py"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
       "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "Canal Fibo test 4-may — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "backtest_20260504_013253 Fibo.html · bot_fibonacci.py"
+        "type": "quality",
+        "last_updated": "2026-05-04T01:34:10Z",
+        "last_updated_meta": "backtest_20260504_013253 Fibo.html · bot_fibonacci.py",
+        "fsh_count": "501 trades · 14 instrumentos",
+        "score": {
+          "valor": 8.2,
+          "max": 10,
+          "label": "Resultados sólidos — validación en vivo pendiente",
+          "bullets": [
+            {
+              "type": "ok",
+              "text": "PF agregado de 4.43 y WR del 65.6% sobre 14 símbolos rentables sin excepción"
+            },
+            {
+              "type": "ok",
+              "text": "Max DD máximo del 5.3% (US30) — capital muy preservado con 1% de riesgo"
+            },
+            {
+              "type": "ok",
+              "text": "Comisión $0.0/lote en backtest — el impacto real de comisiones y slippage no esta modelado"
+            },
+            {
+              "type": "warn",
+              "text": "Sin walk-forward ni out-of-sample: riesgo de sobreajuste latente no cuantificado"
+            },
+            {
+              "type": "warn",
+              "text": "Numero bajo de trades en algunos simbolos (JP225=24, US2000=20, IT40=21) — robustez estadistica limitada"
+            },
+            {
+              "type": "bad",
+              "text": "Token de Telegram y chat ID expuestos en texto plano en el codigo fuente"
+            }
+          ]
+        },
+        "metrics": [
+          {
+            "id": "QM-01",
+            "label": "Instrumentos",
+            "value": "14 simbolos",
+            "status": "ok",
+            "note": "BTCUSD WR 63.4% PF 4.17 | XAUUSD WR 64.8% PF 4.85 | USTEC WR 64.3% PF 5.31 | US500 WR 75.0% PF 6.66 | UK100 WR 80.0% PF 5.85 | DE40 WR 64.3% PF 4.78 | XAGUSD WR 62.2% PF 3.17 | ETHUSD WR 73.4% PF 4.75 | HK50 WR 67.9% PF 3.84 | US30 WR 54.8% PF 3.23 | JP225 WR 70.8% PF 6.47 | ES35 WR 60.9% PF 3.09 | IT40 WR 61.9% PF 2.89 | US2000 WR 55.0% PF 2.93"
+          },
+          {
+            "id": "QM-02",
+            "label": "Total Trades",
+            "value": "501",
+            "status": "warn",
+            "note": "Promedio 35.8 por instrumento; 6 simbolos con menos de 30 trades (JP225=24, US2000=20, IT40=21, ES35=23, DE40=28, US500=28)"
+          },
+          {
+            "id": "QM-03",
+            "label": "Avg Win Rate",
+            "value": "65.6%",
+            "status": "ok",
+            "note": "Rango 54.8% (US30) a 80.0% (UK100)"
+          },
+          {
+            "id": "QM-04",
+            "label": "Avg Profit Factor",
+            "value": "4.43",
+            "status": "ok",
+            "note": "Rango 2.89 (IT40) a 6.66 (US500); todos por encima de 2.5"
+          },
+          {
+            "id": "QM-05",
+            "label": "Peor Max Drawdown",
+            "value": "-5.3%",
+            "status": "ok",
+            "note": "US30 con DD 5.3%; XAGUSD 4.4%; IT40 4.7%; resto por debajo del 3.5%"
+          },
+          {
+            "id": "QM-06",
+            "label": "Comisiones en backtest",
+            "value": "$0.0/lote RT",
+            "status": "warn",
+            "note": "El backtest declara comision cero. Con comisiones reales tipicas el PF real sera inferior; los simbolos con PF mas bajo (IT40 2.89, ES35 3.09) son los mas sensibles"
+          },
+          {
+            "id": "QM-07",
+            "label": "Walk-forward 70/30",
+            "value": "No disponible",
+            "status": "warn",
+            "note": "No se ejecuto walk-forward ni split out-of-sample; los KPIs reflejan rendimiento in-sample puro"
+          },
+          {
+            "id": "QM-08",
+            "label": "Retorno total (24m)",
+            "value": "$83,271 sobre $10,000",
+            "status": "ok",
+            "note": "BTCUSD +161.7% lidera; US2000 +22.5% cierra la lista; todos positivos en el periodo"
+          }
+        ]
       },
-      "m2": [],
-      "m3": [],
-      "m4": [],
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "riesgo",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Credenciales de Telegram expuestas en texto plano",
+          "desc": "TG_TOKEN y TG_CHAT_ID estan hardcodeados como strings literales en bot_fibonacci.py (lineas visibles en el codigo). Cualquier persona con acceso al repositorio o al archivo puede tomar el control del bot de notificaciones o extraer informacion de operaciones en tiempo real. Solucion: leer estas credenciales desde variables de entorno (os.getenv) o desde un archivo .env excluido del control de versiones. Agregar el archivo .env a .gitignore de inmediato.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "alta",
+          "title": "Ausencia de walk-forward — riesgo de sobreajuste no cuantificado",
+          "desc": "El backtest usa 24 meses completos como muestra in-sample sin ningun split de validacion. Los niveles de Fibonacci (0.191, 0.382, 0.618, 1.191, 1.382), umbrales de Smart Money (0.3), COOLDOWN_BARS=3 y MIN_TICK_VOL=150 fueron optimizados sobre el periodo completo. Ejecutar un walk-forward 70/30 o al menos un test out-of-sample sobre los ultimos 6 meses permitira detectar si el PF real del modelo es 4.4 o si se degrada significativamente. Prioridad alta especialmente para simbolos con menos de 30 trades donde los KPIs son poco estables.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Comisiones cero en backtest — sesgo positivo en todos los KPIs",
+          "desc": "El HTML declara 'Comision: $0.0/lote RT'. En condiciones reales los brokers cobran entre $3 y $10 por lote RT segun el instrumento. Con un Avg Win de ~$300 y un Avg Loss de ~$150, una comision de $7 RT representa ~2.3% del beneficio por trade. Para simbolos con PF bajo como IT40 (2.89) y ES35 (3.09) esto podria reducir el PF real a valores cercanos a 2.0-2.3. Incorporar la comision real del broker en el backtest antes de desplegar el bot con RISK_PCT=1.0.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Escalado a RISK_PCT=1.0% sin validacion en vivo completada",
+          "desc": "El comentario en el codigo indica 'RISK_PCT=0.25 en fase observacion, luego 1.0'. El escalado a 1.0% cuadruplica el riesgo por trade. Con MAX_POSITIONS=3 y MAX_CORR_CLASS=1 podria haber hasta 3 posiciones abiertas simultaneas en distintas clases, exponiendo hasta un 3% del equity en un mismo ciclo de mercado adverso. Establecer una condicion explicita y documentada para el escalado: por ejemplo, minimo 30 trades en vivo con PF > 2.0 y DD < 3% antes de subir el riesgo.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "circuit_broken se resetea cada dia aunque la causa sea semanal",
+          "desc": "En handle_resets(), la linea 'state.circuit_broken = False' se ejecuta en el reset diario independientemente de si el circuit breaker fue activado por el limite semanal. Si el bot supera WEEKLY_LOSS_LIMIT un lunes, el martes el circuit breaker se desactivara automaticamente aunque la perdida semanal siga vigente. Correccion: separar los flags daily_circuit_broken y weekly_circuit_broken, o verificar si la perdida semanal sigue activa antes de resetear el flag diario.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "MAX_CORR_CLASS=1 bloquea oportunidades en clases de alta frecuencia de senal",
+          "desc": "Con solo 1 posicion permitida por clase de activo y 4 indices US en la misma clase (us_idx), el bot rechazara señales validas en US500, USTEC o US2000 mientras haya una posicion abierta en US30. En el backtest estos 4 simbolos suman 121 trades (24% del total). En vivo, con un ciclo de 30 segundos y posiciones que pueden durar varios minutos, este filtro podria reducir materialmente el numero de trades ejecutados respecto al backtest. Considerar MAX_CORR_CLASS=2 para clases con 4+ simbolos y monitorear el impacto en DD.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Divergencia posible entre nivel de entrada en backtest y precio de mercado en vivo",
+          "desc": "En process_symbol() la variable entry se asigna al nivel Fibonacci calculado (ach['en_long'] o ach['en_short']), pero send_order() usa el precio ask/bid del tick en el momento de ejecucion. El nivel Fibonacci puede diferir del precio de mercado actual por varios puntos, haciendo que el ratio R:R real sea distinto del ~3:1 del backtest. Documentar esta divergencia, o implementar una validacion que cancele la orden si el precio de mercado supera N puntos del nivel de entrada teorico.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "Simbolos con muy pocos trades — estadistica no concluyente",
+          "desc": "JP225 (24 trades), US2000 (20 trades), IT40 (21 trades) y ES35 (23 trades) tienen menos de 25 trades en 24 meses. Un intervalo de confianza del 95% para una WR del 60% con n=20 va de 36% a 81% — rango demasiado amplio para confiar en el edge. Considerar deshabilitar estos simbolos hasta acumular mas datos historicos, o al menos monitorearlos en fase observacion con lotes minimos separados del capital principal.",
+          "comment": ""
+        },
+        {
+          "id": "R-09",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "baja",
+          "title": "Reporte diario HTML solo se genera a las 00:00-00:05 UTC",
+          "desc": "La condicion 'if now.hour == 0 and now.minute < 6' limita la generacion del reporte a una ventana de 6 minutos al dia. Si el bot se reinicia o hay un error en ese intervalo el reporte del dia anterior no se genera. Agregar una llamada a gen_daily_report() tambien en el cierre seguro (ya existe parcialmente) y al detectar circuit breaker activado, para asegurar que siempre haya un resumen disponible.",
+          "comment": ""
+        },
+        {
+          "id": "R-10",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "title": "Falta monitoreo de slippage en ejecucion en vivo",
+          "desc": "El bot registra fill_price en open_positions pero nunca calcula ni loguea la diferencia entre el nivel de entrada teorico (entry del canal Fibonacci) y el precio de fill real. Acumular esta metrica desde el primer dia en vivo permitira comparar el rendimiento real vs backtest y detectar si el slippage sistematico degrada el PF significativamente.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "open_positions no se persiste en state.json: posible doble conteo de P&L al reiniciar",
+          "desc": "H-06 identifica que open_positions no se guarda en state.json, pero la recomendacion R-04 sobre escalado de riesgo y todas las metricas de control de perdida diaria/semanal asumen que el P&L acumulado es continuo entre reinicios. Si el bot se reinicia con posiciones abiertas, sync_positions() las redescubre sin contexto de entry ni open_time, y cuando esas posiciones cierran el beneficio o perdida se suma al daily_pnl del nuevo ciclo pero puede no haberse restado correctamente del balance inicial del dia (day_start_balance). Esto puede hacer que el circuit breaker diario no se active cuando deberia, o se active prematuramente. Corregir H-06 y verificar que day_start_balance se recalcule desde MT5 tras cada reinicio antes de procesar senales.",
+          "comment": ""
+        },
+        {
+          "id": "R-21",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "title": "Periodo de backtest de 24 meses incluye regimen post-COVID atipico: riesgo de sobreajuste de regimen",
+          "desc": "El backtest cubre aproximadamente mayo 2024 a mayo 2026, un periodo caracterizado por tendencias sostenidas en indices US y criptomonedas. Los niveles Fibonacci y el umbral Smart Money (0.3) optimizados en este entorno pueden no generalizarse a regimenes de baja volatilidad o mercados laterales prolongados. Ningun hallazgo existente menciona el riesgo de sobreajuste de regimen (distinto del sobreajuste estadistico de R-02). Complementar el walk-forward con un backtest adicional sobre un periodo que incluya alta lateralidad, como 2022-2023 en indices, para cuantificar la degradacion del PF fuera del regimen actual.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "error",
+          "origin": "bot_fibonacci.py",
+          "title": "Token de Telegram hardcodeado — riesgo de seguridad critico",
+          "desc": "Las lineas TG_TOKEN='8621269639:AAHUoJrijb8vjSeVnU-WNX2KRH5oW9o7HGU' y TG_CHAT_ID='6864631928' estan en texto plano. Si el codigo se sube a un repositorio publico o privado con acceso compartido, un tercero puede enviar mensajes en nombre del bot o monitorear todas las alertas de trading. Revocar el token actual en BotFather, generar uno nuevo y almacenarlo en variable de entorno antes de cualquier commit.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "bot_fibonacci.py",
+          "title": "Solo 3 bloques try/except para 880 lineas de codigo con 61 bloques if",
+          "desc": "El analisis de complejidad detecta 61 bloques condicionales y 3 try/except en todo el archivo. La mayoria de las llamadas a MT5 (symbol_info, positions_get, history_deals_get, copy_rates_from_pos) no estan envueltas en try/except individuales. Si MT5 retorna un tipo inesperado en una condicion de mercado extrema podria lanzar una excepcion no capturada que termine el bucle principal silenciosamente — el handler del bucle en main() captura errores por simbolo pero no protege sync_positions ni handle_resets.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "backtest_20260504_013253 Fibo.html",
+          "title": "Horas con WR 0% en BTCUSD — posible sesgo horario no filtrado",
+          "desc": "El heatmap de BTCUSD muestra horas H00, H01, H04, H12, H18 y H19 con WR 0.0% y PF 0.0. Aunque el volumen por hora es bajo (1-2 trades), el patron sugiere que la estrategia tiene peor desempeno en ciertas ventanas horarias. El bot en vivo no implementa ningun filtro de sesion horaria. Evaluar si excluir las horas 00-04 UTC para BTCUSD mejora el PF sin reducir significativamente el numero de trades.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "bot_fibonacci.py",
+          "title": "avg_spread calculado con percentil 75 puede subestimar spreads en noticias",
+          "desc": "En compute_signals() el spread promedio se calcula como df['spread'].quantile(0.75), lo que excluye el 25% de barras con mayor spread. Si un evento macro amplia el spread temporalmente, el percentil 75 no lo capturara y el filtro MAX_SPREAD_MULT=2.0 podria no ser suficiente para bloquear entradas en momentos de alta volatilidad. Considerar usar el percentil 90 o mediana + 2 desviaciones estandar para un filtro mas conservador en vivo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "bot_fibonacci.py",
+          "title": "BARS_HISTORY=1500 con ciclo de 30s — posible latencia en simbolos lentos",
+          "desc": "El bot solicita 1500 barras M3 (~75 horas de datos) en cada ciclo para cada uno de los 14 simbolos. Con un ciclo de 30 segundos y procesamiento secuencial, si MT5 tarda 100ms por simbolo la descarga de datos sola consume ~1.4 segundos del ciclo. En condiciones de red lenta o carga alta del terminal esto podria causar que algunos simbolos no se procesen antes del siguiente ciclo. Monitorear el tiempo por ciclo en los primeros dias de operacion.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "bot_fibonacci.py",
+          "title": "state.open_positions no persiste el ticket como entero en JSON",
+          "desc": "En send_order() el ticket se obtiene como result.order (entero de MT5) y se usa como clave de diccionario en state.open_positions. Al serializar con json.dump() y deserializar con json.load(), las claves de diccionario se convierten a string. En sync_positions() la comparacion 'current_tickets = {p.ticket for p in positions}' usa enteros, mientras que bot_tickets = set(state.open_positions.keys()) podria devolver strings tras la recarga. Esto causaria que posiciones cargadas desde disco nunca se detecten como cerradas.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "warn",
+          "origin": "bot_fibonacci.py",
+          "title": "Numeros magicos de Fibonacci sin constante nombrada en el codigo live",
+          "desc": "El analisis detecta 20 numeros magicos en el codigo, incluyendo los niveles Fibonacci criticos (0.191, 0.382, 0.618, 1.191, 1.382) usados directamente en las asignaciones del canal activo dentro de process_symbol(). Aunque estos valores se importan del backtest como parte del canal, cualquier cambio en la logica del canal que no se refleje aqui crearia una divergencia silenciosa entre backtest y live. Centralizar todos los niveles en constantes con nombre explicito.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-008",
+          "tipo": "info",
+          "origin": "bot_fibonacci.py",
+          "title": "Magic number 202601 como identificador de posiciones no documentado",
+          "desc": "El magic number 202601 se usa en send_order() y sync_positions() para identificar posiciones del bot. Este valor no esta definido como constante con nombre (por ejemplo MAGIC_NUMBER = 202601) ni se documenta su significado. Si en el futuro se corre una segunda instancia del bot o un bot diferente en la misma cuenta, una colision de magic number causaria que sync_positions() adopte posiciones ajenas.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "error",
+          "origin": "bot_fibonacci.py",
+          "title": "Solo 3 try/except para 61 bloques condicionales: sync_positions y handle_resets sin proteccion",
+          "desc": "El analisis de complejidad confirma 61 bloques if y solo 3 try/except. OBS-002 menciona el problema de forma general, pero no senala el riesgo especifico de handle_resets(): esta funcion accede a state.start_balance para calcular weekly_loss_pct y llama a history_deals_get. Si MT5 devuelve None en cualquiera de estas llamadas dentro de handle_resets() la excepcion no esta capturada y el bucle principal termina silenciosamente sin activar el circuit breaker. Agregar un try/except en el cuerpo de handle_resets() que loguee el error y preserve el estado previo de circuit_broken en lugar de resetearlo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "warn",
+          "origin": "backtest_20260504_013253 Fibo.html",
+          "title": "Max drawdown agregado del 1.3% es inconsistente con el DD por simbolo del 5.3% en US30",
+          "desc": "m1 reporta el max drawdown agregado como 1.3% y el peor DD por simbolo como 5.3% (US30). Esta discrepancia no se explica en ningun hallazgo. Si el backtest ejecuta los 14 simbolos sobre cuentas separadas de $10,000 el DD agregado no es aditivo, pero si comparten capital el DD real del portfolio podria ser mayor al 1.3% en periodos donde varios simbolos pierden simultaneamente. Ninguna recomendacion existente exige aclarar la metodologia de calculo del DD agregado ni si el backtest modela correlacion de perdidas entre simbolos. Solicitar al desarrollador que confirme si el backtest usa capital compartido o separado por simbolo, y recalcular el DD de portfolio con correlacion real.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "riesgo",
+          "title": "Credenciales de Telegram en texto plano en el codigo fuente",
+          "desc": "TG_TOKEN y TG_CHAT_ID estan hardcodeados. Cualquier exposicion del archivo compromete la seguridad del canal de notificaciones.",
+          "code": "TG_TOKEN   = \"8621269639:AAHUoJrijb8vjSeVnU-WNX2KRH5oW9o7HGU\"\nTG_CHAT_ID = \"6864631928\"",
+          "fix": "import os\nTG_TOKEN   = os.getenv(\"TG_TOKEN\", \"\")\nTG_CHAT_ID = os.getenv(\"TG_CHAT_ID\", \"\")\n# Crear archivo .env (excluido de git) con:\n# TG_TOKEN=<nuevo_token_generado_en_botfather>\n# TG_CHAT_ID=<tu_chat_id>",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "Claves de ticket se convierten a string al recargar estado desde JSON",
+          "desc": "json.dump() serializa claves enteras como strings. Al recargar, state.open_positions tendra claves tipo '123456' (str) mientras que current_tickets en sync_positions contiene enteros. La diferencia de conjuntos nunca detectara tickets cargados desde disco como cerrados.",
+          "code": "# En save():\njson.dump(data, f, indent=2)\n# open_positions = {123456: {...}}\n# Tras load(): open_positions = {'123456': {...}}\n\n# En sync_positions():\ncurrent_tickets = {p.ticket for p in positions}  # set de int\nbot_tickets = set(state.open_positions.keys())   # set de str tras reload",
+          "fix": "# En load(), convertir claves a entero al restaurar open_positions:\nself.open_positions = {\n    int(k): v\n    for k, v in data.get(\"open_positions\", {}).items()\n}\n# En save(), incluir open_positions en el dict serializado:\ndata[\"open_positions\"] = {\n    str(k): v\n    for k, v in self.open_positions.items()\n}",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "bug",
+          "title": "circuit_broken semanal se resetea en el reset diario",
+          "desc": "handle_resets() pone circuit_broken=False cada nuevo dia UTC, aunque el circuit breaker fuera activado por superar WEEKLY_LOSS_LIMIT. El bot reanudara operaciones al dia siguiente ignorando que la perdida semanal sigue activa.",
+          "code": "if state.last_day_reset != today:\n    ...\n    state.circuit_broken = False   # reset diario del circuit breaker",
+          "fix": "if state.last_day_reset != today:\n    ...\n    # Solo resetear si la perdida semanal no supera el limite\n    weekly_loss_pct = (\n        state.weekly_pnl / state.start_balance * 100\n        if state.start_balance > 0 else 0\n    )\n    if weekly_loss_pct >= -WEEKLY_LOSS_LIMIT:\n        state.circuit_broken = False",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "send_order() llama symbol_info_tick() dos veces con posible cambio de precio entre llamadas",
+          "desc": "El precio de orden se obtiene en la primera llamada y luego se obtiene tick de nuevo para validar spread. Entre ambas llamadas el tick puede cambiar, haciendo que price y tick no correspondan al mismo instante.",
+          "code": "price = mt5.symbol_info_tick(symbol).ask if direction == \"long\" \\\n        else mt5.symbol_info_tick(symbol).bid\n...\ntick = mt5.symbol_info_tick(symbol)  # tercera llamada",
+          "fix": "tick = mt5.symbol_info_tick(symbol)\nif tick is None:\n    log.warning(f\"  {symbol}: no se pudo obtener tick al ejecutar\")\n    return None\nprice = tick.ask if direction == \"long\" else tick.bid\nlive_spread_pts = (tick.ask - tick.bid) / info.point\n# Eliminar la segunda llamada a symbol_info_tick mas abajo",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "riesgo",
+          "title": "sync_positions() busca deals en ventana fija de 24h — puede perder cierres de posiciones antiguas",
+          "desc": "history_deals_get usa datetime.now(UTC) - timedelta(hours=24) como limite inferior. Si una posicion estuvo abierta mas de 24 horas (posible en activos de baja frecuencia como JP225 o US2000) el deal de cierre no se encontrara y el P&L diario no se actualizara.",
+          "code": "deals = mt5.history_deals_get(\n    datetime.now(UTC) - timedelta(hours=24),\n    datetime.now(UTC),\n    position=ticket\n)",
+          "fix": "# Usar el open_time guardado del trade como limite inferior\nopen_dt = datetime.fromisoformat(trade.get('open_time', (datetime.now(UTC) - timedelta(hours=48)).isoformat()))\ndeals = mt5.history_deals_get(\n    open_dt - timedelta(minutes=5),\n    datetime.now(UTC),\n    position=ticket\n)",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "ausencia",
+          "title": "open_positions no se persiste en state.json — se pierde al reiniciar el bot",
+          "desc": "BotState.save() serializa active_channels, daily_pnl, weekly_pnl y otros campos, pero NO incluye open_positions. Si el bot se reinicia con posiciones abiertas en MT5, sync_positions() las re-descubre pero sin el contexto de direction, entry ni open_time necesario para calcular P&L correctamente.",
+          "code": "def save(self):\n    data = {\n        \"active_channels\":  self.active_channels,\n        \"daily_pnl\":        self.daily_pnl,\n        # open_positions NO esta aqui\n        ...\n    }",
+          "fix": "def save(self):\n    data = {\n        \"active_channels\":  self.active_channels,\n        \"open_positions\":   {str(k): v for k, v in self.open_positions.items()},\n        \"daily_pnl\":        self.daily_pnl,\n        \"weekly_pnl\":       self.weekly_pnl,\n        \"circuit_broken\":   self.circuit_broken,\n        \"start_balance\":    self.start_balance,\n        \"day_start_balance\":self.day_start_balance,\n        \"last_day_reset\":   self.last_day_reset,\n        \"last_week_reset\":  self.last_week_reset,\n    }",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "ausencia",
+          "title": "Sin constante nombrada para el magic number 202601",
+          "desc": "El valor 202601 aparece hardcodeado en dos lugares distintos (send_order y sync_positions). Si se cambia en uno y no en el otro, el bot deja de rastrear sus propias posiciones.",
+          "code": "# En send_order():\n\"magic\": 202601,\n# En sync_positions():\npositions = mt5.positions_get(magic=202601)",
+          "fix": "# Al inicio del archivo, junto a las otras constantes de CONFIG:\nMAGIC_NUMBER = 202601  # Identificador unico de este bot en MT5\n\n# En send_order():\n\"magic\": MAGIC_NUMBER,\n# En sync_positions():\npositions = mt5.positions_get(magic=MAGIC_NUMBER)",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "mejora",
+          "title": "Slippage no se registra ni monitorea en ejecucion en vivo",
+          "desc": "El bot guarda fill_price pero nunca calcula la diferencia con el nivel teorico de entrada. Esta metrica es critica para comparar rendimiento en vivo vs backtest.",
+          "code": "return {\n    \"ticket\":    result.order,\n    \"fill_price\":result.price,\n    # slippage no registrado\n}",
+          "fix": "slippage_pts = abs(result.price - entry) / info.point\nlog.info(f\"  {symbol}: slippage={slippage_pts:.1f} pts\")\nreturn {\n    \"ticket\":        result.order,\n    \"fill_price\":    result.price,\n    \"entry_theory\":  entry,\n    \"slippage_pts\":  round(slippage_pts, 1),\n}",
+          "comment": ""
+        },
+        {
+          "id": "H-09",
+          "categoria": "mejora",
+          "title": "CYCLE_SECS hardcodeado como variable local en main() — deberia ser constante de configuracion",
+          "desc": "CYCLE_SECS=30 esta definido dentro de main() como variable local, no es visible ni ajustable desde la seccion CONFIG del archivo. Para ajustar la frecuencia de ciclo sin leer el codigo completo el trader necesita entrar a la funcion.",
+          "code": "def main():\n    ...\n    CYCLE_SECS = 30   # revisar cada 30 segundos",
+          "fix": "# En la seccion CONFIG junto a las otras constantes:\nCYCLE_SECS = 30  # segundos entre ciclos de procesamiento\n\n# Eliminar la definicion local dentro de main()",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "get_bars() no valida que copy_rates_from_pos retorne el numero de barras solicitado",
+          "desc": "copy_rates_from_pos puede retornar menos barras que BARS_HISTORY=1500 si el historico del simbolo es insuficiente o MT5 tiene datos incompletos. Si retorna None o un array vacio, el codigo downstream que accede a df['close'] o df['spread'] lanzara un AttributeError o KeyError no capturado. Con solo 3 bloques try/except en 880 lineas, esta excepcion propagaria hasta el bucle principal.",
+          "code": "rates = mt5.copy_rates_from_pos(symbol, tf, 0, n)\ndf = pd.DataFrame(rates)  # si rates es None -> TypeError",
+          "fix": "rates = mt5.copy_rates_from_pos(symbol, tf, 0, n)\nif rates is None or len(rates) < 50:\n    log.warning(f\"  {symbol}: historico insuficiente ({len(rates) if rates is not None else 0} barras)\")\n    return None\ndf = pd.DataFrame(rates)",
+          "comment": ""
+        }
+      ],
       "versions": [
         "FILE-003"
-      ]
+      ],
+      "category": "Bot Live | 14 instrumentos | MetaTrader 5 | Fibonacci Channel Mean Reversion M3",
+      "summary": "Bot de trading en vivo que opera retornos a la media usando canales de Fibonacci AlgoAlpha en timeframe M3, con señal de confirmación Smart Money. El backtest cubre 24 meses y 501 trades sobre 14 símbolos (cripto, índices, metales), logrando un WR agregado de 65.6%, PF de 4.43 y drawdown máximo del 5.3% (US30). El sistema incluye circuit breaker diario/semanal, control de correlación por clase de activo, filtro de spread en ejecución y reconexión automática a MT5.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Volatilidad moderada con VIX en ascenso y eventos macro de alto impacto hoy (RBA ya activo, ISM y JOLTS en pocas horas), lo que exige cautela en índices y pares vinculados al USD mientras el sentimiento cripto se mantiene neutral.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "ISM Servicios y JOLTS: pausar índices USD",
+            "desc": "A las 10:00 ET de hoy se publican ISM Services PMI (forecast 53.8) y JOLTS Job Openings (forecast 6.87M). Ambos datos mueven US30, NAS100 y SPX con fuerza en M3. Se recomienda suspender el bot en esos instrumentos desde las 09:50 ET hasta las 10:15 ET para evitar spreads extremos y velas de alta volatilidad que invalidan la lógica de retorno a la media del canal Fibonacci.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "RBA subio tasa: volatilidad AUD activa",
+            "desc": "El RBA publico su decision de tasa (forecast 4.35% vs previo 4.10%) a las 00:30 ET y la conferencia de prensa fue a la 01:30 ET. Si el bot opera algun par con AUD o activos correlacionados con apetito de riesgo regional (cripto incluido), verificar que el filtro de spread haya actuado correctamente en esas velas. Revisar el log de ejecucion de las ultimas 2 horas antes de reanudar operacion normal.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "VIX subio 7.6%: regimen de volatilidad en transicion",
+            "desc": "El VIX paso de 16.99 a 18.29 (+1.30 puntos), acercandose al umbral de 20 donde la estrategia de mean reversion en M3 historicamente sufre mas falsas senales por expansiones bruscas de rango. Si el VIX supera 20 durante la sesion, considerar reducir el tamano de lote en indices (US30, NAS100, GER40) en un 30-50% o activar el circuit breaker manual hasta que el VIX consolide por debajo de ese nivel.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "alerta",
+            "title": "Nómina canadiense y salarios USD el viernes",
+            "desc": "El viernes 8 de mayo a las 08:30 ET se publican Employment Change Canada (forecast 5.1K vs previo 14.1K) y Average Hourly Earnings USD (forecast 0.3%). Estos datos afectan pares con USD y CAD, y pueden generar gaps de apertura en la sesion de Nueva York. Programar pausa automatica en instrumentos sensibles al USD desde las 08:20 hasta las 08:45 ET del viernes. El dato de salarios es especialmente relevante dado el CPI actual en 330.21 con NFP de 158K.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "Oro: COT institucional muy alcista, sesgar largos",
+            "desc": "El posicionamiento especulativo en XAU muestra net long de 153,504 contratos (longs 204,559 vs shorts 51,055), bias claramente alcista segun el ultimo reporte COT del 28 de abril. Para el bot, esto implica que las senales de retorno a la media en XAU con direccion larga tienen respaldo institucional. Priorizar entradas largas en rebotes al canal medio de Fibonacci y ser mas conservador con shorts en oro durante esta semana.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "Sentimiento cripto neutral: operar sin sesgo",
+            "desc": "El Crypto Fear and Greed Index se ubica en 50 (Neutral), subiendo desde 40 la semana pasada. No hay señal de euforia ni capitulacion en cripto. El dato de funding rate de BTC en Binance no esta disponible, lo que limita la confirmacion de sesgo. En este contexto, el bot puede operar BTC y otros cripto dentro de los parametros normales del sistema, sin ajustes de sesgo direccional. Monitorear el indice diariamente: si supera 70 (Greed) aumenta riesgo de mean reversion bajista.",
+            "horizonte": "24h"
+          }
+        ],
+        "last_updated": "2026-05-05T01:54:15Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 18.29,
+            "prev": 16.99,
+            "change": 1.3,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 50,
+            "label": "Neutral",
+            "prev": 40
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Cash Rate",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "4.35%",
+              "previous": "4.10%"
+            },
+            {
+              "event": "RBA Monetary Policy Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Rate Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Press Conference",
+              "currency": "AUD",
+              "date": "2026-05-05T01:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "ISM Services PMI",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "53.8",
+              "previous": "54.0"
+            },
+            {
+              "event": "JOLTS Job Openings",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "6.87M",
+              "previous": "6.88M"
+            },
+            {
+              "event": "Employment Change q/q",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "5.4%",
+              "previous": "5.4%"
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-05-08T08:20:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Employment Change",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "5.1K",
+              "previous": "14.1K"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "6.7%",
+              "previous": "6.7%"
+            },
+            {
+              "event": "Average Hourly Earnings m/m",
+              "currency": "USD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158637",
+              "date": "2026-03"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": 2339,
+              "long": 192030,
+              "short": 189691,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -109383,
+              "long": 100712,
+              "short": 210095,
+              "bias": "bearish",
+              "date": "2026-04-28"
+            },
+            "XAU": {
+              "net": 153504,
+              "long": 204559,
+              "short": 51055,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-05T01:54:15Z"
+        }
+      }
     }
   ],
   "folders": [
     {
       "id": "f1777776078453",
       "name": "Fibo",
-      "parent_id": null
-    },
-    {
-      "id": "f1777945886435",
-      "name": "Adx",
       "parent_id": null
     }
   ],
