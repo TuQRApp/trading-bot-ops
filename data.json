@@ -1673,20 +1673,282 @@
           "type": "html"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
-      "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "OBV+MACD+ADX bot v2 — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "obv_macd_adx_bot_final_v2.py · obv_macd_adx_all_resultado.html"
-      },
-      "m2": [],
-      "m3": [],
-      "m4": [],
       "versions": [
         "FILE-004"
+      ],
+      "category": "Bot en vivo � 8 instrumentos activos � IC Markets MT5 � OBV+MACD+ADX triple TF",
+      "summary": "Bot de trading en vivo que opera divergencias OBV+MACD con filtro ADX en triple timeframe (H1 sesgo, M15 confirmacion, M5 entrada) sobre 8 instrumentos (5 indices europeos, XTIUSD, XAUUSD, BTCUSD). El backtest de 60 dias sobre 40 instrumentos muestra WR agregado de 71.9% y PF de 4.93 en los instrumentos activos; BTCUSD lidera con +440.64% de retorno. XPDUSD y XPTUSD muestran perdidas catastroficas (-939% y -544%) y deben mantenerse fuera del bot. Periodo de validacion corto (60 dias) es la principal limitacion.",
+      "m1": {
+        "type": "quality",
+        "last_updated": "2026-05-05 � 13:50 � obv_macd_adx_bot_final_v2.py + obv_macd_adx_all_resultado.html",
+        "score": {
+          "valor": 7.5,
+          "max": 10,
+          "label": "Solido - periodo de validacion corto",
+          "bullets": [
+            {
+              "type": "ok",
+              "text": "WR agregado de 71.9% y PF de 4.93 en los 8 instrumentos del bot en vivo"
+            },
+            {
+              "type": "ok",
+              "text": "Sharpe anualizado mayor a 10 en 6 de 8 instrumentos - curva de equity de calidad excepcional"
+            },
+            {
+              "type": "ok",
+              "text": "Drawdown maximo controlado: -2.33% (XTIUSD) a -7.07% (XAUUSD) sobre 60 dias"
+            },
+            {
+              "type": "ok",
+              "text": "Circuit breaker de 3 niveles implementado y verificado en codigo"
+            },
+            {
+              "type": "warn",
+              "text": "Solo 60 dias de backtest - insuficiente para validar multiples regimenes de mercado"
+            },
+            {
+              "type": "warn",
+              "text": "SE30 con solo 23 trades en backtest - muestra delgada para instrumento en produccion"
+            },
+            {
+              "type": "warn",
+              "text": "La senal entra tambien con divergencia simple (or logico linea 279) - nombre doble divergencia no refleja comportamiento real"
+            },
+            {
+              "type": "bad",
+              "text": "XPDUSD -939.87% y XPTUSD -544.62% en el backtest - si se agregan al bot vivo, ruina de cuenta garantizada"
+            }
+          ]
+        },
+        "metrics": [
+          {
+            "id": "QM-01",
+            "label": "Win Rate agregado 8 live",
+            "value": "71.9%",
+            "status": "ok",
+            "note": "Rango: 63.2% NETH25 a 88.5% STOXX50"
+          },
+          {
+            "id": "QM-02",
+            "label": "Profit Factor agregado",
+            "value": "4.93",
+            "status": "ok",
+            "note": "Rango 3.63 BTCUSD a 9.05 STOXX50"
+          },
+          {
+            "id": "QM-03",
+            "label": "Max Drawdown peor caso live",
+            "value": "-7.07%",
+            "status": "ok",
+            "note": "XAUUSD - dentro de umbral aceptable para 2% riesgo/trade"
+          },
+          {
+            "id": "QM-04",
+            "label": "Sharpe promedio 8 live",
+            "value": "12.8",
+            "status": "ok",
+            "note": "Anualizado con sqrt(105120). Verificar con periodo mas largo."
+          },
+          {
+            "id": "QM-05",
+            "label": "Periodo de backtest",
+            "value": "60 dias",
+            "status": "warn",
+            "note": "Insuficiente. Minimo recomendado: 12 meses"
+          },
+          {
+            "id": "QM-06",
+            "label": "BTCUSD retorno",
+            "value": "+440.64%",
+            "status": "ok",
+            "note": "108 trades, WR 69.4%, PF 3.63, DD -6.89%"
+          },
+          {
+            "id": "QM-07",
+            "label": "UK100 retorno",
+            "value": "+217.92%",
+            "status": "ok",
+            "note": "66 trades, WR 74.2%, PF 4.73, DD -4.20%"
+          },
+          {
+            "id": "QM-08",
+            "label": "XAUUSD retorno",
+            "value": "+209.99%",
+            "status": "ok",
+            "note": "62 trades, WR 71.0%, PF 4.41, DD -7.07%"
+          },
+          {
+            "id": "QM-09",
+            "label": "XPDUSD Paladio",
+            "value": "-939.87%",
+            "status": "bad",
+            "note": "WR 5.1%, PF 0.033. Nunca agregar al bot vivo."
+          },
+          {
+            "id": "QM-10",
+            "label": "XPTUSD Platino",
+            "value": "-544.62%",
+            "status": "bad",
+            "note": "WR 3.0%, PF 0.023. Instrumento incompatible con la estrategia."
+          },
+          {
+            "id": "QM-11",
+            "label": "SE30 trades",
+            "value": "23",
+            "status": "warn",
+            "note": "Muestra delgada. Confirmar con backtest extendido."
+          },
+          {
+            "id": "QM-12",
+            "label": "Instrumentos rentables",
+            "value": "37/40",
+            "status": "ok",
+            "note": "92.5% de los 40 instrumentos testeados terminan con retorno positivo"
+          }
+        ]
+      },
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "comment": "",
+          "title": "Ampliar backtest a 12+ meses",
+          "desc": "El backtest actual cubre solo 60 dias. Con 60 dias es imposible validar la estrategia en regimenes distintos (alta volatilidad, mercados laterales, crisis). Re-correr sobre 12-24 meses de datos historicos para confirmar robustez."
+        },
+        {
+          "id": "R-02",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "estado": "pendiente",
+          "comment": "",
+          "title": "Excluir explicitamente XPDUSD y XPTUSD en CONFIG",
+          "desc": "El HTML testea 40 instrumentos incluyendo XPDUSD (Paladio, -939.87%) y XPTUSD (Platino, -544.62%). Aunque el bot vivo no los incluye hoy, agregar cualquiera de los dos significaria ruina de cuenta. Agregar CONFIG['symbols_blacklist'] para proteccion explicita."
+        },
+        {
+          "id": "R-03",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "comment": "",
+          "title": "Documentar o corregir la logica de divergencia simple",
+          "desc": "El bot entra en operaciones con divergencia simple (solo OBV o solo MACD confirma) ademas de la doble divergencia. Lineas 278-279 asignan senal=1 para ambos casos. Testear version con AND en lugar de OR para comparar win rate y precision."
+        },
+        {
+          "id": "R-04",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "comment": "",
+          "title": "Evaluar incorporacion de WTI_M6 y XNGUSD al bot vivo",
+          "desc": "WTI_M6 (+201.30%, Sharpe 13.66, WR 73.6%, PF 5.46, DD -4.07%) y XNGUSD (+122.35%, Sharpe 11.64, WR 77.8%, PF 5.95, DD -3.34%) son excelentes candidatos para expansion. Ambos superan en Sharpe y drawdown a varios instrumentos ya activos."
+        },
+        {
+          "id": "R-05",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "media",
+          "estado": "pendiente",
+          "comment": "",
+          "title": "Minimo de 40 trades para incorporar instrumento al bot vivo",
+          "desc": "Varios instrumentos en produccion tienen muestras delgadas: SE30 (23 trades), NOR25 (20), TecDE30 (18). Un minimo de 40 trades en backtest de 60 dias asegura estadistica suficiente antes de operar con capital real."
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "comment": "",
+          "title": "Divergencia simple entra con senal completa (OR logico)",
+          "desc": "En detectar_doble_divergencia (lineas 278-279), elif precio_ll and (obv_hl or macd_hl) asigna se�ales.iloc[i]=1, igual que la doble divergencia. El bot es en realidad 'divergencia simple o doble', lo que infla el conteo de senales."
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_all_resultado.html",
+          "comment": "",
+          "title": "Sharpe anualizado mayor a 10 puede reflejar suerte del periodo corto",
+          "desc": "Con solo 60 dias de datos, el Sharpe se anualiza con sqrt(105120)=324. STOXX50 (Sharpe 14.25 con solo 26 trades) es el caso mas extremo. Un Sharpe tan alto en un periodo corto puede reflejar suerte del periodo mas que robustez de la estrategia."
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "error",
+          "origin": "obv_macd_adx_all_resultado.html",
+          "comment": "",
+          "title": "XPDUSD y XPTUSD - perdida catastrofica confirmada en backtest",
+          "desc": "Paladio (XPDUSD): retorno -939.87%, DD -943.17%, WR 5.1%, PF 0.033. Platino (XPTUSD): retorno -544.62%, DD -556.40%, WR 3.0%, PF 0.023. Causa probable: incompatibilidad del sizing ATR con el valor del tick de estos instrumentos."
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "comment": "",
+          "title": "Senal live puede disparar posicion duplicada en la misma divergencia",
+          "desc": "get_signal_live busca divergencias en las ultimas 4 velas M5 (range(-4,-1)) en cada ciclo de 30s. Si una divergencia persiste 2 minutos, el bot puede intentar abrir 4 posiciones en el mismo swing del mismo instrumento. max_positions=6 no evita la entrada duplicada por instrumento."
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "obv_macd_adx_bot_final_v2.py",
+          "comment": "",
+          "title": "Uso correcto de iloc[-2] para senal sobre barra cerrada",
+          "desc": "get_signal_live referencia iloc[-2] para ADX y sesgo H1, evitando calcular senales sobre la vela en formacion (bar 0). Practica correcta que elimina el lookback bias en ejecucion live."
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "comment": "",
+          "title": "SettingWithCopyWarning en se�ales.iloc[i] dentro de loop",
+          "desc": "La asignacion se�ales.iloc[i]=1 dentro del for loop puede lanzar SettingWithCopyWarning si la Serie es una copia. En pandas >= 2.0 puede fallar silenciosamente haciendo que la senal no se registre sin error visible.",
+          "code": "se�ales.iloc[i] = 1  # lineas ~276 y ~279",
+          "fix": "se�ales.iat[i] = 1  # .iat[] es el metodo correcto para asignacion posicional entera"
+        },
+        {
+          "id": "H-02",
+          "categoria": "riesgo",
+          "comment": "",
+          "title": "Circuit breaker no cancela ordenes pendientes en MT5 al activarse",
+          "desc": "Cuando el CB entra en modo pausa o detencion, posiciones_del_bot() solo revisa positions_get() (posiciones abiertas). Si habia una orden pendiente enviada antes del CB, sigue activa en MT5 y puede ejecutarse durante la pausa.",
+          "code": "def posiciones_del_bot():\n    pos = mt5.positions_get()\n    return [p for p in pos if p.magic == CONFIG['magic']]",
+          "fix": "Al activar el CB, cancelar pendientes:\norders = mt5.orders_get(magic=CONFIG['magic'])\nfor o in (orders or []):\n    mt5.order_send({'action': mt5.TRADE_ACTION_REMOVE, 'order': o.ticket})"
+        },
+        {
+          "id": "H-03",
+          "categoria": "bug",
+          "comment": "",
+          "title": "Divergencia simple asignada como senal completa (OR logico)",
+          "desc": "En detectar_doble_divergencia, elif precio_ll and (obv_hl or macd_hl) asigna senal=1 igual que la condicion de doble divergencia. El WR del backtest refleja un filtro mas permisivo que el anunciado.",
+          "code": "elif precio_ll and (obv_hl or macd_hl):\n    se�ales.iloc[i] = 1  # igual entramos",
+          "fix": "Para version pura con AND:\nif precio_ll and obv_hl and macd_hl:\n    se�ales.iat[i] = 1\n# Eliminar el elif con OR"
+        },
+        {
+          "id": "H-04",
+          "categoria": "mejora",
+          "comment": "",
+          "title": "Fallback de costos generico para instrumentos exoticos",
+          "desc": "get_costos_reales usa 3.5 USD/lado generico para instrumentos sin override en CONFIG. Para indices como STOXX50, NETH25 o HK50 este default puede ser muy impreciso, inflando el PnL neto y el Profit Factor en backtest.",
+          "code": "comm_usd = CONFIG['comm_overrides'].get(symbol, CONFIG['default_comm'])",
+          "fix": "Agregar overrides explicitos para todos los instrumentos del bot:\n'comm_overrides': {\n    'STOXX50': 3.0, 'DE40': 3.0, 'UK100': 3.0,\n    'NETH25': 3.0, 'SE30': 3.0, 'XTIUSD': 3.5,\n    'BTCUSD': 7.0, 'XAUUSD': 3.5\n}"
+        },
+        {
+          "id": "H-05",
+          "categoria": "ausencia",
+          "comment": "",
+          "title": "Sin validacion de tick antes de calcular precio de entrada",
+          "desc": "En abrir_orden y cerrar_timeout, el precio se obtiene de mt5.symbol_info_tick(). Si tick es None (instrumento sin datos, fuera de horario, problema de conexion), tick.bid lanza AttributeError e interrumpe el loop del bot.",
+          "code": "tick = mt5.symbol_info_tick(sym)\nprecio = tick.bid if pos.type == mt5.ORDER_TYPE_BUY else tick.ask",
+          "fix": "tick = mt5.symbol_info_tick(symbol)\nif tick is None:\n    log.error(f'  {symbol}: tick None - orden cancelada')\n    return None\nprecio = tick.ask if direccion == 1 else tick.bid"
+        }
       ]
     }
   ],
