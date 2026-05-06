@@ -133,7 +133,7 @@ async function handleUpload(request, env) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (bytes.length > 10 * 1024 * 1024) return json({ error: 'Archivo demasiado grande (máx 10 MB). Los archivos HTML de resultados no necesitan subirse — solo sube el .py y los .csv.' }, 413);
     let base64 = '';
-    const CHUNK = 8192;
+    const CHUNK = 8190; // must be multiple of 3 for valid base64 concatenation
     for (let i = 0; i < bytes.length; i += CHUNK) {
       base64 += btoa(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
     }
