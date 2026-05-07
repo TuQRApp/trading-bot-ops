@@ -36,18 +36,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .nav-a:hover{color:var(--text);border-color:var(--border)}
 .nav-a.active{color:var(--nico);border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.06)}
 
-/* ── Layout 3 columnas ──────────────────────────────── */
-.main{display:grid;grid-template-columns:256px 1fr 348px;flex:1;overflow:hidden}
+/* ── Layout 2 columnas ──────────────────────────────── */
+.main{display:grid;grid-template-columns:256px 1fr;flex:1;overflow:hidden}
 
 /* ── Panel base ─────────────────────────────────────── */
 .col{display:flex;flex-direction:column;overflow:hidden}
 .col-left{border-right:1px solid var(--border);background:var(--surface)}
-.col-right{border-left:1px solid var(--border);background:var(--surface)}
 .col-header{padding:9px 14px;border-bottom:1px solid var(--border);flex-shrink:0;
             font-family:var(--mono);font-size:9.5px;font-weight:700;text-transform:uppercase;
             letter-spacing:.8px;color:var(--muted);background:var(--bg3)}
 
-/* ── Contexto auto ──────────────────────────────────── */
+/* ── Contexto ───────────────────────────────────────── */
 .col-body{flex:1;overflow-y:auto;padding:10px 12px}
 .ctx-section{margin-bottom:14px}
 .ctx-section-title{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;
@@ -60,8 +59,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .ctx-badge{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:4px;
            background:rgba(5,150,105,.1);color:var(--trader);border:1px solid rgba(5,150,105,.2)}
 .ctx-badge.warn{background:rgba(217,119,6,.1);color:var(--shared);border-color:rgba(217,119,6,.2)}
-
-/* ── Contexto manual ────────────────────────────────── */
 .ctx-drop{border:1px dashed var(--border);border-radius:8px;padding:12px;
           text-align:center;font-size:11px;color:var(--muted);cursor:pointer;
           transition:border-color .2s,color .2s;margin-bottom:6px}
@@ -77,10 +74,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         font-size:13px;line-height:1;flex-shrink:0}
 .ctx-rm:hover{color:var(--gate)}
 
+/* ── Progress inline ────────────────────────────────── */
+.chat-prog{height:30px;border-bottom:1px solid var(--border);background:var(--bg3);
+           display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
+.chat-prog-track{flex:1;height:3px;background:var(--border);border-radius:2px}
+.chat-prog-fill{height:3px;background:var(--trader);border-radius:2px;
+                transition:width .35s;width:0%}
+.chat-prog-label{font-family:var(--mono);font-size:10px;font-weight:700;
+                 color:var(--muted);white-space:nowrap}
+.chat-prog-label.done{color:var(--trader)}
+
 /* ── Chat ───────────────────────────────────────────── */
 .chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;
            flex-direction:column;gap:10px;background:var(--bg)}
-.msg{max-width:88%;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.55}
+.msg{max-width:78%;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.55}
 .msg.user{background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);align-self:flex-end}
 .msg.bot{background:var(--surface);border:1px solid var(--border);align-self:flex-start}
 .msg.sys{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2);align-self:center;
@@ -93,7 +100,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         animation:blink 1s infinite;vertical-align:middle;margin-left:2px}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-.chat-foot{border-top:1px solid var(--border);padding:9px 11px;flex-shrink:0;background:var(--surface)}
+.chat-foot{border-top:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.chat-input-area{padding:9px 11px}
 .chat-previews{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}
 .preview-tag{display:flex;align-items:center;gap:4px;padding:2px 7px;
              border-radius:4px;background:var(--bg);border:1px solid var(--border);font-size:10.5px}
@@ -115,64 +123,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           background:var(--nico);color:#fff;cursor:pointer;
           display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .send-btn:hover{background:#1d51c0}
-.send-btn:disabled{background:var(--bg);border:1px solid var(--border);
-                   color:var(--muted);cursor:not-allowed}
 
-/* ── Spec panel ─────────────────────────────────────── */
-.spec-progress{padding:9px 13px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg3)}
-.prog-row{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:5px}
-.prog-row span:first-child{font-family:var(--mono);color:var(--muted);text-transform:uppercase;
-                           letter-spacing:.5px;font-weight:700;font-size:10px}
-.prog-row .prog-count{font-family:var(--mono);font-weight:700;color:var(--text)}
-.prog-track{height:3px;background:var(--border);border-radius:2px}
-.prog-fill{height:3px;background:var(--trader);border-radius:2px;transition:width .3s}
-
-.spec-fields{flex:1;overflow-y:auto;padding:8px 10px}
-.spec-group-title{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;
-                  color:var(--muted);padding:8px 2px 5px;margin-top:4px;
-                  border-bottom:1px solid var(--border);margin-bottom:6px}
-.spec-field{border:1px solid var(--border);border-radius:7px;padding:7px 9px;
-            margin-bottom:5px;background:var(--surface);transition:border-color .2s;
-            box-shadow:0 1px 2px rgba(30,45,110,.04)}
-.spec-field.s-answered{border-color:rgba(5,150,105,.4);background:rgba(5,150,105,.02)}
-.spec-field.s-nc{border-color:rgba(217,119,6,.3);opacity:.7}
-.spec-field.s-error{border-color:var(--gate)}
-
-.sf-header{display:flex;align-items:center;gap:5px;margin-bottom:4px}
-.sf-num{font-family:var(--mono);font-size:9.5px;color:var(--muted);min-width:18px;font-weight:700}
-.sf-label{font-size:11.5px;font-weight:600;flex:1}
-.sf-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0}
-.sf-dot.answered{background:var(--trader)}
-.sf-dot.nc{background:var(--shared)}
-.sf-dot.error{background:var(--gate)}
-
-.sf-input{width:100%;background:var(--bg);border:1px solid var(--border);
-          border-radius:5px;padding:5px 8px;color:var(--text);
-          font-size:11.5px;font-family:var(--font)}
-.sf-input:focus{outline:none;border-color:var(--nico);background:#fff}
-.sf-input:disabled{opacity:.4;cursor:not-allowed}
-select.sf-input{cursor:pointer}
-textarea.sf-input{resize:vertical;min-height:52px;line-height:1.45}
-
-.sf-sub{display:flex;gap:5px;margin-top:4px}
-.sf-sub .sf-input{flex:1}
-.sf-hint{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.5}
-
-.nc-row{display:flex;align-items:center;gap:5px;margin-top:5px}
-.nc-row input{accent-color:var(--shared);cursor:pointer}
-.nc-row label{font-size:10px;color:var(--muted);cursor:pointer}
-
-/* ── Generar btn ────────────────────────────────────── */
-.generar-wrap{padding:9px 11px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg3)}
+/* ── Botón Generar (en chat-foot) ───────────────────── */
+.generar-wrap{padding:9px 11px;border-top:1px solid var(--border);
+              background:rgba(5,150,105,.04);display:none}
 .btn-generar{width:100%;padding:9px;border-radius:7px;border:none;
              font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font);
-             display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-generar:not(:disabled){background:var(--trader);color:#fff}
-.btn-generar:not(:disabled):hover{background:#047857}
-.btn-generar:disabled{background:var(--bg);border:1px solid var(--border);
-                      color:var(--muted);cursor:not-allowed}
-.generar-pending{font-family:var(--mono);font-size:10px;color:var(--muted);
-                 text-align:center;margin-top:5px;min-height:14px}
+             display:flex;align-items:center;justify-content:center;gap:6px;
+             background:var(--trader);color:#fff}
+.btn-generar:hover{background:#047857}
 
 /* ── Modal generación ───────────────────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,39,87,.4);
@@ -299,334 +258,34 @@ textarea.sf-input{resize:vertical;min-height:52px;line-height:1.45}
 
   <!-- ── COL CENTRAL: Chat ───────────────────────────── -->
   <div class="col">
-    <div class="col-header">Conversación de diseño</div>
+    <div class="col-header">Conversación de diseño · 14 puntos</div>
+    <div class="chat-prog">
+      <div class="chat-prog-track">
+        <div class="chat-prog-fill" id="prog-fill"></div>
+      </div>
+      <span class="chat-prog-label" id="prog-label">0 / 14</span>
+    </div>
     <div class="chat-msgs" id="chat-msgs"></div>
     <div class="chat-foot">
-      <div class="chat-previews" id="chat-previews"></div>
-      <div class="chat-row">
-        <button class="icon-btn" title="Adjuntar archivo"
-                onclick="document.getElementById('chat-file-input').click()">📎</button>
-        <textarea class="chat-textarea" id="chat-input" rows="1"
-                  placeholder="Describí la ineficiencia que querés explotar…"
-                  onkeydown="onChatKey(event)"
-                  oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendChat()">➤</button>
+      <div class="generar-wrap" id="generar-wrap">
+        <button class="btn-generar" onclick="openGenerar()">
+          ⚡ Generar Estrategia + Backtest
+        </button>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-previews" id="chat-previews"></div>
+        <div class="chat-row">
+          <button class="icon-btn" title="Adjuntar archivo"
+                  onclick="document.getElementById('chat-file-input').click()">📎</button>
+          <textarea class="chat-textarea" id="chat-input" rows="1"
+                    placeholder="Respondé la pregunta o describí tu idea…"
+                    onkeydown="onChatKey(event)"
+                    oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendChat()">➤</button>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- ── COL DERECHA: Estrategia ─────────────────────── -->
-  <div class="col col-right">
-    <div class="spec-progress">
-      <div class="prog-row">
-        <span>Estrategia</span>
-        <span class="prog-count" id="prog-count">0 / 14</span>
-      </div>
-      <div class="prog-track">
-        <div class="prog-fill" id="prog-fill" style="width:0%"></div>
-      </div>
-    </div>
-
-    <div class="spec-fields" id="spec-fields">
-
-      <div class="spec-group-title">A · Instrumento e hipótesis</div>
-
-      <!-- 01 -->
-      <div class="spec-field" id="sf-instrumentos">
-        <div class="sf-header">
-          <span class="sf-num">01</span>
-          <span class="sf-label">Instrumento(s)</span>
-          <span class="sf-dot" id="dot-instrumentos"></span>
-        </div>
-        <input class="sf-input" id="fv-instrumentos" type="text"
-               placeholder="ej: XAUUSD · BTCUSD · EURUSD"
-               oninput="onFieldChange('instrumentos', this.value)">
-        <div class="sf-hint">Sin futuros exóticos ni activos con spread estructuralmente inviable</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-instrumentos" onchange="toggleNC('instrumentos')">
-          <label for="nc-instrumentos">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 02 -->
-      <div class="spec-field" id="sf-hipotesis">
-        <div class="sf-header">
-          <span class="sf-num">02</span>
-          <span class="sf-label">Hipótesis / ineficiencia</span>
-          <span class="sf-dot" id="dot-hipotesis"></span>
-        </div>
-        <textarea class="sf-input" id="fv-hipotesis" rows="3"
-                  placeholder="Por qué debería funcionar — qué ineficiencia explota. Ej: reversión en spikes de volatilidad en Fibonacci (canal MR) o divergencia de volumen al final de un movimiento (OBV MACD)."
-                  oninput="onFieldChange('hipotesis', this.value)"></textarea>
-        <div class="sf-hint">Identificar la ineficiencia antes de ver los datos — si no se puede escribir, no está lista</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-hipotesis" onchange="toggleNC('hipotesis')">
-          <label for="nc-hipotesis">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 03 -->
-      <div class="spec-field" id="sf-direccion">
-        <div class="sf-header">
-          <span class="sf-num">03</span>
-          <span class="sf-label">Dirección permitida</span>
-          <span class="sf-dot" id="dot-direccion"></span>
-        </div>
-        <select class="sf-input" id="fv-direccion"
-                onchange="onFieldChange('direccion', this.value)">
-          <option value="">— seleccionar —</option>
-          <option value="long">Solo long</option>
-          <option value="short">Solo short</option>
-          <option value="ambas">Long y short</option>
-        </select>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-direccion" onchange="toggleNC('direccion')">
-          <label for="nc-direccion">No considerar</label>
-        </div>
-      </div>
-
-      <div class="spec-group-title">B · Estructura temporal</div>
-
-      <!-- 04 -->
-      <div class="spec-field" id="sf-tf-entrada">
-        <div class="sf-header">
-          <span class="sf-num">04</span>
-          <span class="sf-label">Timeframe de entrada</span>
-          <span class="sf-dot" id="dot-tf-entrada"></span>
-        </div>
-        <select class="sf-input" id="fv-tf-entrada"
-                onchange="onFieldChange('tf-entrada', this.value)">
-          <option value="">— seleccionar —</option>
-          <option>M3</option><option>M5</option>
-          <option>M15</option><option>M30</option>
-          <option>H1</option><option>H4</option><option>D1</option>
-        </select>
-        <div class="sf-hint">Mínimo M3 — scalping (&lt;M3) no viable en IC Markets Raw</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tf-entrada" onchange="toggleNC('tf-entrada')">
-          <label for="nc-tf-entrada">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 05 -->
-      <div class="spec-field" id="sf-tf-apoyo">
-        <div class="sf-header">
-          <span class="sf-num">05</span>
-          <span class="sf-label">Timeframes de apoyo</span>
-          <span class="sf-dot" id="dot-tf-apoyo"></span>
-        </div>
-        <input class="sf-input" id="fv-tf-apoyo" type="text"
-               placeholder="ej: M15 confirmación · H1 sesgo / ninguno"
-               oninput="onFieldChange('tf-apoyo', this.value)">
-        <div class="sf-hint">Escribí "ninguno" si no usás multi-TF</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tf-apoyo" onchange="toggleNC('tf-apoyo')">
-          <label for="nc-tf-apoyo">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 06 -->
-      <div class="spec-field" id="sf-sesion">
-        <div class="sf-header">
-          <span class="sf-num">06</span>
-          <span class="sf-label">Sesión operativa</span>
-          <span class="sf-dot" id="dot-sesion"></span>
-        </div>
-        <select class="sf-input" id="fv-sesion-tipo" onchange="onSesionChange()">
-          <option value="">— seleccionar —</option>
-          <option value="24x7">7×24 (crypto, forex)</option>
-          <option value="bolsa">Ventana específica (bolsa / apertura)</option>
-        </select>
-        <div id="sesion-horas-wrap" style="display:none;margin-top:4px">
-          <input class="sf-input" id="fv-sesion-horas" type="text"
-                 placeholder="ej: 01–12h UTC · lunes a viernes"
-                 oninput="onFieldChange('sesion', buildSesionVal())">
-        </div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-sesion" onchange="toggleNC('sesion')">
-          <label for="nc-sesion">No considerar</label>
-        </div>
-      </div>
-
-      <div class="spec-group-title">C · Señal y ejecución</div>
-
-      <!-- 07 -->
-      <div class="spec-field" id="sf-senal">
-        <div class="sf-header">
-          <span class="sf-num">07</span>
-          <span class="sf-label">Tipo de señal</span>
-          <span class="sf-dot" id="dot-senal"></span>
-        </div>
-        <select class="sf-input" id="fv-senal-tipo" style="margin-bottom:4px"
-                onchange="onFieldChange('senal', buildSenalVal())">
-          <option value="">— seleccionar —</option>
-          <option value="reversion">Reversión de canal / nivel</option>
-          <option value="divergencia">Divergencia de indicador</option>
-          <option value="breakout">Breakout / ruptura</option>
-          <option value="cruce">Cruce de medias / indicadores</option>
-          <option value="patron">Patrón de vela / estructura</option>
-          <option value="otro">Otro</option>
-        </select>
-        <input class="sf-input" id="fv-senal-desc" type="text"
-               placeholder="Descripción exacta de la condición de entrada"
-               oninput="onFieldChange('senal', buildSenalVal())">
-        <div class="sf-hint">Definir reglas exactas antes de ver los datos</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-senal" onchange="toggleNC('senal')">
-          <label for="nc-senal">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 08 -->
-      <div class="spec-field" id="sf-ejecucion">
-        <div class="sf-header">
-          <span class="sf-num">08</span>
-          <span class="sf-label">Tipo de ejecución</span>
-          <span class="sf-dot" id="dot-ejecucion"></span>
-        </div>
-        <select class="sf-input" id="fv-ejecucion"
-                onchange="onFieldChange('ejecucion', this.value)">
-          <option value="">— seleccionar —</option>
-          <option value="limite">Orden límite — entrada al precio exacto</option>
-          <option value="mercado">Orden mercado — entrada al Open siguiente</option>
-        </select>
-        <div class="sf-hint">Entrada al Open de la barra siguiente a la señal (sin lookahead)</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-ejecucion" onchange="toggleNC('ejecucion')">
-          <label for="nc-ejecucion">No considerar</label>
-        </div>
-      </div>
-
-      <div class="spec-group-title">D · Gestión de posición</div>
-
-      <!-- 09 -->
-      <div class="spec-field" id="sf-sl">
-        <div class="sf-header">
-          <span class="sf-num">09</span>
-          <span class="sf-label">Stop Loss (SL)</span>
-          <span class="sf-dot" id="dot-sl"></span>
-        </div>
-        <input class="sf-input" id="fv-sl" type="text"
-               placeholder="ej: 1.5× ATR14 · nivel Fibonacci 1.382 · 20 pips"
-               oninput="onFieldChange('sl', this.value)">
-        <div class="sf-hint">Mínimo 3× spread típico del instrumento</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-sl" onchange="toggleNC('sl')">
-          <label for="nc-sl">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 10 -->
-      <div class="spec-field" id="sf-tp">
-        <div class="sf-header">
-          <span class="sf-num">10</span>
-          <span class="sf-label">Toma de ganancias (TP)</span>
-          <span class="sf-dot" id="dot-tp"></span>
-        </div>
-        <input class="sf-input" id="fv-tp" type="text"
-               placeholder="ej: 3× ATR · 3 TPs parciales con BE en TP1 · trailing stop"
-               oninput="onFieldChange('tp', this.value)">
-        <div class="sf-hint">ATR múltiplo, nivel Fibonacci, R:R fijo o combinación</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tp" onchange="toggleNC('tp')">
-          <label for="nc-tp">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 11 -->
-      <div class="spec-field" id="sf-timeout">
-        <div class="sf-header">
-          <span class="sf-num">11</span>
-          <span class="sf-label">Timeout (cierre por tiempo)</span>
-          <span class="sf-dot" id="dot-timeout"></span>
-        </div>
-        <select class="sf-input" id="fv-timeout-yn" onchange="onTimeoutChange()">
-          <option value="">— seleccionar —</option>
-          <option value="no">No usar timeout</option>
-          <option value="si">Sí — cerrar tras N barras</option>
-        </select>
-        <div id="timeout-val-wrap" style="display:none;margin-top:4px">
-          <div class="sf-sub">
-            <input class="sf-input" id="fv-timeout-n" type="number" min="1"
-                   placeholder="N barras" style="width:80px"
-                   oninput="onFieldChange('timeout', buildTimeoutVal())">
-            <select class="sf-input" id="fv-timeout-tf"
-                    onchange="onFieldChange('timeout', buildTimeoutVal())">
-              <option value="">TF</option>
-              <option>M3</option><option>M5</option>
-              <option>M15</option><option>M30</option><option>H1</option>
-            </select>
-          </div>
-        </div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-timeout" onchange="toggleNC('timeout')">
-          <label for="nc-timeout">No considerar</label>
-        </div>
-      </div>
-
-      <div class="spec-group-title">E · Contexto y parámetros</div>
-
-      <!-- 12 -->
-      <div class="spec-field" id="sf-filtros">
-        <div class="sf-header">
-          <span class="sf-num">12</span>
-          <span class="sf-label">Filtros y contexto de mercado</span>
-          <span class="sf-dot" id="dot-filtros"></span>
-        </div>
-        <input class="sf-input" id="fv-filtros" type="text"
-               placeholder="ej: ADX>25 · M5 tendencia alcista · no operar si VIX>30 / ninguno"
-               oninput="onFieldChange('filtros', this.value)">
-        <div class="sf-hint">Condiciones de mercado que habilitan o deshabilitan la estrategia. Escribí "ninguno" si no usás.</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-filtros" onchange="toggleNC('filtros')">
-          <label for="nc-filtros">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 13 -->
-      <div class="spec-field" id="sf-params-fijos">
-        <div class="sf-header">
-          <span class="sf-num">13</span>
-          <span class="sf-label">Parámetros fijos</span>
-          <span class="sf-dot" id="dot-params-fijos"></span>
-        </div>
-        <textarea class="sf-input" id="fv-params-fijos" rows="2"
-                  placeholder="Estándares de industria — no optimizar. Ej: MACD 12/26/9 · ATR 14 · EMA 200"
-                  oninput="onFieldChange('params-fijos', this.value)"></textarea>
-        <div class="sf-hint">Escribí "ninguno" si no usás indicadores con parámetros fijos</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-params-fijos" onchange="toggleNC('params-fijos')">
-          <label for="nc-params-fijos">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 14 -->
-      <div class="spec-field" id="sf-params-opt">
-        <div class="sf-header">
-          <span class="sf-num">14</span>
-          <span class="sf-label">Parámetros optimizables</span>
-          <span class="sf-dot" id="dot-params-opt"></span>
-        </div>
-        <textarea class="sf-input" id="fv-params-opt" rows="2"
-                  placeholder="Umbrales propios de la estrategia. Ej: ADX threshold (20–35) · SL multiplier (1.0–2.5) · canal lookback (15–30)"
-                  oninput="onFieldChange('params-opt', this.value)"></textarea>
-        <div class="sf-hint">Solo 3–5 parámetros máximo — grid de ~80 combinaciones para walk-forward. Escribí "ninguno" si no aplica.</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-params-opt" onchange="toggleNC('params-opt')">
-          <label for="nc-params-opt">No considerar</label>
-        </div>
-      </div>
-
-    </div><!-- /spec-fields -->
-
-    <div class="generar-wrap">
-      <button class="btn-generar" id="btn-generar" disabled onclick="openGenerar()">
-        <span id="btn-generar-icon">🔒</span>
-        <span id="btn-generar-text">Generar Estrategia + Backtest</span>
-      </button>
-      <div class="generar-pending" id="generar-pending">Completá o marcá "No considerar" los 14 campos</div>
-    </div>
-  </div><!-- /col-right -->
 
 </div><!-- /main -->
 
@@ -703,7 +362,6 @@ let   dataJson = null;
 // ── Init ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   updateProgress();
-  updateDots();
   loadDataJson();
   showWelcome();
 });
@@ -807,59 +465,7 @@ function openNoteDialog() {
     addManualCtxItem('note', 'nota-' + Date.now(), texto.trim(), null);
 }
 
-// ── Spec — campos ───────────────────────────────────────────
-function onFieldChange(id, value) {
-  if (specState[id].noConsiderar) return;
-  specState[id].value = value && value.trim() ? value.trim() : null;
-  updateFieldStatus(id);
-  updateProgress();
-}
-
-function toggleNC(id) {
-  const nc = document.getElementById('nc-' + id).checked;
-  specState[id].noConsiderar = nc;
-  if (nc) {
-    specState[id].value = null;
-    disableFieldInputs(id, true);
-  } else {
-    disableFieldInputs(id, false);
-    const mainInput = document.getElementById('fv-' + id);
-    if (mainInput && mainInput.value.trim())
-      specState[id].value = mainInput.value.trim();
-  }
-  updateFieldStatus(id);
-  updateProgress();
-}
-
-function disableFieldInputs(id, disabled) {
-  document.querySelectorAll(`#sf-${id} .sf-input`).forEach(el => {
-    if (disabled) el.setAttribute('disabled', true);
-    else el.removeAttribute('disabled');
-  });
-}
-
-function updateFieldStatus(id) {
-  const s    = specState[id];
-  const dot  = document.getElementById('dot-' + id);
-  const wrap = document.getElementById('sf-' + id);
-  if (!dot || !wrap) return;
-
-  wrap.classList.remove('s-answered','s-nc','s-error');
-  dot.classList.remove('answered','nc','error');
-
-  if (s.noConsiderar) {
-    wrap.classList.add('s-nc');
-    dot.classList.add('nc');
-  } else if (s.value !== null && s.value !== '') {
-    wrap.classList.add('s-answered');
-    dot.classList.add('answered');
-  }
-}
-
-function updateDots() {
-  FIELDS.forEach(f => updateFieldStatus(f));
-}
-
+// ── Progreso ─────────────────────────────────────────────────
 function updateProgress() {
   let answered = 0;
   FIELDS.forEach(f => {
@@ -867,70 +473,55 @@ function updateProgress() {
     if (s.noConsiderar || (s.value !== null && s.value !== '')) answered++;
   });
   const total = FIELDS.length;
-  document.getElementById('prog-count').textContent = `${answered} / ${total}`;
-  document.getElementById('prog-fill').style.width = `${answered / total * 100}%`;
+  const pct   = answered / total * 100;
 
-  const btn = document.getElementById('btn-generar');
-  if (answered === total) {
-    btn.disabled = false;
-    document.getElementById('btn-generar-icon').textContent = '⚡';
-    document.getElementById('generar-pending').textContent = 'Listo para generar';
-  } else {
-    btn.disabled = true;
-    document.getElementById('btn-generar-icon').textContent = '🔒';
-    const left = total - answered;
-    document.getElementById('generar-pending').textContent =
-      `Faltan ${left} campo${left > 1 ? 's' : ''}`;
+  document.getElementById('prog-fill').style.width  = pct + '%';
+  const label = document.getElementById('prog-label');
+  label.textContent = `${answered} / ${total}`;
+  label.className   = 'chat-prog-label' + (answered === total ? ' done' : '');
+
+  const wrap = document.getElementById('generar-wrap');
+  wrap.style.display = answered === total ? 'block' : 'none';
+}
+
+// ── Anotaciones ||SPEC:{...}|| ───────────────────────────────
+function parseSpecAnnotations(text) {
+  const marker = '||SPEC:';
+  let result = text;
+  let start = result.indexOf(marker);
+  while (start !== -1) {
+    const jsonStart = start + marker.length;
+    const end = result.indexOf('||', jsonStart);
+    if (end === -1) break;
+    const jsonStr = result.slice(jsonStart, end);
+    try {
+      const fields = JSON.parse(jsonStr);
+      Object.entries(fields).forEach(([key, val]) => {
+        if (!FIELDS.includes(key)) return;
+        if (val === '__NC__') {
+          specState[key].noConsiderar = true;
+          specState[key].value = null;
+        } else {
+          specState[key].noConsiderar = false;
+          specState[key].value = String(val);
+        }
+      });
+    } catch (_) {}
+    // Strip annotation from displayed text
+    result = result.slice(0, start).trimEnd() + result.slice(end + 2);
+    start = result.indexOf(marker);
   }
-}
-
-// ── Campos con lógica condicional ───────────────────────────
-function onSesionChange() {
-  const tipo = document.getElementById('fv-sesion-tipo').value;
-  document.getElementById('sesion-horas-wrap').style.display =
-    tipo === 'bolsa' ? 'block' : 'none';
-  onFieldChange('sesion', buildSesionVal());
-}
-function buildSesionVal() {
-  const tipo = document.getElementById('fv-sesion-tipo').value;
-  if (!tipo) return '';
-  if (tipo === '24x7') return '7x24';
-  const h = document.getElementById('fv-sesion-horas').value.trim();
-  return h ? `Ventana: ${h}` : '';
-}
-
-function buildSenalVal() {
-  const tipo = document.getElementById('fv-senal-tipo').value;
-  const desc = document.getElementById('fv-senal-desc').value.trim();
-  if (!tipo) return desc || '';
-  return desc ? `${tipo} · ${desc}` : tipo;
-}
-
-function onTimeoutChange() {
-  const v = document.getElementById('fv-timeout-yn').value;
-  document.getElementById('timeout-val-wrap').style.display =
-    v === 'si' ? 'block' : 'none';
-  if (v === 'no') onFieldChange('timeout', 'No usar timeout');
-  else onFieldChange('timeout', buildTimeoutVal());
-}
-function buildTimeoutVal() {
-  const n  = document.getElementById('fv-timeout-n').value;
-  const tf = document.getElementById('fv-timeout-tf').value;
-  if (!n || !tf) return '';
-  return `${n} barras ${tf}`;
+  return result.trim();
 }
 
 // ── Chat ────────────────────────────────────────────────────
 function showWelcome() {
   addMsg('bot',
-    'Hola. Soy tu asistente de diseño de estrategias (Fase 1 del pipeline).\n\n' +
+    'Hola. Vamos a definir tu estrategia respondiendo 14 preguntas — sin formularios.\n\n' +
     'Tengo cargado el contexto de tus bots activos y el mercado de hoy. ' +
-    'Mi rol es ayudarte a definir las 14 dimensiones del panel derecho — ' +
-    'una estrategia completa antes de ver los datos.\n\n' +
-    'Cuando completes los 14 campos (o los marques como "No considerar"), ' +
-    'el botón "Generar Estrategia + Backtest" se habilita y Claude genera ' +
-    'la spec completa más el código Python del backtest listo para correr.\n\n' +
-    '¿Tenés alguna ineficiencia en mente, o querés que proponga algo basado en tu perfil?'
+    'La barra de arriba muestra cuántos puntos completaste. ' +
+    'Cuando lleguemos al 14/14, el botón para generar el código del backtest se habilita.\n\n' +
+    '¿Tenés algún instrumento o ineficiencia en mente, o querés que proponga algo basado en lo que ya tenés corriendo?'
   );
 }
 
@@ -1005,7 +596,7 @@ async function sendChat() {
   chatHistory.push({ role: 'user', content: content.length === 1 && content[0].type === 'text'
     ? content[0].text : content });
 
-  const streamDiv = addStreamingMsg();
+  const streamDiv  = addStreamingMsg();
   const streamText = streamDiv.querySelector('.stream-text');
   const cursor     = streamDiv.querySelector('.cursor');
 
@@ -1044,7 +635,12 @@ async function sendChat() {
     }
 
     cursor.remove();
-    chatHistory.push({ role: 'assistant', content: full });
+
+    // Parse and strip ||SPEC:{...}|| annotations
+    const cleaned = parseSpecAnnotations(full);
+    streamText.textContent = cleaned;
+    chatHistory.push({ role: 'assistant', content: cleaned });
+    updateProgress();
 
   } catch (err) {
     cursor.remove();
@@ -1071,11 +667,19 @@ function buildChatPayload() {
     content: m.content || null, imageData: m.imageData || null
   }));
 
-  ctx.spec_actual = buildSpecSummary();
+  ctx.spec_actual  = buildSpecSummary();
+  ctx.mode         = 'estrategia_qa';
   return { messages: chatHistory, context: ctx };
 }
 
 function buildSpecSummary() {
+  const labels = {
+    'instrumentos':'Instrumentos','hipotesis':'Hipotesis','direccion':'Direccion',
+    'tf-entrada':'TF entrada','tf-apoyo':'TF apoyo','sesion':'Sesion',
+    'senal':'Senal','ejecucion':'Ejecucion','sl':'Stop Loss','tp':'Take Profit',
+    'timeout':'Timeout','filtros':'Filtros','params-fijos':'Params fijos',
+    'params-opt':'Params optimizables'
+  };
   const out = {};
   FIELDS.forEach(f => {
     const s = specState[f];
