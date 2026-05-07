@@ -43,6 +43,7 @@ export default {
     if (pathname === '/status'        && method === 'GET')  return handleGetStatus(env);
     if (pathname === '/chat'          && method === 'POST') return handleChat(request, env);
     if (pathname === '/generate-spec' && method === 'POST') return handleGenerateSpec(request, env);
+    if (pathname === '/generate-bot'  && method === 'POST') return handleGenerateBot(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -684,20 +685,33 @@ function buildProfileText(tp) {
 function buildSpecText(spec) {
   if (!spec) return 'Sin spec definida.';
   const labels = {
-    'instrumentos': 'Instrumento(s)',
-    'sesion'      : 'Sesion operativa',
-    'm5'          : 'Influencia M5',
-    'duracion'    : 'Duracion',
-    'tf-entrada'  : 'TF de entrada',
-    'tf-apoyo'    : 'TFs de apoyo',
-    'senal'       : 'Tipo de senal',
-    'ejecucion'   : 'Tipo de ejecucion',
-    'tp'          : 'Toma de ganancias',
-    'sl'          : 'Stop Loss',
-    'timeout'     : 'Timeout',
-    'riesgo'      : 'Riesgo por trade (%)',
-    'maxpos'      : 'Posiciones max',
-    'cb'          : 'Circuit Breaker',
+    'instrumentos' : 'Instrumento(s)',
+    'hipotesis'    : 'Hipotesis / ineficiencia',
+    'direccion'    : 'Direccion',
+    'tf-entrada'   : 'TF de entrada',
+    'tf-apoyo'     : 'TFs de apoyo',
+    'sesion'       : 'Sesion operativa',
+    'senal'        : 'Tipo de senal',
+    'ejecucion'    : 'Tipo de ejecucion',
+    'sl'           : 'Stop Loss',
+    'tp'           : 'Toma de ganancias',
+    'timeout'      : 'Timeout',
+    'filtros'      : 'Filtros y contexto',
+    'params-fijos' : 'Parametros fijos',
+    'params-opt'   : 'Parametros optimizables',
+    // bot live
+    'riesgo'       : 'Riesgo por trade (%)',
+    'maxpos'       : 'Posiciones max',
+    'cb-diario'    : 'Circuit Breaker diario',
+    'cb-semanal'   : 'Circuit Breaker semanal',
+    'cb-cooldown'  : 'Cooldown CB',
+    'alertas'      : 'Alertas',
+    'estado'       : 'Estado persistente',
+    'reconexion'   : 'Reconexion automatica',
+    // legacy
+    'm5'           : 'Influencia M5',
+    'duracion'     : 'Duracion',
+    'cb'           : 'Circuit Breaker',
   };
   return Object.entries(spec)
     .map(([k, v]) => `${labels[k] || k}: ${v}`)
@@ -722,9 +736,32 @@ function buildChatSystem(context) {
   const manualText  = buildManualCtxText(context.manual || []);
   const specText    = buildSpecText(context.spec_actual);
 
-  return `Sos un asistente experto en diseno de bots de trading para IC Markets MT5 en Python.
-Tu rol es guiar al trader para definir las 14 dimensiones de su nueva estrategia.
-Sos conciso y practico. Una o dos preguntas por turno, no mas.
+  const mode = context.mode === 'bot' ? 'bot' : 'estrategia';
+
+  if (mode === 'bot') {
+    const estrategia = context.estrategia_seleccionada;
+    const specRef = estrategia ? `\nESTRATEGIA DE REFERENCIA:\n${JSON.stringify(estrategia.spec || {}, null, 2)}` : '';
+    return `Sos un experto en configuracion de bots de trading para IC Markets MT5 Python.
+Tu rol es ayudar al trader a configurar los 8 parametros operativos del bot live (Fase 6).
+NO escribis codigo Python en el chat. Respondas preguntas de configuracion y das recomendaciones concretas.
+Una o dos respuestas por turno, conciso y practico.
+${specRef}
+
+PARAMETROS A CONFIGURAR (estado actual):
+${specText}
+
+REGLAS:
+- Forward test siempre arranca con RISK_PCT = 0.25% (un cuarto del tamano final)
+- Escalado progresivo: 0.25% → 0.5% → 1.0% Nunca saltar directamente al maximo
+- Circuit breaker es red de seguridad, no limite operativo: debe ser holgado
+- Con apalancamiento 100x y 0.25% de riesgo, se necesitan ~40 SL seguidos para activarlo
+- Estado persistente en JSON permite retomar si el bot se reinicia`;
+  }
+
+  return `Sos un experto en diseno de estrategias de trading para IC Markets MT5 Python.
+Tu rol es ayudar al trader a definir las 14 dimensiones del panel de estrategia (Fase 1).
+NUNCA escribas codigo Python en el chat. Tu output es conversacional: preguntas, sugerencias, analisis.
+Una o dos preguntas por turno, no mas. Cuando el trader responde algo, sugeri que campo del panel completar.
 
 === BOTS YA ACTIVOS ===
 ${botsText}
@@ -735,28 +772,29 @@ ${m5Text}
 === PERFIL DEL TRADER ===
 ${profileText}
 
-=== ESTADO ACTUAL DE LA SPEC (lo que ya definio el trader) ===
+=== ESTADO ACTUAL DE LA ESTRATEGIA (panel derecho) ===
 ${specText}
 
 ${manualText ? '=== CONTEXTO ADICIONAL ADJUNTO ===\n' + manualText : ''}
 
 === REGLAS INVIOLABLES ===
-- Nunca sugerir scalping (< 5 min): el spread de IC Markets Raw elimina el margen
-- Nunca sugerir dependencias de datos externos en tiempo real durante el loop del bot
-- Nunca sugerir senales que requieran precision sub-segundo (loop MT5 Python es 20-30s)
-- Si el instrumento + TF + logica de entrada se superpone con un bot activo, decirlo explicitamente
-- El SL debe ser al menos 3x el spread tipico del instrumento
-- Plataforma objetivo: Python + MetaTrader5 lib, loop poll, cuenta real IC Markets Raw
-- Para las dimensiones con valor PENDIENTE: guiar al trader para definirlas
-- Para las dimensiones con valor NO_CONSIDERAR: no volver a preguntar por ellas`;
+- NUNCA generar codigo Python en el chat — el codigo se genera solo con el boton "Generar Estrategia + Backtest"
+- Nunca sugerir scalping (TF < M3): el spread de IC Markets Raw elimina el margen
+- Nunca sugerir datos externos en tiempo real durante el loop (20-30 segundos)
+- Nunca sugerir precision sub-segundo
+- Si instrumento + TF + logica se solapa con un bot activo, decirlo explicitamente
+- SL minimo = 3x el spread tipico del instrumento
+- Plataforma: Python + MetaTrader5 lib, loop poll, IC Markets Raw
+- Campos PENDIENTE: guiar al trader con preguntas concretas
+- Campos NO_CONSIDERAR: no volver a preguntar`;
 }
 
 function buildPass1System(context) {
   const botsText = buildBotsText(context.bots_activos);
   const m5Text   = buildM5Text(context.market_context);
 
-  return `Sos un quant analyst senior especializado en bots de trading para IC Markets MT5 Python.
-Tu tarea: generar una spec completa y realista a partir de las dimensiones definidas por el trader.
+  return `Sos un quant analyst senior especializado en estrategias de trading para IC Markets MT5 Python.
+Tu tarea: dado el formulario de 14 dimensiones del trader, generar (1) una spec completa y (2) el codigo Python completo del backtest.
 
 BOTS ACTIVOS (no duplicar sin valor diferencial claro):
 ${botsText}
@@ -764,33 +802,49 @@ ${botsText}
 MERCADO HOY:
 ${m5Text}
 
-REGLAS:
-- Para dimensiones PENDIENTE: proponé el valor mas razonable dado el contexto del trader
-- Para dimensiones NO_CONSIDERAR: omitilas de la spec final (no incluirlas)
-- No incluyas scalping ni dependencias de APIs externas en tiempo real
-- El SL debe ser >= 3x el spread tipico del instrumento
+REGLAS PARA LA SPEC:
+- Dimensiones PENDIENTE: proponé el valor mas razonable segun el contexto
+- Dimensiones NO_CONSIDERAR: omitir de la spec (no incluir la key)
+- No incluir scalping ni dependencias de APIs externas en tiempo real
+- SL >= 3x spread tipico del instrumento
 - Todo implementable en MT5 Python con loop de 20-30 segundos
 
-Responde SOLO con JSON valido sin markdown ni texto adicional:
+REGLAS PARA EL BACKTEST (backtest_code):
+- Usar copy_rates_from_pos para datos historicos (no hardcode lookback)
+- 7 correcciones de integridad OBLIGATORIAS:
+  A) Sin lookahead bias — swing confirmado con N barras de margen
+  B) Entrada al Open de la barra siguiente a la senal
+  C) Senales no se duplican en la misma barra
+  D) ATR consistente con el bot live (mismo periodo)
+  E) Costos descontados al abrir (spread p75 + comision IC Markets Raw), NO al cerrar
+  F) Timeout cierra al Open de la barra donde ocurre
+  G) Filtro de liquidez minima (tick volume > 0)
+- Equity independiente por simbolo: cada simbolo arranca con $10,000
+- Checkpoint automatico: guardar progreso en JSON despues de cada simbolo
+- Output: archivo HTML con curvas de equity + heatmap horario; CSV con todos los trades
+- Columnas CSV obligatorias: symbol, direction, entry_time, entry_price, exit_time, exit_price, sl, tp, lots, pnl, pnl_pct, obv_div (o indicador activador), macd_div (si aplica), exit_reason
+
+Responde SOLO con JSON valido sin markdown:
 {
-  "name": "nombre corto del bot (maximo 40 caracteres)",
-  "summary": "2-3 oraciones densas: que hace, como, diferencial respecto a bots activos",
+  "name": "nombre corto (max 40 chars)",
+  "summary": "2-3 oraciones: que hace, como, diferencial respecto a bots activos",
   "spec": {
-    "instrumentos"   : "...",
-    "sesion"         : "...",
-    "m5_rol"         : "...",
-    "duracion"       : "...",
-    "tf_entrada"     : "...",
-    "tf_apoyo"       : "...",
-    "senal"          : "...",
-    "ejecucion"      : "...",
-    "tp"             : "...",
-    "sl"             : "...",
-    "timeout"        : "...",
-    "riesgo_pct"     : "...",
-    "max_posiciones" : "...",
-    "circuit_breaker": "..."
+    "instrumentos"  : "...",
+    "hipotesis"     : "...",
+    "direccion"     : "...",
+    "tf_entrada"    : "...",
+    "tf_apoyo"      : "...",
+    "sesion"        : "...",
+    "senal"         : "...",
+    "ejecucion"     : "...",
+    "sl"            : "...",
+    "tp"            : "...",
+    "timeout"       : "...",
+    "filtros"       : "...",
+    "params_fijos"  : "...",
+    "params_opt"    : "..."
   },
+  "backtest_code": "# Python code completo...",
   "warnings": [],
   "critical": []
 }`;
@@ -920,6 +974,107 @@ async function gptJsonCall(system, userMsg, env) {
   } catch (e) {
     return { raw_response: text, parse_error: e.message };
   }
+}
+
+// ── /generate-bot  POST — generacion del bot live ───────────────────────────
+// Body: { pass, bot_config, estrategia, chat_history, generated_bot? }
+// pass: 'bot-pass1' | 'bot-pass2' | 'bot-pass3'
+
+async function handleGenerateBot(request, env) {
+  try {
+    const body = await request.json();
+    const { pass, bot_config = {}, estrategia = {}, generated_bot = null } = body;
+
+    if (pass === 'bot-pass1') {
+      if (!env.ANTHROPIC_API_KEY)
+        return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+      const system  = buildBotPass1System(estrategia);
+      const userMsg = buildBotPass1User(bot_config, estrategia);
+      const result  = await claudeJsonCall(system, userMsg, env, 8192);
+      return json(result);
+    }
+
+    if (pass === 'bot-pass2') {
+      if (!env.ANTHROPIC_API_KEY)
+        return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+      const system  = buildBotPass2System();
+      const userMsg = `Bot a auditar:\n${JSON.stringify(generated_bot || {}, null, 2)}`;
+      const result  = await claudeJsonCall(system, userMsg, env, 2048);
+      return json(result);
+    }
+
+    if (pass === 'bot-pass3') {
+      if (!env.OPENAI_API_KEY)
+        return json({ error: 'OPENAI_API_KEY no configurado' }, 500);
+      const system  = buildPass3System();
+      const userMsg = `Bot live code to review:\n${JSON.stringify(generated_bot || {}, null, 2)}`;
+      const result  = await gptJsonCall(system, userMsg, env);
+      return json(result);
+    }
+
+    return json({ error: 'pass invalido — usar bot-pass1, bot-pass2 o bot-pass3' }, 400);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+function buildBotPass1System(estrategia) {
+  const specRef = estrategia?.spec
+    ? `\nESTRATEGIA DE REFERENCIA:\n${JSON.stringify(estrategia.spec, null, 2)}`
+    : '';
+
+  return `Sos un Python engineer especializado en bots de trading para IC Markets MT5.
+Tu tarea: generar el codigo Python completo del bot live a partir de la estrategia aprobada y la configuracion operativa del trader.
+
+${specRef}
+
+REQUISITOS OBLIGATORIOS DEL BOT LIVE:
+1. Seguridad antes que todo:
+   - Spread live verificado al momento exacto de ejecutar la orden
+   - Deduplicacion de senales por simbolo (no repetir la misma senal cada 30s)
+   - Validacion de orden confirmada (retcode == TRADE_RETCODE_DONE)
+   - Limite de posiciones simultaneas (MAX_POSITIONS)
+   - Reconexion automatica MT5 con backoff exponencial si se configuro
+2. Circuit breaker automatico:
+   - Limite de perdida diaria y semanal configurables
+   - Estado persistente: si se reinicia, retoma desde donde estaba
+3. Alertas Telegram (si configuradas): senal detectada, fill confirmado, TP/SL tocado con P&L, heartbeat horario, circuit breaker activado
+4. Deteccion de gaps: si Open de la barra actual difiere mas de 3xATR del Close anterior, ignorar senal
+5. Estado persistente en JSON: posiciones abiertas, P&L diario/semanal, estado del circuit breaker
+6. Salida segura: Ctrl+C cierra limpio — posiciones abiertas quedan activas en MT5 con sus SL/TP, NO se cierran forzosamente
+
+FORMATO: JSON sin markdown:
+{
+  "name": "nombre del bot (max 40 chars)",
+  "summary": "que hace operativamente, instrumentos, riesgo, circuito de seguridad",
+  "bot_code": "# Python code completo...",
+  "warnings": [],
+  "critical": []
+}`;
+}
+
+function buildBotPass1User(botConfig, estrategia) {
+  return `Configuracion operativa del trader:\n${buildSpecText(botConfig)}\n\nEstrategia aprobada:\n${JSON.stringify(estrategia?.spec || {}, null, 2)}\n\nGenera el bot live completo en JSON.`;
+}
+
+function buildBotPass2System() {
+  return `Sos un QA auditor de bots de trading para IC Markets MT5.
+Auditas el codigo de un bot live buscando problemas de seguridad operativa.
+
+AUDITORIA — cheques obligatorios:
+1. Deduplicacion de senales: el bot puede abrir la misma posicion dos veces en 30s?
+2. Validacion de retcode: se verifica que la orden fue ejecutada correctamente?
+3. Circuit breaker: se resetea correctamente al dia siguiente? Puede quedarse bloqueado?
+4. Estado persistente: si el JSON se corrompe, el bot crashea o lo maneja?
+5. Reconexion: si MT5 se desconecta a mitad de una orden, que pasa?
+6. Salida segura: Ctrl+C cierra sin forzar posiciones abiertas?
+7. Memory leaks: loops con estructuras que crecen indefinidamente?
+
+Responde SOLO con JSON sin markdown:
+{
+  "warnings": ["advertencias — no bloqueantes pero a revisar"],
+  "critical": ["problemas graves que deben corregirse antes de correr en real"]
+}`;
 }
 
 // ── normalizeMessages ────────────────────────────────────────────────────────

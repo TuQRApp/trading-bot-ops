@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bot Designer — Trading</title>
+<title>Estrategia Designer — Trading</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;
 .nav-a{padding:4px 10px;border-radius:6px;font-size:11px;color:var(--muted);
        text-decoration:none;border:1px solid transparent}
 .nav-a:hover{color:var(--text);border-color:var(--border)}
+.nav-a.active{color:var(--blue);border-color:var(--blue)}
 
 /* ── Layout 3 columnas ──────────────────────────────── */
 .main{display:grid;grid-template-columns:256px 1fr 348px;flex:1;overflow:hidden}
@@ -34,9 +35,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;
 .col-header{padding:9px 14px;border-bottom:1px solid var(--border);flex-shrink:0;
             font-size:10px;font-weight:700;text-transform:uppercase;
             letter-spacing:.6px;color:var(--muted)}
-.col-body{flex:1;overflow-y:auto;padding:10px 12px}
 
 /* ── Contexto auto ──────────────────────────────────── */
+.col-body{flex:1;overflow-y:auto;padding:10px 12px}
 .ctx-section{margin-bottom:14px}
 .ctx-section-title{font-size:10px;text-transform:uppercase;letter-spacing:.5px;
                    color:var(--muted);margin-bottom:6px}
@@ -139,11 +140,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;
 .sf-input:focus{outline:none;border-color:var(--blue)}
 .sf-input:disabled{opacity:.4;cursor:not-allowed}
 select.sf-input{cursor:pointer}
+textarea.sf-input{resize:vertical;min-height:52px;line-height:1.45}
 
 .sf-sub{display:flex;gap:5px;margin-top:4px}
 .sf-sub .sf-input{flex:1}
 .sf-hint{font-size:9.5px;color:var(--muted);margin-top:2px}
-.sf-warn{font-size:9.5px;color:var(--yellow);margin-top:2px}
 
 .nc-row{display:flex;align-items:center;gap:5px;margin-top:5px}
 .nc-row input{accent-color:var(--yellow);cursor:pointer}
@@ -166,7 +167,7 @@ select.sf-input{cursor:pointer}
          z-index:200;align-items:center;justify-content:center}
 .overlay.show{display:flex}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-       width:640px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column}
+       width:680px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column}
 .modal-head{padding:13px 17px;border-bottom:1px solid var(--border);
             display:flex;align-items:center;justify-content:space-between}
 .modal-title{font-size:13px;font-weight:700;color:var(--blue)}
@@ -197,6 +198,14 @@ select.sf-input{cursor:pointer}
 .spec-out-warn{font-size:11px;color:var(--yellow);margin-top:3px}
 .spec-out-crit{font-size:11px;color:var(--red);margin-top:3px}
 
+.code-block{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+            padding:12px;font-family:'Consolas','Courier New',monospace;font-size:10.5px;
+            color:#79b8ff;overflow:auto;white-space:pre;max-height:280px;margin-bottom:8px}
+.btn-download{width:100%;padding:8px;border-radius:7px;border:1px solid var(--green);
+              background:transparent;color:var(--green);font-size:12px;
+              cursor:pointer;margin-bottom:6px}
+.btn-download:hover{background:#0a1f18}
+
 .modal-foot{padding:11px 17px;border-top:1px solid var(--border);
             display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 .btn-sec{padding:7px 14px;border-radius:7px;border:1px solid var(--border);
@@ -216,11 +225,13 @@ select.sf-input{cursor:pointer}
 
 <!-- Topbar -->
 <div class="topbar">
-  <span class="topbar-logo">⚡ Bot Designer</span>
-  <span class="topbar-sub">IC Markets · MT5</span>
+  <span class="topbar-logo">⚡ Estrategia Designer</span>
+  <span class="topbar-sub">IC Markets · MT5 · Fase 1–2</span>
   <nav class="topbar-nav">
     <a href="index.html" class="nav-a">Dashboard</a>
     <a href="feedback.html" class="nav-a">Análisis</a>
+    <a href="design.html" class="nav-a active">Estrategia</a>
+    <a href="bot.html" class="nav-a">Bot Live</a>
   </nav>
 </div>
 
@@ -281,7 +292,7 @@ select.sf-input{cursor:pointer}
         <button class="icon-btn" title="Adjuntar archivo"
                 onclick="document.getElementById('chat-file-input').click()">📎</button>
         <textarea class="chat-textarea" id="chat-input" rows="1"
-                  placeholder="Describí la estrategia que querés diseñar…"
+                  placeholder="Describí la ineficiencia que querés explotar…"
                   onkeydown="onChatKey(event)"
                   oninput="autoResize(this)"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendChat()">➤</button>
@@ -289,11 +300,11 @@ select.sf-input{cursor:pointer}
     </div>
   </div>
 
-  <!-- ── COL DERECHA: Spec ───────────────────────────── -->
+  <!-- ── COL DERECHA: Estrategia ─────────────────────── -->
   <div class="col col-right">
     <div class="spec-progress">
       <div class="prog-row">
-        <span>Spec del bot</span>
+        <span>Estrategia</span>
         <span class="prog-count" id="prog-count">0 / 14</span>
       </div>
       <div class="prog-track">
@@ -303,9 +314,9 @@ select.sf-input{cursor:pointer}
 
     <div class="spec-fields" id="spec-fields">
 
-      <div class="spec-group-title">A · Instrumento y contexto</div>
+      <div class="spec-group-title">A · Instrumento e hipótesis</div>
 
-      <!-- 1 -->
+      <!-- 01 -->
       <div class="spec-field" id="sf-instrumentos">
         <div class="sf-header">
           <span class="sf-num">01</span>
@@ -313,27 +324,103 @@ select.sf-input{cursor:pointer}
           <span class="sf-dot" id="dot-instrumentos"></span>
         </div>
         <input class="sf-input" id="fv-instrumentos" type="text"
-               placeholder="XAUUSD, BTCUSD…"
+               placeholder="ej: XAUUSD · BTCUSD · EURUSD"
                oninput="onFieldChange('instrumentos', this.value)">
-        <div class="sf-hint">Verificamos solapamiento con bots activos</div>
+        <div class="sf-hint">Sin futuros exóticos ni activos con spread estructuralmente inviable</div>
         <div class="nc-row">
           <input type="checkbox" id="nc-instrumentos" onchange="toggleNC('instrumentos')">
           <label for="nc-instrumentos">No considerar</label>
         </div>
       </div>
 
-      <!-- 2 -->
-      <div class="spec-field" id="sf-sesion">
+      <!-- 02 -->
+      <div class="spec-field" id="sf-hipotesis">
         <div class="sf-header">
           <span class="sf-num">02</span>
+          <span class="sf-label">Hipótesis / ineficiencia</span>
+          <span class="sf-dot" id="dot-hipotesis"></span>
+        </div>
+        <textarea class="sf-input" id="fv-hipotesis" rows="3"
+                  placeholder="Por qué debería funcionar — qué ineficiencia explota. Ej: reversión en spikes de volatilidad en Fibonacci (canal MR) o divergencia de volumen al final de un movimiento (OBV MACD)."
+                  oninput="onFieldChange('hipotesis', this.value)"></textarea>
+        <div class="sf-hint">Identificar la ineficiencia antes de ver los datos — si no se puede escribir, no está lista</div>
+        <div class="nc-row">
+          <input type="checkbox" id="nc-hipotesis" onchange="toggleNC('hipotesis')">
+          <label for="nc-hipotesis">No considerar</label>
+        </div>
+      </div>
+
+      <!-- 03 -->
+      <div class="spec-field" id="sf-direccion">
+        <div class="sf-header">
+          <span class="sf-num">03</span>
+          <span class="sf-label">Dirección permitida</span>
+          <span class="sf-dot" id="dot-direccion"></span>
+        </div>
+        <select class="sf-input" id="fv-direccion"
+                onchange="onFieldChange('direccion', this.value)">
+          <option value="">— seleccionar —</option>
+          <option value="long">Solo long</option>
+          <option value="short">Solo short</option>
+          <option value="ambas">Long y short</option>
+        </select>
+        <div class="nc-row">
+          <input type="checkbox" id="nc-direccion" onchange="toggleNC('direccion')">
+          <label for="nc-direccion">No considerar</label>
+        </div>
+      </div>
+
+      <div class="spec-group-title">B · Estructura temporal</div>
+
+      <!-- 04 -->
+      <div class="spec-field" id="sf-tf-entrada">
+        <div class="sf-header">
+          <span class="sf-num">04</span>
+          <span class="sf-label">Timeframe de entrada</span>
+          <span class="sf-dot" id="dot-tf-entrada"></span>
+        </div>
+        <select class="sf-input" id="fv-tf-entrada"
+                onchange="onFieldChange('tf-entrada', this.value)">
+          <option value="">— seleccionar —</option>
+          <option>M3</option><option>M5</option>
+          <option>M15</option><option>M30</option>
+          <option>H1</option><option>H4</option><option>D1</option>
+        </select>
+        <div class="sf-hint">Mínimo M3 — scalping (&lt;M3) no viable en IC Markets Raw</div>
+        <div class="nc-row">
+          <input type="checkbox" id="nc-tf-entrada" onchange="toggleNC('tf-entrada')">
+          <label for="nc-tf-entrada">No considerar</label>
+        </div>
+      </div>
+
+      <!-- 05 -->
+      <div class="spec-field" id="sf-tf-apoyo">
+        <div class="sf-header">
+          <span class="sf-num">05</span>
+          <span class="sf-label">Timeframes de apoyo</span>
+          <span class="sf-dot" id="dot-tf-apoyo"></span>
+        </div>
+        <input class="sf-input" id="fv-tf-apoyo" type="text"
+               placeholder="ej: M15 confirmación · H1 sesgo / ninguno"
+               oninput="onFieldChange('tf-apoyo', this.value)">
+        <div class="sf-hint">Escribí "ninguno" si no usás multi-TF</div>
+        <div class="nc-row">
+          <input type="checkbox" id="nc-tf-apoyo" onchange="toggleNC('tf-apoyo')">
+          <label for="nc-tf-apoyo">No considerar</label>
+        </div>
+      </div>
+
+      <!-- 06 -->
+      <div class="spec-field" id="sf-sesion">
+        <div class="sf-header">
+          <span class="sf-num">06</span>
           <span class="sf-label">Sesión operativa</span>
           <span class="sf-dot" id="dot-sesion"></span>
         </div>
-        <select class="sf-input" id="fv-sesion-tipo"
-                onchange="onSesionChange()">
+        <select class="sf-input" id="fv-sesion-tipo" onchange="onSesionChange()">
           <option value="">— seleccionar —</option>
           <option value="24x7">7×24 (crypto, forex)</option>
-          <option value="bolsa">Horario de bolsa / ventana específica</option>
+          <option value="bolsa">Ventana específica (bolsa / apertura)</option>
         </select>
         <div id="sesion-horas-wrap" style="display:none;margin-top:4px">
           <input class="sf-input" id="fv-sesion-horas" type="text"
@@ -346,95 +433,9 @@ select.sf-input{cursor:pointer}
         </div>
       </div>
 
-      <!-- 3 -->
-      <div class="spec-field" id="sf-m5">
-        <div class="sf-header">
-          <span class="sf-num">03</span>
-          <span class="sf-label">Influencia M5 en este bot</span>
-          <span class="sf-dot" id="dot-m5"></span>
-        </div>
-        <select class="sf-input" id="fv-m5" onchange="onM5Change()">
-          <option value="">— seleccionar —</option>
-          <option value="ninguno">Sin rol (solo informativo)</option>
-          <option value="pausa">Pausa condicionada</option>
-          <option value="filtro">Filtro de dirección</option>
-        </select>
-        <div id="m5-cond-wrap" style="display:none;margin-top:4px">
-          <input class="sf-input" id="fv-m5-cond" type="text"
-                 placeholder="ej: no operar si VIX > 30"
-                 oninput="onFieldChange('m5', buildM5Val())">
-        </div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-m5" onchange="toggleNC('m5')">
-          <label for="nc-m5">No considerar</label>
-        </div>
-      </div>
+      <div class="spec-group-title">C · Señal y ejecución</div>
 
-      <div class="spec-group-title">B · Estructura temporal</div>
-
-      <!-- 4 -->
-      <div class="spec-field" id="sf-duracion">
-        <div class="sf-header">
-          <span class="sf-num">04</span>
-          <span class="sf-label">Duración esperada del trade</span>
-          <span class="sf-dot" id="dot-duracion"></span>
-        </div>
-        <select class="sf-input" id="fv-duracion" onchange="onDuracionChange()">
-          <option value="">— seleccionar —</option>
-          <option value="scalping">Scalping (&lt; 5 min)</option>
-          <option value="intraday-s">Intraday corto (5 – 120 min)</option>
-          <option value="intraday-m">Intraday medio (2 – 8 h)</option>
-          <option value="multiday">Multiday / swing</option>
-        </select>
-        <div class="sf-warn" id="warn-duracion" style="display:none">
-          ⚠ Scalping no recomendado — el spread consume el margen en IC Markets Raw
-        </div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-duracion" onchange="toggleNC('duracion')">
-          <label for="nc-duracion">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 5 -->
-      <div class="spec-field" id="sf-tf-entrada">
-        <div class="sf-header">
-          <span class="sf-num">05</span>
-          <span class="sf-label">Timeframe de entrada</span>
-          <span class="sf-dot" id="dot-tf-entrada"></span>
-        </div>
-        <select class="sf-input" id="fv-tf-entrada"
-                onchange="onFieldChange('tf-entrada', this.value)">
-          <option value="">— seleccionar —</option>
-          <option>M1</option><option>M3</option><option>M5</option>
-          <option>M15</option><option>M30</option>
-          <option>H1</option><option>H4</option><option>D1</option>
-        </select>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tf-entrada" onchange="toggleNC('tf-entrada')">
-          <label for="nc-tf-entrada">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 6 -->
-      <div class="spec-field" id="sf-tf-apoyo">
-        <div class="sf-header">
-          <span class="sf-num">06</span>
-          <span class="sf-label">Timeframes de apoyo</span>
-          <span class="sf-dot" id="dot-tf-apoyo"></span>
-        </div>
-        <input class="sf-input" id="fv-tf-apoyo" type="text"
-               placeholder="ej: M15 confirmación · H1 sesgo  /  ninguno"
-               oninput="onFieldChange('tf-apoyo', this.value)">
-        <div class="sf-hint">Escribí "ninguno" si no usás multi-TF</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tf-apoyo" onchange="toggleNC('tf-apoyo')">
-          <label for="nc-tf-apoyo">No considerar</label>
-        </div>
-      </div>
-
-      <div class="spec-group-title">C · Señal</div>
-
-      <!-- 7 -->
+      <!-- 07 -->
       <div class="spec-field" id="sf-senal">
         <div class="sf-header">
           <span class="sf-num">07</span>
@@ -452,15 +453,16 @@ select.sf-input{cursor:pointer}
           <option value="otro">Otro</option>
         </select>
         <input class="sf-input" id="fv-senal-desc" type="text"
-               placeholder="Descripción breve de la condición"
+               placeholder="Descripción exacta de la condición de entrada"
                oninput="onFieldChange('senal', buildSenalVal())">
+        <div class="sf-hint">Definir reglas exactas antes de ver los datos</div>
         <div class="nc-row">
           <input type="checkbox" id="nc-senal" onchange="toggleNC('senal')">
           <label for="nc-senal">No considerar</label>
         </div>
       </div>
 
-      <!-- 8 -->
+      <!-- 08 -->
       <div class="spec-field" id="sf-ejecucion">
         <div class="sf-header">
           <span class="sf-num">08</span>
@@ -470,10 +472,10 @@ select.sf-input{cursor:pointer}
         <select class="sf-input" id="fv-ejecucion"
                 onchange="onFieldChange('ejecucion', this.value)">
           <option value="">— seleccionar —</option>
-          <option value="limite">Orden límite (precio exacto)</option>
-          <option value="mercado">Orden mercado (al precio actual)</option>
+          <option value="limite">Orden límite — entrada al precio exacto</option>
+          <option value="mercado">Orden mercado — entrada al Open siguiente</option>
         </select>
-        <div class="sf-hint">Límite: mejor precio, puede no ejecutarse</div>
+        <div class="sf-hint">Entrada al Open de la barra siguiente a la señal (sin lookahead)</div>
         <div class="nc-row">
           <input type="checkbox" id="nc-ejecucion" onchange="toggleNC('ejecucion')">
           <label for="nc-ejecucion">No considerar</label>
@@ -482,36 +484,37 @@ select.sf-input{cursor:pointer}
 
       <div class="spec-group-title">D · Gestión de posición</div>
 
-      <!-- 9 -->
-      <div class="spec-field" id="sf-tp">
-        <div class="sf-header">
-          <span class="sf-num">09</span>
-          <span class="sf-label">Toma de ganancias (TP)</span>
-          <span class="sf-dot" id="dot-tp"></span>
-        </div>
-        <input class="sf-input" id="fv-tp" type="text"
-               placeholder="ej: 3 TPs parciales · breakeven en TP1"
-               oninput="onFieldChange('tp', this.value)">
-        <div class="sf-hint">ATR múltiplo, nivel fijo, Fibonacci, o combinación</div>
-        <div class="nc-row">
-          <input type="checkbox" id="nc-tp" onchange="toggleNC('tp')">
-          <label for="nc-tp">No considerar</label>
-        </div>
-      </div>
-
-      <!-- 10 -->
+      <!-- 09 -->
       <div class="spec-field" id="sf-sl">
         <div class="sf-header">
-          <span class="sf-num">10</span>
+          <span class="sf-num">09</span>
           <span class="sf-label">Stop Loss (SL)</span>
           <span class="sf-dot" id="dot-sl"></span>
         </div>
         <input class="sf-input" id="fv-sl" type="text"
-               placeholder="ej: 1.5× ATR  /  nivel Fibonacci 1.382"
+               placeholder="ej: 1.5× ATR14 · nivel Fibonacci 1.382 · 20 pips"
                oninput="onFieldChange('sl', this.value)">
+        <div class="sf-hint">Mínimo 3× spread típico del instrumento</div>
         <div class="nc-row">
           <input type="checkbox" id="nc-sl" onchange="toggleNC('sl')">
           <label for="nc-sl">No considerar</label>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="spec-field" id="sf-tp">
+        <div class="sf-header">
+          <span class="sf-num">10</span>
+          <span class="sf-label">Toma de ganancias (TP)</span>
+          <span class="sf-dot" id="dot-tp"></span>
+        </div>
+        <input class="sf-input" id="fv-tp" type="text"
+               placeholder="ej: 3× ATR · 3 TPs parciales con BE en TP1 · trailing stop"
+               oninput="onFieldChange('tp', this.value)">
+        <div class="sf-hint">ATR múltiplo, nivel Fibonacci, R:R fijo o combinación</div>
+        <div class="nc-row">
+          <input type="checkbox" id="nc-tp" onchange="toggleNC('tp')">
+          <label for="nc-tp">No considerar</label>
         </div>
       </div>
 
@@ -535,7 +538,7 @@ select.sf-input{cursor:pointer}
             <select class="sf-input" id="fv-timeout-tf"
                     onchange="onFieldChange('timeout', buildTimeoutVal())">
               <option value="">TF</option>
-              <option>M1</option><option>M3</option><option>M5</option>
+              <option>M3</option><option>M5</option>
               <option>M15</option><option>M30</option><option>H1</option>
             </select>
           </div>
@@ -546,56 +549,56 @@ select.sf-input{cursor:pointer}
         </div>
       </div>
 
-      <div class="spec-group-title">E · Riesgo</div>
+      <div class="spec-group-title">E · Contexto y parámetros</div>
 
       <!-- 12 -->
-      <div class="spec-field" id="sf-riesgo">
+      <div class="spec-field" id="sf-filtros">
         <div class="sf-header">
           <span class="sf-num">12</span>
-          <span class="sf-label">Riesgo por trade (%)</span>
-          <span class="sf-dot" id="dot-riesgo"></span>
+          <span class="sf-label">Filtros y contexto de mercado</span>
+          <span class="sf-dot" id="dot-filtros"></span>
         </div>
-        <input class="sf-input" id="fv-riesgo" type="number"
-               min="0.1" max="10" step="0.1" value="2"
-               oninput="onFieldChange('riesgo', this.value)">
-        <div class="sf-hint">% del equity — bots actuales usan 2%</div>
+        <input class="sf-input" id="fv-filtros" type="text"
+               placeholder="ej: ADX>25 · M5 tendencia alcista · no operar si VIX>30 / ninguno"
+               oninput="onFieldChange('filtros', this.value)">
+        <div class="sf-hint">Condiciones de mercado que habilitan o deshabilitan la estrategia. Escribí "ninguno" si no usás.</div>
         <div class="nc-row">
-          <input type="checkbox" id="nc-riesgo" onchange="toggleNC('riesgo')">
-          <label for="nc-riesgo">No considerar</label>
+          <input type="checkbox" id="nc-filtros" onchange="toggleNC('filtros')">
+          <label for="nc-filtros">No considerar</label>
         </div>
       </div>
 
       <!-- 13 -->
-      <div class="spec-field" id="sf-maxpos">
+      <div class="spec-field" id="sf-params-fijos">
         <div class="sf-header">
           <span class="sf-num">13</span>
-          <span class="sf-label">Posiciones simultáneas máx</span>
-          <span class="sf-dot" id="dot-maxpos"></span>
+          <span class="sf-label">Parámetros fijos</span>
+          <span class="sf-dot" id="dot-params-fijos"></span>
         </div>
-        <input class="sf-input" id="fv-maxpos" type="number"
-               min="1" max="20" value="1"
-               oninput="onFieldChange('maxpos', this.value)">
-        <div class="sf-hint">OBV bot usa 6 · Canal Fib usa 1 por símbolo</div>
+        <textarea class="sf-input" id="fv-params-fijos" rows="2"
+                  placeholder="Estándares de industria — no optimizar. Ej: MACD 12/26/9 · ATR 14 · EMA 200"
+                  oninput="onFieldChange('params-fijos', this.value)"></textarea>
+        <div class="sf-hint">Escribí "ninguno" si no usás indicadores con parámetros fijos</div>
         <div class="nc-row">
-          <input type="checkbox" id="nc-maxpos" onchange="toggleNC('maxpos')">
-          <label for="nc-maxpos">No considerar</label>
+          <input type="checkbox" id="nc-params-fijos" onchange="toggleNC('params-fijos')">
+          <label for="nc-params-fijos">No considerar</label>
         </div>
       </div>
 
       <!-- 14 -->
-      <div class="spec-field" id="sf-cb">
+      <div class="spec-field" id="sf-params-opt">
         <div class="sf-header">
           <span class="sf-num">14</span>
-          <span class="sf-label">Circuit Breaker</span>
-          <span class="sf-dot" id="dot-cb"></span>
+          <span class="sf-label">Parámetros optimizables</span>
+          <span class="sf-dot" id="dot-params-opt"></span>
         </div>
-        <input class="sf-input" id="fv-cb" type="text"
-               placeholder="ej: 3 pérdidas → pausa 4h · 4% DD día · 10% DD total"
-               oninput="onFieldChange('cb', this.value)">
-        <div class="sf-hint">Referencia: Canal Fib v3 — mismo esquema</div>
+        <textarea class="sf-input" id="fv-params-opt" rows="2"
+                  placeholder="Umbrales propios de la estrategia. Ej: ADX threshold (20–35) · SL multiplier (1.0–2.5) · canal lookback (15–30)"
+                  oninput="onFieldChange('params-opt', this.value)"></textarea>
+        <div class="sf-hint">Solo 3–5 parámetros máximo — grid de ~80 combinaciones para walk-forward. Escribí "ninguno" si no aplica.</div>
         <div class="nc-row">
-          <input type="checkbox" id="nc-cb" onchange="toggleNC('cb')">
-          <label for="nc-cb">No considerar</label>
+          <input type="checkbox" id="nc-params-opt" onchange="toggleNC('params-opt')">
+          <label for="nc-params-opt">No considerar</label>
         </div>
       </div>
 
@@ -604,7 +607,7 @@ select.sf-input{cursor:pointer}
     <div class="generar-wrap">
       <button class="btn-generar" id="btn-generar" disabled onclick="openGenerar()">
         <span id="btn-generar-icon">🔒</span>
-        <span id="btn-generar-text">Generar Spec</span>
+        <span id="btn-generar-text">Generar Estrategia + Backtest</span>
       </button>
       <div class="generar-pending" id="generar-pending">Completá o marcá "No considerar" los 14 campos</div>
     </div>
@@ -616,7 +619,7 @@ select.sf-input{cursor:pointer}
 <div class="overlay" id="gen-overlay">
   <div class="modal">
     <div class="modal-head">
-      <span class="modal-title">⚡ Generando spec del bot</span>
+      <span class="modal-title">⚡ Generando estrategia</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-body">
@@ -624,21 +627,21 @@ select.sf-input{cursor:pointer}
         <div class="pass-icon" id="pass1-icon">○</div>
         <div class="pass-info">
           <div class="pass-name">Pass 1 — Claude Sonnet 4.6</div>
-          <div class="pass-desc">Genera la spec completa basada en tus 14 dimensiones y contexto</div>
+          <div class="pass-desc">Genera spec completa + código Python del backtest con las 7 correcciones de integridad</div>
         </div>
       </div>
       <div class="pass-card idle" id="pass2-card">
         <div class="pass-icon" id="pass2-icon">○</div>
         <div class="pass-info">
           <div class="pass-name">Pass 2 — Claude critic</div>
-          <div class="pass-desc">Audita flancos: duplicación con bots activos, R:R real, viabilidad de señal</div>
+          <div class="pass-desc">Audita flancos: R:R real, costos IC Markets Raw, solapamiento con bots activos, señal irrealizable</div>
         </div>
       </div>
       <div class="pass-card idle" id="pass3-card">
         <div class="pass-icon" id="pass3-icon">○</div>
         <div class="pass-info">
           <div class="pass-name">Pass 3 — GPT-4o</div>
-          <div class="pass-desc">Verifica implementabilidad en MT5 Python: indicadores, loop timing, costos</div>
+          <div class="pass-desc">Verifica implementabilidad MT5 Python: indicadores, loop timing, race conditions, sizing</div>
         </div>
       </div>
       <div class="spec-output" id="spec-output" style="display:none"></div>
@@ -663,24 +666,22 @@ const WORKER = 'https://trading-upload.nestragues.workers.dev';
 
 // ── Estado ──────────────────────────────────────────────────
 const FIELDS = [
-  'instrumentos','sesion','m5','duracion','tf-entrada',
-  'tf-apoyo','senal','ejecucion','tp','sl','timeout',
-  'riesgo','maxpos','cb'
+  'instrumentos','hipotesis','direccion',
+  'tf-entrada','tf-apoyo','sesion',
+  'senal','ejecucion',
+  'sl','tp','timeout',
+  'filtros','params-fijos','params-opt'
 ];
 
 const specState = {};
 FIELDS.forEach(f => { specState[f] = { value: null, noConsiderar: false }; });
 
-// Inicializar riesgo y maxpos con defaults
-specState['riesgo'].value = '2';
-specState['maxpos'].value = '1';
-
-const autoCtx  = { bots: true, m5: true, perfil: true };
-const manualCtx = [];   // { id, type, name, content/data }
+const autoCtx   = { bots: true, m5: true, perfil: true };
+const manualCtx = [];
 let   manualCtxId = 0;
 
-const chatHistory = [];  // { role, content (text o array multimodal) }
-let   pendingFiles = []; // { name, type, content } para el chat
+const chatHistory = [];
+let   pendingFiles = [];
 let   generatedSpec = null;
 let   dataJson = null;
 
@@ -688,10 +689,6 @@ let   dataJson = null;
 window.addEventListener('DOMContentLoaded', () => {
   updateProgress();
   updateDots();
-  // Riesgo y maxpos arrancan con valor por defecto
-  updateFieldStatus('riesgo');
-  updateFieldStatus('maxpos');
-  updateProgress();
   loadDataJson();
   showWelcome();
 });
@@ -811,7 +808,6 @@ function toggleNC(id) {
     disableFieldInputs(id, true);
   } else {
     disableFieldInputs(id, false);
-    // re-read current input values
     const mainInput = document.getElementById('fv-' + id);
     if (mainInput && mainInput.value.trim())
       specState[id].value = mainInput.value.trim();
@@ -851,14 +847,9 @@ function updateDots() {
 
 function updateProgress() {
   let answered = 0;
-  const pending = [];
   FIELDS.forEach(f => {
     const s = specState[f];
-    if (s.noConsiderar || (s.value !== null && s.value !== '')) {
-      answered++;
-    } else {
-      pending.push(f);
-    }
+    if (s.noConsiderar || (s.value !== null && s.value !== '')) answered++;
   });
   const total = FIELDS.length;
   document.getElementById('prog-count').textContent = `${answered} / ${total}`;
@@ -881,8 +872,8 @@ function updateProgress() {
 // ── Campos con lógica condicional ───────────────────────────
 function onSesionChange() {
   const tipo = document.getElementById('fv-sesion-tipo').value;
-  const wrap = document.getElementById('sesion-horas-wrap');
-  wrap.style.display = tipo === 'bolsa' ? 'block' : 'none';
+  document.getElementById('sesion-horas-wrap').style.display =
+    tipo === 'bolsa' ? 'block' : 'none';
   onFieldChange('sesion', buildSesionVal());
 }
 function buildSesionVal() {
@@ -890,28 +881,7 @@ function buildSesionVal() {
   if (!tipo) return '';
   if (tipo === '24x7') return '7x24';
   const h = document.getElementById('fv-sesion-horas').value.trim();
-  return h ? `Bolsa · ${h}` : '';
-}
-
-function onM5Change() {
-  const v = document.getElementById('fv-m5').value;
-  const wrap = document.getElementById('m5-cond-wrap');
-  wrap.style.display = (v === 'pausa' || v === 'filtro') ? 'block' : 'none';
-  onFieldChange('m5', buildM5Val());
-}
-function buildM5Val() {
-  const v = document.getElementById('fv-m5').value;
-  if (!v) return '';
-  if (v === 'ninguno') return 'Sin rol';
-  const c = document.getElementById('fv-m5-cond').value.trim();
-  return c ? `${v === 'pausa' ? 'Pausa' : 'Filtro'}: ${c}` : '';
-}
-
-function onDuracionChange() {
-  const v = document.getElementById('fv-duracion').value;
-  document.getElementById('warn-duracion').style.display =
-    v === 'scalping' ? 'block' : 'none';
-  onFieldChange('duracion', v);
+  return h ? `Ventana: ${h}` : '';
 }
 
 function buildSenalVal() {
@@ -923,8 +893,8 @@ function buildSenalVal() {
 
 function onTimeoutChange() {
   const v = document.getElementById('fv-timeout-yn').value;
-  const wrap = document.getElementById('timeout-val-wrap');
-  wrap.style.display = v === 'si' ? 'block' : 'none';
+  document.getElementById('timeout-val-wrap').style.display =
+    v === 'si' ? 'block' : 'none';
   if (v === 'no') onFieldChange('timeout', 'No usar timeout');
   else onFieldChange('timeout', buildTimeoutVal());
 }
@@ -938,14 +908,14 @@ function buildTimeoutVal() {
 // ── Chat ────────────────────────────────────────────────────
 function showWelcome() {
   addMsg('bot',
-    'Hola. Soy tu asistente de diseño de bots. ' +
-    'Tengo cargado el contexto de tus bots activos y el mercado de hoy.\n\n' +
-    'Para diseñar una nueva estrategia podés:\n' +
-    '• Conversarme libremente y yo te guío por las 14 dimensiones del panel derecho\n' +
-    '• Completar el panel directamente si ya tenés la idea clara\n' +
-    '• Adjuntar backtests, código o imágenes de charts como referencia\n\n' +
-    '¿Tenés alguna idea de instrumento o estrategia en mente, ' +
-    'o querés que proponga algo basado en tu perfil?'
+    'Hola. Soy tu asistente de diseño de estrategias (Fase 1 del pipeline).\n\n' +
+    'Tengo cargado el contexto de tus bots activos y el mercado de hoy. ' +
+    'Mi rol es ayudarte a definir las 14 dimensiones del panel derecho — ' +
+    'una estrategia completa antes de ver los datos.\n\n' +
+    'Cuando completes los 14 campos (o los marques como "No considerar"), ' +
+    'el botón "Generar Estrategia + Backtest" se habilita y Claude genera ' +
+    'la spec completa más el código Python del backtest listo para correr.\n\n' +
+    '¿Tenés alguna ineficiencia en mente, o querés que proponga algo basado en tu perfil?'
   );
 }
 
@@ -954,9 +924,7 @@ function addMsg(role, text, files = []) {
   div.className = `msg ${role === 'user' ? 'user' : role === 'sys' ? 'sys' : 'bot'}`;
 
   if (files.length) {
-    const tags = files.map(f =>
-      `<span class="msg-file-tag">${f.name}</span>`
-    ).join('');
+    const tags = files.map(f => `<span class="msg-file-tag">${f.name}</span>`).join('');
     div.innerHTML = `<div class="msg-files">${tags}</div>`;
   }
 
@@ -1007,7 +975,6 @@ async function sendChat() {
   input.value = '';
   input.style.height = 'auto';
 
-  // Armar mensaje multimodal si hay archivos
   const content = [];
   if (text) content.push({ type: 'text', text });
   for (const f of files) {
@@ -1045,7 +1012,6 @@ async function sendChat() {
       const { done, value } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
-      // SSE: data: <texto>\n\n
       chunk.split('\n').forEach(line => {
         if (line.startsWith('data: ')) {
           const d = line.slice(6).trim();
@@ -1067,14 +1033,12 @@ async function sendChat() {
 
   } catch (err) {
     cursor.remove();
-    streamText.textContent = `[Error: ${err.message}. ` +
-      `Verificá que el Worker tenga el endpoint /chat configurado.]`;
+    streamText.textContent = `[Error: ${err.message}]`;
     chatHistory.pop();
   }
 }
 
 function buildChatPayload() {
-  // Contexto automático desde data.json
   const ctx = {};
   if (autoCtx.bots && dataJson) {
     const grupos = dataJson.groups || dataJson;
@@ -1087,17 +1051,12 @@ function buildChatPayload() {
   if (autoCtx.perfil && dataJson?.trader_profile)
     ctx.trader_profile = dataJson.trader_profile;
 
-  // Contexto manual
   ctx.manual = manualCtx.map(m => ({
-    type: m.type,
-    name: m.name,
-    content: m.content || null,
-    imageData: m.imageData || null
+    type: m.type, name: m.name,
+    content: m.content || null, imageData: m.imageData || null
   }));
 
-  // Estado actual de la spec (para que Claude sepa qué falta)
   ctx.spec_actual = buildSpecSummary();
-
   return { messages: chatHistory, context: ctx };
 }
 
@@ -1181,15 +1140,12 @@ async function runGeneration() {
   };
 
   try {
-    // Pass 1: Claude genera la spec completa
     const spec1 = await runPass('pass1', basePayload);
     generatedSpec = spec1;
 
-    // Pass 2: Claude critic audita la spec generada (no la original de 14 campos)
     const spec2 = await runPass('pass2', { ...basePayload, generated_spec: spec1 });
     if (spec2) mergePassResult(spec2);
 
-    // Pass 3: GPT-4o verifica implementabilidad MT5 sobre la spec generada
     const spec3 = await runPass('pass3', { ...basePayload, generated_spec: spec1 });
     if (spec3) mergePassResult(spec3);
 
@@ -1200,8 +1156,8 @@ async function runGeneration() {
       `<div style="color:var(--red);font-size:12px;line-height:1.6">
          <b>Error en la generación:</b> ${e.message}<br><br>
          Verificá que el Worker tenga configurados los secrets:<br>
-         &nbsp;• <code>ANTHROPIC_API_KEY</code> (para pass1 y pass2)<br>
-         &nbsp;• <code>OPENAI_API_KEY</code> (para pass3)
+         &nbsp;• <code>ANTHROPIC_API_KEY</code> (pass1 y pass2)<br>
+         &nbsp;• <code>OPENAI_API_KEY</code> (pass3)
        </div>`;
     document.getElementById('modal-foot').style.display = 'flex';
   }
@@ -1236,9 +1192,9 @@ async function runPass(passId, payload) {
 
 function mergePassResult(data) {
   if (!generatedSpec) return;
-  if (data.warnings) generatedSpec.warnings = [...(generatedSpec.warnings || []), ...data.warnings];
-  if (data.critical)  generatedSpec.critical  = [...(generatedSpec.critical  || []), ...data.critical];
-  if (data.mt5_notes) generatedSpec.mt5_notes = [...(generatedSpec.mt5_notes || []), ...data.mt5_notes];
+  if (data.warnings)  generatedSpec.warnings  = [...(generatedSpec.warnings  || []), ...data.warnings];
+  if (data.critical)  generatedSpec.critical   = [...(generatedSpec.critical  || []), ...data.critical];
+  if (data.mt5_notes) generatedSpec.mt5_notes  = [...(generatedSpec.mt5_notes || []), ...data.mt5_notes];
 }
 
 function showSpecOutput() {
@@ -1263,6 +1219,12 @@ function showSpecOutput() {
      </div>`
   ).join('');
 
+  const codeHtml = s.backtest_code ? `
+    <div class="spec-out-title" style="margin-top:16px">Código del backtest</div>
+    <pre class="code-block">${escapeHtml(s.backtest_code)}</pre>
+    <button class="btn-download" onclick="downloadBacktest()">⬇ Descargar backtest.py</button>
+  ` : '';
+
   el.innerHTML = `
     <div class="spec-out-title">Spec generada</div>
     ${s.name ? `<div class="spec-out-card">
@@ -1277,16 +1239,35 @@ function showSpecOutput() {
     ${crits || warns || mt5ns ? `
     <div class="spec-out-title" style="margin-top:12px">Observaciones de los 3 passes</div>
     ${crits}${warns}${mt5ns}` : ''}
+    ${codeHtml}
   `;
   document.getElementById('modal-foot').style.display = 'flex';
+}
+
+function downloadBacktest() {
+  const code = generatedSpec?.backtest_code;
+  if (!code) return;
+  const name = (generatedSpec.name || 'backtest')
+    .replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+  const blob = new Blob([code], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `backtest_${name}.py`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function saveSpec() {
   if (!generatedSpec || !dataJson) return;
   const specs = dataJson.bot_specs || [];
-  generatedSpec.id = `SPEC-${Date.now()}`;
+  generatedSpec.id      = `SPEC-${Date.now()}`;
   generatedSpec.created = new Date().toISOString().slice(0, 10);
-  generatedSpec.status = 'draft';
+  generatedSpec.status  = 'draft';
   specs.push(generatedSpec);
   dataJson.bot_specs = specs;
 
@@ -1297,7 +1278,7 @@ async function saveSpec() {
       body: JSON.stringify(dataJson)
     });
     if (r.ok) {
-      addMsg('sys', `✅ Spec guardada en data.json como ${generatedSpec.id}`);
+      addMsg('sys', `Estrategia guardada como ${generatedSpec.id} — siguiente paso: correr el backtest y subirlo al sistema.`);
       closeModal();
     } else {
       alert('Error al guardar: ' + r.status);
@@ -1307,7 +1288,6 @@ async function saveSpec() {
   }
 }
 
-// ── Utils ────────────────────────────────────────────────────
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 
