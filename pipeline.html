@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline — Trading Bot Ops</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#58a6ff;--green:#00d4aa;--yellow:#ffaa00;
+  --red:#ff4d4d;--orange:#f78166;--purple:#bc8cff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;
+     min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Topbar ─────────────────────────────────────────── */
+.topbar{height:46px;background:var(--bg2);border-bottom:1px solid var(--border);
+        display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;
+        position:sticky;top:0;z-index:10}
+.topbar-logo{font-size:13px;font-weight:700;color:var(--blue)}
+.topbar-sub{font-size:11px;color:var(--muted)}
+.topbar-nav{display:flex;gap:4px;margin-left:auto}
+.nav-a{padding:4px 10px;border-radius:6px;font-size:11px;color:var(--muted);
+       text-decoration:none;border:1px solid transparent}
+.nav-a:hover{color:var(--text);border-color:var(--border)}
+.nav-a.active{color:var(--blue);border-color:var(--blue)}
+
+/* ── Page ───────────────────────────────────────────── */
+.page{max-width:780px;margin:0 auto;padding:28px 20px 60px;width:100%}
+
+.page-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.page-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+
+/* ── Legend ─────────────────────────────────────────── */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Progress summary ───────────────────────────────── */
+.progress-bar-wrap{margin-bottom:24px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;
+                color:var(--muted);margin-bottom:6px}
+.progress-track{height:4px;background:var(--border);border-radius:2px}
+.progress-fill{height:4px;background:var(--green);border-radius:2px;
+               transition:width .5s ease}
+
+/* ── Phase card ─────────────────────────────────────── */
+.phase{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;
+       background:var(--bg2);overflow:hidden;transition:border-color .2s}
+.phase.open{border-color:var(--border)}
+.phase.status-done{border-left:3px solid var(--green)}
+.phase.status-active{border-left:3px solid var(--blue)}
+.phase.status-pending{border-left:3px solid var(--border)}
+
+.phase-head{display:flex;align-items:center;gap:12px;padding:13px 16px;
+            cursor:pointer;user-select:none}
+.phase-head:hover{background:var(--bg3)}
+.phase-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+           justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;
+           background:var(--bg3);border:1px solid var(--border)}
+.phase-num.done{background:#0a2a1a;border-color:var(--green);color:var(--green)}
+.phase-num.active{background:#0a1f3a;border-color:var(--blue);color:var(--blue)}
+
+.phase-title{font-size:13px;font-weight:600;flex:1}
+.phase-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.badge-analisis{background:#162032;color:var(--blue)}
+.badge-construccion{background:#0a2a1a;color:var(--green)}
+.badge-validacion{background:#2a2000;color:var(--yellow)}
+.badge-produccion{background:#2a1000;color:var(--orange)}
+.badge-status{font-size:10px;padding:2px 7px;border-radius:4px}
+.badge-done{background:#0a2a1a;color:var(--green)}
+.badge-active{background:#0a1f3a;color:var(--blue)}
+.badge-pending{background:var(--bg3);color:var(--muted)}
+
+.phase-arrow{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.phase.open .phase-arrow{transform:rotate(180deg)}
+
+/* ── Phase body ─────────────────────────────────────── */
+.phase-body{display:none;padding:0 16px 14px 16px}
+.phase.open .phase-body{display:block}
+
+.phase-body ul{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.phase-body li{display:flex;gap:8px;font-size:12px;line-height:1.55;color:var(--muted)}
+.phase-body li::before{content:'•';color:var(--blue);flex-shrink:0;margin-top:1px}
+.phase-body li b{color:var(--text)}
+.phase-body li code{background:var(--bg3);border:1px solid var(--border);
+                    border-radius:3px;padding:0 4px;font-size:10.5px;color:var(--blue)}
+
+.gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.gate-box{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+          padding:8px 10px}
+.gate-box-label{font-size:10px;color:var(--muted);margin-bottom:2px}
+.gate-box-val{font-size:13px;font-weight:700}
+.gate-box-val.ok{color:var(--green)}
+.gate-box-val.nd{color:var(--muted);font-style:italic;font-size:11px}
+
+.phase-divider{height:1px;background:var(--border);margin:12px 0}
+
+.phase-cta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-phase{padding:7px 16px;border-radius:7px;border:none;font-size:12px;
+           font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-primary{background:var(--blue);color:#0d1117}
+.btn-primary:hover{background:#79b8ff}
+.btn-primary.orange{background:var(--orange)}
+.btn-primary.orange:hover{background:#ffab97}
+.btn-primary.green{background:var(--green)}
+.btn-primary.green:hover{background:#00f0c0}
+.btn-secondary{background:transparent;border:1px solid var(--border);
+               color:var(--text)}
+.btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
+.phase-cta-note{font-size:10.5px;color:var(--muted)}
+
+/* ── Stack actual ───────────────────────────────────── */
+.stack-section{margin-top:28px;padding:16px;border:1px solid var(--border);
+               border-radius:10px;background:var(--bg2)}
+.stack-title{font-size:11px;font-weight:700;text-transform:uppercase;
+             letter-spacing:.6px;color:var(--muted);margin-bottom:12px}
+.stack-rows{display:flex;flex-direction:column;gap:6px}
+.stack-row{display:flex;align-items:center;gap:10px;font-size:11.5px}
+.stack-badge{font-size:10px;padding:2px 7px;border-radius:4px;
+             font-weight:600;flex-shrink:0;min-width:60px;text-align:center}
+.stack-live{background:#0a2a1a;color:var(--green)}
+.stack-bt{background:#162032;color:var(--blue)}
+.stack-dash{background:#2a2000;color:var(--yellow)}
+.stack-name{font-weight:600;color:var(--text);flex:1}
+.stack-desc{color:var(--muted)}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">⚡ Trading Bot Ops</span>
+  <span class="topbar-sub">IC Markets · MT5</span>
+  <nav class="topbar-nav">
+    <a href="pipeline.html" class="nav-a active">Pipeline</a>
+    <a href="index.html" class="nav-a">Dashboard</a>
+    <a href="feedback.html" class="nav-a">Análisis</a>
+    <a href="design.html" class="nav-a">Estrategia</a>
+    <a href="bot.html" class="nav-a">Bot Live</a>
+  </nav>
+</div>
+
+<div class="page">
+
+  <div class="page-title">Pipeline completo — construcción de un bot de trading</div>
+  <div class="page-sub">desde la hipótesis hasta el bot live en producción · hacé clic en cada fase para ver el detalle</div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="leg-dot" style="background:var(--blue)"></span> Análisis / decisión</div>
+    <div class="legend-item"><span class="leg-dot" style="background:var(--green)"></span> Construcción</div>
+    <div class="legend-item"><span class="leg-dot" style="background:var(--yellow)"></span> Validación</div>
+    <div class="legend-item"><span class="leg-dot" style="background:var(--orange)"></span> Producción</div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span id="prog-label">Cargando estado…</span>
+      <span id="prog-pct">—</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- FASE 1 -->
+  <div class="phase" id="ph-1" onclick="togglePhase(1)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-1">1</div>
+      <div class="phase-title">Hipótesis de la estrategia</div>
+      <div class="phase-badges">
+        <span class="badge badge-analisis">Análisis</span>
+        <span class="badge badge-status badge-pending" id="ps-1">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Idea de trading:</b> identificar una ineficiencia de mercado con lógica económica detrás. No optimizar sobre datos — entender por qué funciona. Ej: reversión en spikes de volatilidad (Canal MR) o divergencia de volumen al final de un movimiento (OBV MACD).</li>
+        <li><b>Definir reglas exactas</b> antes de ver los datos: entrada, dirección, SL, TP, timeframe, filtros. Si la regla no se puede escribir en código, no está lista.</li>
+        <li><b>Separar parámetros fijos de optimizables.</b> Fijos = estándares de industria (MACD 12/26/9, ATR 14). Optimizables = umbrales propios de la estrategia (ADX threshold, SL multiplier).</li>
+        <li><b>Definir universo de activos:</b> qué instrumentos aplican a esta estrategia. Sin futuros exóticos ni activos con spread estructuralmente inviable.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="design.html" class="btn-phase btn-primary">Abrir Estrategia Designer →</a>
+        <span class="phase-cta-note">Completa las 14 dimensiones y Claude genera la spec + el código del backtest</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 2 -->
+  <div class="phase" id="ph-2" onclick="togglePhase(2)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-2">2</div>
+      <div class="phase-title">Construcción del backtest</div>
+      <div class="phase-badges">
+        <span class="badge badge-construccion">Construcción</span>
+        <span class="badge badge-status badge-pending" id="ps-2">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Datos directamente desde MT5:</b> <code>copy_rates_from_pos</code> — spread histórico real barra a barra. Caché local de 12h para no redescargar.</li>
+        <li><b>Costos reales:</b> spread = percentil 75 de cada barra (excluye spikes de noticias). Comisión $0 en cuenta Standard IC Markets. No se hardcodea ningún valor.</li>
+        <li><b>Integridad del backtest — 7 correcciones aplicadas:</b>
+          <br>A) Sin lookahead bias — swing confirmado con N barras de margen
+          <br>B) Entrada al Open de la barra siguiente, no al Close de la señal
+          <br>C) Señales no se duplican en la misma barra
+          <br>D) ATR consistente con el bot live
+          <br>E) Costos descontados al abrir, no al cerrar
+          <br>F) Timeout cierra al Open de la barra donde ocurre
+          <br>G) Filtro de liquidez mínima (tick volume)
+        </li>
+        <li><b>Equity independiente por símbolo:</b> cada símbolo arranca con $10,000 y no comparte P&L. Permite comparar en igualdad de condiciones.</li>
+        <li><b>Output:</b> <code>HTML</code> con curvas de equity + heatmaps horarios · <code>CSV</code> con todos los trades detallados</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="design.html" class="btn-phase btn-primary">Generar backtest.py →</a>
+        <span class="phase-cta-note">El código se descarga desde Estrategia Designer · Luego subí el HTML/CSV al Dashboard</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 3 -->
+  <div class="phase" id="ph-3" onclick="togglePhase(3)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-3">3</div>
+      <div class="phase-title">Análisis de resultados del backtest</div>
+      <div class="phase-badges">
+        <span class="badge badge-analisis">Análisis</span>
+        <span class="badge badge-status badge-pending" id="ps-3">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Gate check inicial:</b> WR ≥ 40% · PF ≥ 1.3 · MaxDD ≤ 20% · ≥ 100 trades totales. Si no pasa algún gate, se analiza por qué antes de continuar.</li>
+        <li><b>Clasificar símbolos</b> en positivos / negativos. Diagnosticar los negativos: ¿spread destructivo? ¿bug de sizing? ¿régimen de mercado atípico?</li>
+        <li><b>Análisis horario UTC:</b> el heatmap del HTML muestra qué horas generan edge real vs cuáles destruyen valor. Apertura NY (16:00 UTC) suele dominar.</li>
+        <li><b>Análisis por activador:</b> columnas en el CSV permiten filtrar en Excel cuál indicador genera mejor WR por separado.</li>
+        <li><b>Análisis de SL/TP:</b> si los trades entran bien pero decaen → considerar trailing stop. Re-correr el backtest con la nueva lógica y comparar resultados.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="index.html" class="btn-phase btn-primary btn-phase" style="background:var(--green);color:#0d1117">Subir backtest al Dashboard →</a>
+        <a href="feedback.html" class="btn-phase btn-secondary">Ver análisis →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 4 -->
+  <div class="phase" id="ph-4" onclick="togglePhase(4)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-4">4</div>
+      <div class="phase-title">Optimización Walk-Forward + Monte Carlo</div>
+      <div class="phase-badges">
+        <span class="badge badge-validacion">Validación</span>
+        <span class="badge badge-status badge-pending" id="ps-4">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Grid search anti-overfitting:</b> solo 3–5 parámetros con lógica económica. Nunca tocar los indicadores base (MACD 12/26/9, ATR 14). Grid de ~80 combinaciones máximo.</li>
+        <li><b>Split In-Sample / Out-of-Sample 75/25:</b> el grid se optimiza sobre los primeros 75% de datos. El parámetro ganador se valida sobre el 25% restante que nunca vio. Si OOS degrada &gt; 25%, los parámetros no son robustos.</li>
+        <li><b>Criterio de selección = Profit Factor IS</b> (no retorno). El PF es más estable que el retorno frente a cambios de orden de trades.</li>
+        <li><b>Monte Carlo 1.000 permutaciones:</b> baraja el orden de los trades OOS. Calcula distribuciones de PF, MaxDD y Retorno. Responde: ¿fue suerte de secuencia o hay edge real? Gate: DD p95 &lt; 20%.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="feedback.html" class="btn-phase btn-phase" style="background:var(--yellow);color:#0d1117;border:none;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none">Ver resultados walk-forward →</a>
+        <span class="phase-cta-note">Claude lo ejecuta automáticamente al analizar el backtest</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 5 -->
+  <div class="phase" id="ph-5" onclick="togglePhase(5)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-5">5</div>
+      <div class="phase-title">Gate check final — ¿la estrategia está lista?</div>
+      <div class="phase-badges">
+        <span class="badge badge-validacion">Validación</span>
+        <span class="badge badge-status badge-pending" id="ps-5">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <div class="gate-grid" id="gate-grid-5">
+        <div class="gate-box"><div class="gate-box-label">WIN RATE GLOBAL</div><div class="gate-box-val nd" id="g5-wr">≥ 40% —</div></div>
+        <div class="gate-box"><div class="gate-box-label">PROFIT FACTOR PONDERADO</div><div class="gate-box-val nd" id="g5-pf">≥ 1.3 —</div></div>
+        <div class="gate-box"><div class="gate-box-label">MAXDD PROMEDIO</div><div class="gate-box-val nd" id="g5-dd">≤ 20% —</div></div>
+        <div class="gate-box"><div class="gate-box-label">TRADES TOTALES</div><div class="gate-box-val nd" id="g5-tr">≥ 100 —</div></div>
+        <div class="gate-box"><div class="gate-box-label">DEGRADACIÓN OOS</div><div class="gate-box-val nd" id="g5-oos">&lt; 25% —</div></div>
+        <div class="gate-box"><div class="gate-box-label">MONTE CARLO DD P95</div><div class="gate-box-val nd" id="g5-mc">&lt; 20% —</div></div>
+      </div>
+      <ul>
+        <li>Si todos los gates pasan → avanzar a bot live. Si alguno falla → volver a Fase 3 con diagnóstico.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="feedback.html" class="btn-phase btn-phase" style="background:var(--yellow);color:#0d1117;border:none;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none">Ver gate check en Análisis →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 6 -->
+  <div class="phase" id="ph-6" onclick="togglePhase(6)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-6">6</div>
+      <div class="phase-title">Construcción del bot live</div>
+      <div class="phase-badges">
+        <span class="badge badge-produccion">Producción</span>
+        <span class="badge badge-status badge-pending" id="ps-6">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Seguridad antes que todo:</b>
+          spread live verificado al ejecutar la orden ·
+          deduplicación de señales por símbolo (no repetir cada 30s) ·
+          validación de orden confirmada (retcode == DONE) ·
+          límite de posiciones simultáneas ·
+          reconexión automática MT5 con backoff exponencial</li>
+        <li><b>Circuit breaker automático:</b> límite de pérdida diaria (10%) y semanal (20%). Con apalancamiento 100× y RISK_PCT=0.25%, se necesitan ~40 SL seguidos para activarlo — es red de seguridad, no límite operativo.</li>
+        <li><b>Alertas Telegram:</b> señal detectada · fill confirmado · TP/SL tocado con P&L · heartbeat horario · circuit breaker activado.</li>
+        <li><b>Estado persistente en JSON:</b> posiciones abiertas, P&L diario/semanal y estado del circuit breaker. Si se reinicia, retoma exactamente donde estaba.</li>
+        <li><b>Salida segura:</b> Ctrl+C cierra limpio. Las posiciones abiertas quedan activas en MT5 con sus SL/TP — no se cierran forzosamente.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="bot.html" class="btn-phase btn-primary orange">Abrir Bot Live Designer →</a>
+        <span class="phase-cta-note">Requiere estrategia guardada de Fase 1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FASE 7 -->
+  <div class="phase" id="ph-7" onclick="togglePhase(7)">
+    <div class="phase-head">
+      <div class="phase-num" id="pn-7">7</div>
+      <div class="phase-title">Forward test y escalado</div>
+      <div class="phase-badges">
+        <span class="badge badge-produccion">Producción</span>
+        <span class="badge badge-status badge-pending" id="ps-7">Pendiente</span>
+      </div>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul>
+        <li><b>Fase de observación (semanas 1–4):</b> RISK_PCT = 0.25% — un cuarto del tamaño final. Objetivo: verificar que la ejecución live replica el backtest, no que gana dinero.</li>
+        <li><b>Gates del forward test:</b> métricas live deben estar dentro del ±25% del backtest. Ej: WR backtest 66% → rango válido 49%–83%.</li>
+        <li><b>Escalado progresivo si pasa:</b> 0.25% → 0.5% → 1.0%. Nunca saltar directamente al máximo.</li>
+        <li><b>VPS (próximo paso):</b> migrar a servidor Windows virtual para correr 24/7 sin depender de la PC local. MT5 demo + MT5 live en instancias separadas.</li>
+      </ul>
+      <div class="phase-divider"></div>
+      <div class="phase-cta">
+        <a href="index.html" class="btn-phase btn-primary btn-phase" style="background:var(--orange);color:#0d1117;border:none;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none">Subir resultados forward →</a>
+        <a href="feedback.html" class="btn-phase btn-secondary">Ver comparación live vs backtest →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack actual -->
+  <div class="stack-section">
+    <div class="stack-title">Stack actual en producción</div>
+    <div class="stack-rows" id="stack-rows">
+      <div style="font-size:11px;color:var(--muted)">Cargando…</div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+const WORKER = 'https://trading-upload.nestragues.workers.dev';
+let dataJson = null;
+
+const PHASE_OPEN = {};
+
+window.addEventListener('DOMContentLoaded', async () => {
+  // Abrir fase 1 por defecto
+  togglePhase(1);
+  try {
+    const r = await fetch(`${WORKER}/data`);
+    if (r.ok) {
+      dataJson = await r.json();
+      updateStatus();
+      renderStack();
+    }
+  } catch (_) {}
+});
+
+function togglePhase(n) {
+  const ph = document.getElementById('ph-' + n);
+  if (!ph) return;
+  PHASE_OPEN[n] = !ph.classList.contains('open');
+  ph.classList.toggle('open', PHASE_OPEN[n]);
+  // Close others
+  for (let i = 1; i <= 7; i++) {
+    if (i !== n) document.getElementById('ph-' + i)?.classList.remove('open');
+  }
+}
+
+function setPhaseStatus(n, status) {
+  const pn = document.getElementById('pn-' + n);
+  const ps = document.getElementById('ps-' + n);
+  const ph = document.getElementById('ph-' + n);
+  if (!pn || !ps || !ph) return;
+
+  ph.classList.remove('status-done','status-active','status-pending');
+  pn.classList.remove('done','active');
+  ps.classList.remove('badge-done','badge-active','badge-pending');
+
+  if (status === 'done') {
+    ph.classList.add('status-done');
+    pn.classList.add('done');
+    pn.textContent = '✓';
+    ps.classList.add('badge-done');
+    ps.textContent = 'Completado';
+  } else if (status === 'active') {
+    ph.classList.add('status-active');
+    pn.classList.add('active');
+    pn.textContent = n;
+    ps.classList.add('badge-active');
+    ps.textContent = 'En progreso';
+  } else {
+    ph.classList.add('status-pending');
+    pn.textContent = n;
+    ps.classList.add('badge-pending');
+    ps.textContent = 'Pendiente';
+  }
+}
+
+function updateStatus() {
+  if (!dataJson) return;
+
+  const grupos = getGrupos();
+  const activos = grupos.filter(g => g.status === 'activo');
+  const specs   = dataJson.bot_specs || [];
+
+  // Fase 1: hay specs guardadas?
+  if (specs.length > 0)  setPhaseStatus(1, 'done');
+  else                   setPhaseStatus(1, 'active');
+
+  // Fase 2: hay specs con backtest_code?
+  const specConCodigo = specs.some(s => s.backtest_code);
+  if (specConCodigo)     setPhaseStatus(2, 'done');
+  else if (specs.length) setPhaseStatus(2, 'active');
+  else                   setPhaseStatus(2, 'pending');
+
+  // Fase 3: hay grupos analizados?
+  if (activos.length > 0) setPhaseStatus(3, 'done');
+  else                    setPhaseStatus(3, 'pending');
+
+  // Fase 4: hay walk-forward en algún grupo?
+  const hasWF = activos.some(g => {
+    const metrics = g.m1?.metrics || [];
+    return metrics.some(m => /walk.?forward|oos|overfitting/i.test(m.label));
+  });
+  if (hasWF)              setPhaseStatus(4, 'done');
+  else if (activos.length) setPhaseStatus(4, 'active');
+  else                     setPhaseStatus(4, 'pending');
+
+  // Fase 5: gate check — leer del primer grupo activo con métricas
+  const gateGroup = activos.find(g => (g.m1?.metrics || []).length > 0);
+  if (gateGroup) {
+    const metrics = gateGroup.m1.metrics;
+    const getVal = label => {
+      const m = metrics.find(x => x.label && new RegExp(label, 'i').test(x.label));
+      return m ? parseFloat(String(m.value).replace(/[^0-9.-]/g,'')) : null;
+    };
+    const gates = [
+      { id:'wr',  val:getVal('win.?rate'),     thr:40,  above:true,  label:'WR' },
+      { id:'pf',  val:getVal('profit.?factor'),thr:1.3, above:true,  label:'PF' },
+      { id:'dd',  val:getVal('drawdown'),      thr:20,  above:false, label:'DD' },
+      { id:'tr',  val:getVal('trades'),        thr:100, above:true,  label:'Trades' },
+    ];
+    let gatesPassed = 0;
+    gates.forEach(g => {
+      const el = document.getElementById('g5-' + g.id);
+      if (!el) return;
+      if (g.val === null) { el.className = 'gate-box-val nd'; el.textContent = '—'; return; }
+      const pass = g.above ? g.val >= g.thr : g.val <= g.thr;
+      el.className = 'gate-box-val ' + (pass ? 'ok' : 'fail');
+      const rawM = metrics.find(x => x.label && new RegExp(g.id === 'wr' ? 'win.?rate' : g.id === 'pf' ? 'profit.?factor' : g.id === 'dd' ? 'drawdown' : 'trades', 'i').test(x.label));
+      el.textContent = (rawM?.value || g.val) + (pass ? ' ✓' : ' ✗');
+      if (pass) gatesPassed++;
+    });
+    if (gatesPassed >= 3) setPhaseStatus(5, 'done');
+    else if (activos.length) setPhaseStatus(5, 'active');
+  }
+
+  // Fase 6: hay bot_specs?
+  if (specs.some(s => s.bot_code)) setPhaseStatus(6, 'done');
+  else if (specs.length)           setPhaseStatus(6, 'active');
+
+  // Fase 7: siempre pendiente por ahora (requiere forward test manual)
+  setPhaseStatus(7, 'pending');
+
+  // Progress
+  let done = 0;
+  for (let i = 1; i <= 7; i++) {
+    if (document.getElementById('ps-' + i)?.textContent === 'Completado') done++;
+  }
+  document.getElementById('prog-label').textContent =
+    `${done} de 7 fases completadas`;
+  document.getElementById('prog-pct').textContent = `${Math.round(done/7*100)}%`;
+  document.getElementById('prog-fill').style.width = `${done/7*100}%`;
+}
+
+function renderStack() {
+  if (!dataJson) return;
+  const grupos = getGrupos();
+  const activos = grupos.filter(g => g.status === 'activo');
+  const el = document.getElementById('stack-rows');
+
+  if (!activos.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Sin bots activos aún</div>';
+    return;
+  }
+
+  el.innerHTML = activos.map(g => {
+    const metrics = g.m1?.metrics || [];
+    const wr = metrics.find(m => m.label && /win.?rate/i.test(m.label))?.value || '—';
+    const isLive = g.category && /live|bot/i.test(g.category);
+    const badgeClass = isLive ? 'stack-live' : 'stack-bt';
+    const badgeLabel = isLive ? 'Live' : 'Backtest';
+    return `<div class="stack-row">
+      <span class="stack-badge ${badgeClass}">${badgeLabel}</span>
+      <span class="stack-name">${g.name || g.badge}</span>
+      <span class="stack-desc">${g.category || ''} · WR ${wr}</span>
+    </div>`;
+  }).join('');
+}
+
+function getGrupos() {
+  if (!dataJson) return [];
+  const g = dataJson.groups || dataJson;
+  return Array.isArray(g)
+    ? g.filter(x => x && x.badge)
+    : Object.values(g).filter(x => x && x.badge);
+}
+</script>
+
+</body>
+</html>
