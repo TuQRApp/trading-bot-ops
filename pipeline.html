@@ -87,6 +87,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .phase-body li::before{content:'·';color:var(--nico);flex-shrink:0;font-size:16px;line-height:1.3;}
 .phase-body li b{color:var(--text);}
 .phase-body li code{background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);font-size:10.5px;color:var(--nico);}
+.phase-body ul.checklist{gap:5px;margin-top:6px;margin-bottom:4px;}
+.phase-body ul.checklist li{font-size:12px;color:#4a5875;}
+.phase-body ul.checklist li::before{content:'✓';color:var(--trader);font-size:12px;line-height:1.6;}
+.corr-list{list-style:none;display:flex;flex-direction:column;gap:4px;margin:6px 0 4px 0;}
+.corr-list li{display:flex;gap:8px;font-size:12px;line-height:1.6;color:#4a5875;}
+.corr-list li::before{display:none;}
+.corr-key{font-family:var(--font-mono);font-size:10px;font-weight:700;width:14px;height:14px;border-radius:3px;background:rgba(37,99,235,.12);color:var(--nico);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
 
 /* Gate grid */
 .gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
@@ -205,9 +212,20 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <ul>
         <li><b>Datos directamente desde MT5:</b> <code>copy_rates_from_pos</code> — spread histórico real barra a barra, no estimado. Caché local de 12h para no redescargar.</li>
         <li><b>Costos reales:</b> spread = percentil 75 de cada barra (excluye spikes de noticias). Comisión $0 en cuenta Standard IC Markets. No se hardcodea ningún valor.</li>
-        <li><b>Integridad del backtest — 7 correcciones obligatorias:</b> (A) sin lookahead bias · (B) entrada al Open siguiente · (C) señales sin duplicar · (D) ATR consistente con el bot live · (E) costos al abrir no al cerrar · (F) timeout al Open de la barra · (G) filtro de liquidez mínima.</li>
-        <li><b>Equity independiente por símbolo:</b> $10,000 por instrumento, sin compartir P&L. Checkpoint después de cada símbolo.</li>
-        <li><b>Output:</b> <code>HTML</code> con curvas de equity + heatmaps horarios · <code>CSV</code> con todos los trades detallados.</li>
+        <li><b>Integridad del backtest — 7 correcciones aplicadas:</b>
+          <ul class="corr-list">
+            <li><span class="corr-key">A</span>Sin lookforward bias — swing confirmado con N barras de margen</li>
+            <li><span class="corr-key">B</span>Entrada al Open de la barra siguiente, no al Close de la señal</li>
+            <li><span class="corr-key">C</span>Señales no se duplican en la misma barra</li>
+            <li><span class="corr-key">D</span>ATR consistente con el bot live</li>
+            <li><span class="corr-key">E</span>Costos descontados al abrir, no al cerrar</li>
+            <li><span class="corr-key">F</span>Timeout cierra al Open de la barra donde ocurre</li>
+            <li><span class="corr-key">G</span>Filtro de liquidez mínima (tick volume)</li>
+          </ul>
+        </li>
+        <li><b>Equity independiente por símbolo:</b> cada símbolo arranca con $10,000 y no comparte P&L con otros. Permite comparar símbolos en igualdad de condiciones.</li>
+        <li><b>Checkpoint automático:</b> guarda el progreso después de cada símbolo. Si se interrumpe, retoma desde donde estaba.</li>
+        <li><b>Output:</b> <code>HTML</code> con curvas de equity + heatmaps horarios · <code>CSV</code> con todos los trades detallados · <code>LOG</code> en tiempo real.</li>
       </ul>
       <div class="phase-divider"></div>
       <div class="phase-cta">
@@ -231,9 +249,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="phase-body">
       <ul>
         <li><b>Gate check inicial:</b> WR ≥ 40% · PF ≥ 1.3 · MaxDD ≤ 20% · ≥ 100 trades totales. Si no pasa algún gate, se analiza por qué antes de continuar.</li>
-        <li><b>Clasificar símbolos</b> en positivos / negativos. Diagnosticar negativos: ¿spread destructivo? ¿bug de sizing? ¿régimen de mercado atípico?</li>
+        <li><b>Clasificar símbolos</b> en positivos / negativos. Diagnosticar los negativos: ¿spread destructivo? ¿bug de sizing? ¿régimen de mercado atípico? Ejemplos: XPDUSD spread 760pts → inviable estructural. XTIUSD/XBRUSDO → contaminados por guerra con Irán.</li>
         <li><b>Análisis horario UTC:</b> el heatmap del HTML muestra qué horas generan edge real vs cuáles destruyen valor. Apertura NY (16:00 UTC) suele dominar.</li>
-        <li><b>Análisis de SL/TP:</b> si los trades entran bien pero decaen → considerar trailing stop. Re-correr el backtest con la nueva lógica y comparar resultados.</li>
+        <li><b>Análisis por activador (OBV vs MACD):</b> columnas <code>obv_div</code> y <code>macd_div</code> en el CSV permiten filtrar en Excel cuál indicador genera mejor WR. En OBV MACD ADX: MACD solo = PF 1.25, OBV solo = PF 0.97.</li>
+        <li><b>Análisis de SL/TP:</b> si los trades entran bien pero decaen → considerar trailing stop en lugar de TP fijo. Se re-corre el backtest con la nueva lógica y se comparan resultados.</li>
       </ul>
       <div class="phase-divider"></div>
       <div class="phase-cta">
@@ -259,7 +278,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <li><b>Grid search anti-overfitting:</b> solo 3–5 parámetros con lógica económica. Nunca tocar los indicadores base (MACD 12/26/9, ATR 14). Grid de ~80 combinaciones máximo.</li>
         <li><b>Split In-Sample / Out-of-Sample 75/25:</b> grid optimizado sobre el 75% de datos. El parámetro ganador se valida sobre el 25% restante que nunca vio. Si OOS degrada &gt; 25%, los parámetros no son robustos.</li>
         <li><b>Criterio de selección = Profit Factor IS</b> (no retorno). El PF es más estable que el retorno frente a cambios de orden de trades.</li>
-        <li><b>Monte Carlo 1.000 permutaciones:</b> baraja el orden de los trades OOS. Gate: DD p95 &lt; 20%.</li>
+        <li><b>Monte Carlo 1.000 permutaciones:</b> baraja el orden de los trades OOS. Calcula distribuciones de PF, MaxDD y Retorno. Responde: ¿fue suerte de secuencia o hay edge real? Gate: DD p95 &lt; 20%.</li>
+        <li><b>Reporte HTML del optimizador:</b> heatmap PF IS × parámetros · top 10 combinaciones IS vs OOS · walk-forward por símbolo · histogramas Monte Carlo.</li>
+        <li><b>Resultado Fibonacci MR:</b> SM_THRESHOLD=0.3 · COOLDOWN=3 · MIN_TICK_VOL=150. Degradación OOS 2.6%. Monte Carlo DD p95 = 3.0%.</li>
       </ul>
       <div class="phase-divider"></div>
       <div class="phase-cta">
@@ -286,8 +307,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="gate-box"><div class="gate-box-label">Profit Factor Ponderado</div><div class="gate-box-val nd" id="g5-pf">≥ 1.3 —</div></div>
         <div class="gate-box"><div class="gate-box-label">MaxDD Promedio</div><div class="gate-box-val nd" id="g5-dd">≤ 20% —</div></div>
         <div class="gate-box"><div class="gate-box-label">Trades Totales</div><div class="gate-box-val nd" id="g5-tr">≥ 100 —</div></div>
+        <div class="gate-box"><div class="gate-box-label">Símbolos Positivos</div><div class="gate-box-val nd" id="g5-sp">100% —</div></div>
         <div class="gate-box"><div class="gate-box-label">Degradación OOS</div><div class="gate-box-val nd" id="g5-oos">&lt; 25% —</div></div>
         <div class="gate-box"><div class="gate-box-label">Monte Carlo DD p95</div><div class="gate-box-val nd" id="g5-mc">&lt; 20% —</div></div>
+        <div class="gate-box"><div class="gate-box-label">Régimen de Mercado</div><div class="gate-box-val nd" id="g5-rm">sin contaminación —</div></div>
       </div>
       <ul>
         <li>Si todos los gates pasan → avanzar a bot live. Si alguno falla → volver a Fase 3 con diagnóstico.</li>
@@ -312,10 +335,21 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
     <div class="phase-body">
       <ul>
-        <li><b>Seguridad antes que todo:</b> spread live verificado al ejecutar · deduplicación de señales por símbolo · validación de orden (retcode == DONE) · límite de posiciones simultáneas · reconexión automática con backoff exponencial.</li>
-        <li><b>Circuit breaker automático:</b> límite de pérdida diaria (10%) y semanal (20%). Con apalancamiento 100× y RISK_PCT=0.25%, se necesitan ~40 SL seguidos para activarlo — red de seguridad, no límite operativo.</li>
-        <li><b>Alertas Telegram:</b> señal detectada · fill confirmado · TP/SL tocado con P&L · heartbeat horario · circuit breaker activado.</li>
-        <li><b>Estado persistente en JSON:</b> posiciones abiertas, P&L diario/semanal, estado del circuit breaker. Si se reinicia, retoma exactamente donde estaba.</li>
+        <li><b>Seguridad antes que todo:</b>
+          <ul class="checklist">
+            <li>Spread live verificado al momento exacto de ejecutar la orden</li>
+            <li>Deduplicación de señales por símbolo (no repetir misma señal cada 30s)</li>
+            <li>Validación de orden confirmada (retcode == DONE)</li>
+            <li>Límite de posiciones simultáneas (MAX_POSITIONS)</li>
+            <li>Correlación por clase de activo (MAX_CORR_CLASS)</li>
+            <li>Reconexión automática MT5 con backoff exponencial</li>
+            <li>Validación de tamaño de lote contra vol_min/vol_max del broker</li>
+          </ul>
+        </li>
+        <li><b>Circuit breaker automático:</b> límite de pérdida diaria (10%) y semanal (20%). Con apalancamiento 100× y RISK_PCT=0.25% se necesitan ~40 SL seguidos para activarlo — es red de seguridad, no límite operativo.</li>
+        <li><b>Alertas Telegram:</b> señal detectada · fill confirmado · TP/SL tocado con P&L · heartbeat horario · circuit breaker activado · errores críticos. Bot verificado con la URL API antes de arrancar.</li>
+        <li><b>Detección de gaps:</b> si el Open de la barra actual difiere más de 3×ATR del Close anterior → señal ignorada.</li>
+        <li><b>Estado persistente en JSON:</b> el bot guarda posiciones abiertas, P&L diario/semanal y estado del circuit breaker. Si se reinicia, retoma exactamente donde estaba.</li>
         <li><b>Salida segura:</b> Ctrl+C cierra limpio. Las posiciones abiertas quedan activas en MT5 con sus SL/TP — no se cierran forzosamente.</li>
       </ul>
       <div class="phase-divider"></div>
@@ -340,9 +374,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="phase-body">
       <ul>
         <li><b>Fase de observación (semanas 1–4):</b> RISK_PCT = 0.25% — un cuarto del tamaño final. Objetivo: verificar que la ejecución live replica el backtest, no que gana dinero.</li>
-        <li><b>Gates del forward test:</b> métricas live deben estar dentro del ±25% del backtest. WR backtest 66% → rango válido 49%–83%.</li>
+        <li><b>Gates del forward test:</b> métricas live deben estar dentro del ±25% del backtest. WR backtest 66% → rango válido 49%–83%. PF backtest 4.49 → rango válido 3.37–5.61.</li>
         <li><b>Escalado progresivo si pasa:</b> 0.25% → 0.5% → 1.0%. Nunca saltar directamente al máximo.</li>
-        <li><b>VPS (próximo paso):</b> migrar a servidor Windows virtual para correr 24/7 sin depender de la PC local.</li>
+        <li><b>Dashboard en tiempo real:</b> balance · posiciones abiertas · últimos trades · circuit breaker status · equity curve del día. Puerto 5050, accesible desde cualquier browser.</li>
+        <li><b>VPS (próximo paso):</b> migrar a servidor Windows virtual para correr 24/7 sin depender de la PC local. MT5 demo + MT5 live en instancias separadas. Dashboard accesible por IP pública.</li>
       </ul>
       <div class="phase-divider"></div>
       <div class="phase-cta">
