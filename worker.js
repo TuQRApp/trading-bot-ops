@@ -261,8 +261,9 @@ async function handleRegisterGroup(request, env) {
 
     const { data, sha } = await readData(env);
 
-    // Badge: next FILE-NNN
-    const n = data.groups.length + 1;
+    // Badge: next FILE-NNN (safe — finds max existing badge to avoid collisions)
+    const nums = data.groups.map(g => { const m = /^FILE-(\d+)$/.exec(g.badge || ''); return m ? parseInt(m[1], 10) : 0; });
+    const n = (nums.length ? Math.max(...nums) : 0) + 1;
     const badge = 'FILE-' + String(n).padStart(3, '0');
 
     // fsh_class from palette (cycle)
