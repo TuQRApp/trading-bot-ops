@@ -621,7 +621,7 @@ async function handleGenerateSpec(request, env) {
         return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
       const system  = buildPass1System(context);
       const userMsg = buildPass1User(spec, context);
-      const result  = await claudeJsonCall(system, userMsg, env, 4096);
+      const result  = await claudeJsonCall(system, userMsg, env, 8192);
       return json(result);
     }
 

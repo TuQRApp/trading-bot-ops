@@ -942,6 +942,37 @@ function mergePassResult(data) {
   if (data.mt5_notes) generatedSpec.mt5_notes  = [...(generatedSpec.mt5_notes || []), ...data.mt5_notes];
 }
 
+function tryExtractBacktestCode(raw) {
+  try {
+    const start = raw.indexOf('"backtest_code"');
+    if (start === -1) return null;
+    const colon = raw.indexOf(':', start);
+    if (colon === -1) return null;
+    let i = colon + 1;
+    while (i < raw.length && (raw[i] === ' ' || raw[i] === '\n' || raw[i] === '\r')) i++;
+    if (raw[i] !== '"') return null;
+    i++;
+    let code = '';
+    while (i < raw.length) {
+      if (raw[i] === '\\' && i + 1 < raw.length) {
+        const nx = raw[i + 1];
+        if      (nx === 'n')  code += '\n';
+        else if (nx === 't')  code += '\t';
+        else if (nx === 'r')  code += '\r';
+        else if (nx === '"')  code += '"';
+        else if (nx === '\\') code += '\\';
+        else                  code += nx;
+        i += 2;
+      } else if (raw[i] === '"') {
+        break;
+      } else {
+        code += raw[i++];
+      }
+    }
+    return code.length > 50 ? code : null;
+  } catch (e) { return null; }
+}
+
 function showSpecOutput() {
   const el = document.getElementById('spec-output');
   el.style.display = 'block';
@@ -953,6 +984,12 @@ function showSpecOutput() {
   }
 
   const s = generatedSpec;
+
+  // Fallback: si el JSON falló al parsear, intentar extraer backtest_code del texto crudo
+  if (s.raw_response && !s.backtest_code) {
+    const extracted = tryExtractBacktestCode(s.raw_response);
+    if (extracted) s.backtest_code = extracted;
+  }
   const warns  = (s.warnings  || []).map(w => `<div class="spec-out-warn">⚠ ${w}</div>`).join('');
   const crits  = (s.critical  || []).map(c => `<div class="spec-out-crit">✖ ${c}</div>`).join('');
   const mt5ns  = (s.mt5_notes || []).map(n => `<div class="spec-out-warn">🔧 ${n}</div>`).join('');
