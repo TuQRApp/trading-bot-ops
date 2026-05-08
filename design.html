@@ -262,6 +262,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         <div class="chat-prog-fill" id="prog-fill"></div>
       </div>
       <span class="chat-prog-label" id="prog-label">0 / 14</span>
+      <button onclick="loadExample()" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;margin-left:10px;white-space:nowrap;transition:color .15s,border-color .15s" onmouseover="this.style.color='var(--nico)';this.style.borderColor='rgba(37,99,235,.4)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Cargar ejemplo</button>
     </div>
     <div class="chat-msgs" id="chat-msgs"></div>
     <div class="chat-foot">
@@ -347,6 +348,35 @@ const FIELDS = [
 
 const specState = {};
 FIELDS.forEach(f => { specState[f] = { value: null, noConsiderar: false }; });
+
+// ── Ejemplo de prueba — RSI Divergencia MR ───────────────────
+function loadExample() {
+  const ex = {
+    'instrumentos' : 'EURUSD, GBPUSD, USDJPY, AUDUSD',
+    'hipotesis'    : 'Reversión en extremos de RSI con divergencia de precio — el precio hace un nuevo mínimo/máximo pero el RSI no lo confirma, señalando agotamiento del movimiento y alta probabilidad de reversión',
+    'direccion'    : 'ambas',
+    'tf-entrada'   : 'M15',
+    'tf-apoyo'     : 'H1',
+    'sesion'       : 'Londres + NY activas (06:00–17:00 UTC)',
+    'senal'        : 'LONG: RSI(14) < 30 + divergencia alcista (precio LL, RSI HL en últimas 5 barras) + tick volume > media 20 barras × 1.3. SHORT: RSI(14) > 70 + divergencia bajista (precio HH, RSI LH) + mismo filtro de volumen',
+    'ejecucion'    : 'limite — entrada al precio de cierre de la barra de señal',
+    'sl'           : '1.5× ATR(14)',
+    'tp'           : '2.5× ATR(14)',
+    'timeout'      : '48 barras M15 (12 horas)',
+    'filtros'      : 'ADX(14) < 28 (mercado sin tendencia fuerte) + dentro de ventana de sesión',
+    'params-fijos' : 'RSI período 14, ATR período 14, Volume lookback 20 barras',
+    'params-opt'   : 'RSI threshold (25–35), SL multiplier (1.0–2.0), Volume multiplier (1.0–1.5), Divergence lookback (3–7 barras)',
+  };
+  FIELDS.forEach(f => {
+    if (ex[f] !== undefined) {
+      specState[f] = { value: ex[f], noConsiderar: false };
+    }
+  });
+  chatHistory.length = 0;
+  document.getElementById('chat-msgs').innerHTML = '';
+  addMsg('sys', 'Ejemplo cargado: RSI Divergencia MR · EURUSD/GBPUSD/USDJPY/AUDUSD · M15 · 14/14 campos completos.\nHacé clic en "⚡ Generar Estrategia + Backtest" para iniciar los 3 passes.');
+  updateProgress();
+}
 
 const autoCtx   = { bots: true, m5: true, perfil: true };
 const manualCtx = [];
