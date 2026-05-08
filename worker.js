@@ -214,7 +214,10 @@ async function handleGetData(env) {
 async function handlePutData(request, env) {
   try {
     const newData = await request.json();
-    const { sha } = await readData(env);
+    const { data: current, sha } = await readData(env);
+    if (!newData.bot_specs && current.bot_specs?.length) {
+      newData.bot_specs = current.bot_specs;
+    }
     await writeData(newData, sha, env);
     return json({ ok: true });
   } catch (e) {
