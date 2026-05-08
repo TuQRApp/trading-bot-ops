@@ -478,10 +478,11 @@ function loadSavedSpec(i) {
     'senal':'senal','ejecucion':'ejecucion','sl':'sl','tp':'tp',
     'timeout':'timeout','filtros':'filtros','params_fijos':'params-fijos','params_opt':'params-opt',
   };
-  const spec = s.spec || {};
+  const spec   = s.spec || {};
+  const fields = s.spec_fields || {};
   let loaded = 0;
   Object.entries(fieldMap).forEach(([srcKey, fid]) => {
-    const val = spec[srcKey] || spec[fid];
+    const val = spec[srcKey] || spec[fid] || fields[fid] || fields[srcKey];
     if (val && val !== 'NO_CONSIDERAR') {
       specState[fid] = { value: val, noConsiderar: false };
       loaded++;
@@ -996,9 +997,11 @@ function escapeHtml(str) {
 async function saveSpec() {
   if (!generatedSpec || !dataJson) return;
   const specs = dataJson.bot_specs || [];
-  generatedSpec.id      = `SPEC-${Date.now()}`;
-  generatedSpec.created = new Date().toISOString().slice(0, 10);
-  generatedSpec.status  = 'draft';
+  generatedSpec.id           = `SPEC-${Date.now()}`;
+  generatedSpec.created      = new Date().toISOString().slice(0, 10);
+  generatedSpec.status       = 'draft';
+  generatedSpec.spec_fields  = buildSpecSummary();   // raw specState — fallback si spec falla
+  if (!generatedSpec.name)   generatedSpec.name = generatedSpec.spec_fields['instrumentos'] || generatedSpec.id;
   specs.push(generatedSpec);
   dataJson.bot_specs = specs;
 
