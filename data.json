@@ -2296,6 +2296,454 @@
       "id": "fsh-e"
     },
     {
+      "id": "fsh-e",
+      "fsh_class": "fsh-e",
+      "name": "RSI+BB",
+      "badge": "FILE-007",
+      "icon": "🐍",
+      "ftype": "py",
+      "folder": "RSI+BB",
+      "folder_id": "f1778205926755",
+      "date": "2026-05-08T02:06:23.500Z",
+      "files": [
+        {
+          "name": "strategy.py",
+          "type": "py"
+        }
+      ],
+      "status": "en_revision",
+      "version_of": null,
+      "m1": {
+        "OPTION B — use when only .py files, no backtest data (type=empty)": {
+          "type": "empty",
+          "last_updated": "2026-05-08T00:00:00Z",
+          "last_updated_meta": "strategy.py",
+          "empty_title": "Sin datos de backtest disponibles",
+          "empty_desc": "El archivo entregado contiene únicamente la lógica de generación de señales (build_features y generate_signals). No se proporcionó CSV de trades ni reporte HTML de MT5, por lo que no es posible calcular win rate, profit factor, drawdown máximo ni ninguna otra métrica de rendimiento.",
+          "empty_trigger": "strategy.py"
+        }
+      },
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "alta",
+          "title": "Ejecutar backtest y subir CSV de resultados",
+          "desc": "Sin datos históricos de trades es imposible validar la estrategia. Se recomienda correr el motor de backtesting sobre al menos 2-3 años de datos M5 para el instrumento objetivo y cargar el CSV resultante (timestamp, side, entry, sl, tp1, tp2, exit_price, pnl). Solo entonces se podrán calcular win rate, profit factor, drawdown máximo y análisis walk-forward 70/30.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Conflicto potencial entre filtro H4 y señales de corto plazo en rango",
+          "desc": "La condición H4 EMA(200) bloquea longs cuando el precio está por debajo de la EMA y shorts cuando está por encima. En mercados en rango prolongado, el precio oscila alrededor de la EMA(200) y prácticamente todas las señales de reversión quedan invalidadas. Considerar relajar el filtro a una banda de tolerancia (p. ej. ±0.5 × ATR H4 alrededor de la EMA200) o añadir un filtro de régimen de tendencia/rango explícito (ADX < 20) que permita operar en ambas direcciones cuando el mercado no tiene tendencia definida.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "SL calculado sobre el cierre de la barra de señal, no sobre la apertura de entrada",
+          "desc": "El SL y los TP se calculan en la barra de señal (bar[i]) pero la entrada ocurre en la apertura de bar[i+1]. Si entre el cierre de bar[i] y la apertura de bar[i+1] hay un gap (especialmente en apertura de sesión o news), la distancia real al SL puede ser mayor o menor que la calculada, distorsionando el ratio riesgo/beneficio. Se recomienda que el motor recalcule o ajuste sl/tp en base al precio de entrada real, o documentar claramente que el SL es fijo e independiente del slippage de entrada.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Ausencia de proteccion ante señales consecutivas en la misma direccion",
+          "desc": "generate_signals puede producir múltiples señales long (o short) consecutivas si las condiciones persisten varias velas M5. El motor de ejecución debe filtrar señales duplicadas mientras hay una operación abierta en la misma dirección. Si no lo hace, se puede acumular exposición no intencionada. Añadir en generate_signals una columna 'position_open' o delegar explícitamente al motor la responsabilidad de ignorar señales cuando ya hay un trade activo.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "Umbral RSI fijo (30/70) no ajustado por volatilidad de régimen",
+          "desc": "Los niveles RSI < 30 y RSI > 70 son estándar pero pueden ser demasiado estrictos en activos de alta volatilidad (pocas señales) o demasiado permisivos en activos de baja volatilidad (muchas señales falsas). Evaluar umbrales alternativos (p. ej. 25/75 o 35/65) mediante optimización walk-forward una vez dispongan de datos de backtest, para evitar sobreajuste sobre una sola combinación de parámetros.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Filtro de sesion hardcoded solo en comentario docstring",
+          "desc": "El docstring especifica la ventana 01:00-20:00 UTC, pero dicho filtro no está implementado en build_features ni en generate_signals. Si el motor no aplica el filtro de sesión externamente, la estrategia operará también en las horas de baja liquidez o cierre de NY. Añadir el filtro directamente en generate_signals usando el índice datetime del DataFrame para garantizar consistencia entre documentación y comportamiento real.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "Tiempo limite de la operacion (48 barras M5) no implementado",
+          "desc": "El docstring documenta un time-stop de 48 barras M5 (~4 horas), pero generate_signals no genera ningún campo de expiración. Si el motor no implementa este cierre por tiempo, los trades que no alcanzan ni TP1 ni SL pueden quedar abiertos indefinidamente, distorsionando el análisis de drawdown y el comportamiento esperado de la estrategia.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "baja",
+          "title": "TP2 utiliza la banda opuesta calculada en la barra de señal",
+          "desc": "Las Bandas de Bollinger son dinámicas; la banda superior/inferior usada como TP2 en la barra de señal puede diferir significativamente del valor de la banda cuando el precio llegue al objetivo, especialmente en trades que duran varias horas. Considerar si tiene más sentido usar el valor actualizado de la banda en tiempo real como objetivo dinámico, en lugar de fijar TP2 en el momento de la señal.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Costos de transaccion (spread, comision, slippage) no modelados en ninguna capa visible",
+          "desc": "Ni generate_signals ni la documentacion del motor mencionan el modelado de spread, comision por lote ni slippage de ejecucion. En instrumentos M5 con targets ajustados a 1-2x ATR, los costos de transaccion pueden representar el 10-30% del beneficio bruto por trade. Se recomienda incorporar estos costos en el motor de backtest (entrada al ask, salida al bid, comision fija por lote) y reportar el profit factor neto ademas del bruto.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "info",
+          "origin": "strategy.py",
+          "title": "Arquitectura multi-TF bien estructurada con align_htf",
+          "desc": "El uso de resample_to_tf y align_htf para alinear H4 y M30 al índice M5 es una práctica robusta que evita el look-ahead bias introducido por un merge ingenuo. La separación de responsabilidades entre build_features (indicadores) y generate_signals (lógica de señales) facilita el testing unitario de cada componente.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "strategy.py",
+          "title": "complexity cero: sin bloques if, loops ni try-except en el codigo",
+          "desc": "Los hechos de pre-análisis reportan 0 bloques if, 0 loops y 0 try-except. Toda la lógica se apoya en operaciones vectorizadas de pandas/numpy, lo cual es eficiente, pero la ausencia total de manejo de excepciones significa que cualquier error en los datos de entrada (NaNs inesperados, columnas faltantes, tipos incorrectos) propagará una excepción no controlada al motor.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "strategy.py",
+          "title": "Numeros magicos sin constantes nombradas",
+          "desc": "Los valores 14, 20, 30, 70 y 200 aparecen directamente en el código sin ser definidos como constantes al inicio del módulo. Esto dificulta la parametrización y los experimentos de optimización, ya que un cambio de parámetro requiere modificar múltiples líneas. Se recomienda declarar RSI_PERIOD, BB_PERIOD, BB_STD, EMA_PERIOD, etc. como constantes al nivel del módulo o como argumentos de las funciones.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "strategy.py",
+          "title": "Dependencia de modulos shared no versionados en el repositorio",
+          "desc": "Las funciones ema, atr, rsi, bollinger_bands, align_htf y resample_to_tf se importan desde shared.indicators y shared.data_loader mediante una manipulación directa de sys.path. No se proporciona ni versión ni interfaz de dichos módulos, lo que impide verificar si la implementación de los indicadores introduce look-ahead bias o diferencias con respecto a plataformas de trading.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "strategy.py",
+          "title": "Logica de señal conservadora con doble confirmacion",
+          "desc": "La exigencia de que (a) la vela anterior toque la banda, (b) el RSI esté en zona extrema Y (c) la vela actual cierre dentro de la banda antes de generar señal es una condición de triple filtro que reduce el número de trades falsos pero puede generar muy pocas señales en mercados tranquilos. Es importante verificar con el backtest que la frecuencia de señales sea suficiente para obtener significancia estadística.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "warn",
+          "origin": "strategy.py",
+          "title": "Movimiento de SL a break-even tras TP1 no implementado en generate_signals",
+          "desc": "El docstring describe que al alcanzar TP1 el SL se mueve a break-even, pero generate_signals solo define sl, tp1 y tp2 estáticos. Esta lógica de gestión de trade activo debe estar implementada en el motor de ejecución; si no se verifica, el riesgo real tras TP1 parcial puede diferir significativamente del diseño original.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "warn",
+          "origin": "strategy.py",
+          "title": "sys.path manipulado directamente para importar shared; riesgo de importacion silenciosa de version incorrecta",
+          "desc": "El uso de sys.path.insert o similar para resolver shared.indicators y shared.data_loader significa que la version del modulo cargada depende del entorno de ejecucion en el momento del import. Si existen dos instalaciones (desarrollo vs produccion) o el PYTHONPATH no esta fijado, podria importarse una version distinta de ema, rsi o bollinger_bands sin ningun error visible, produciendo resultados inconsistentes entre backtest y live.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "Look-ahead potencial en align_htf con resample no validado",
+          "desc": "resample_to_tf y align_htf son funciones externas no auditadas. Si el resample utiliza el cierre de la barra actual para alinear (en lugar de un forward-fill estricto con shift), los indicadores M30 y H4 del bar[i] M5 podrían incluir información del futuro inmediato. Esto produciría resultados de backtest irrealmente buenos que no se replican en live.",
+          "code": "df = align_htf(df_m5, df_h4, ['ema200'], 'h4')\ndf = align_htf(df, df_m30, ['bb_lower', 'bb_mid', 'bb_upper', 'rsi14', 'atr14'], 'm30')",
+          "fix": "# Verificar que align_htf usa merge_asof con direction='backward' o equivalente,\n# y que resample_to_tf aplica .shift(1) tras el resample para evitar usar\n# el cierre de la barra HTF en curso.\n# Añadir un test unitario:\n# assert df['m30_rsi14'].iloc[k] == valor_calculado_solo_con_datos_hasta_barra_k",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "prev utiliza shift(1) sobre columnas HTF ya alineadas, duplicando el retardo",
+          "desc": "En generate_signals, prev = df.shift(1) aplica un desplazamiento adicional sobre columnas como m30_bb_lower que ya fueron alineadas con forward-fill desde M30. Dependiendo de la granularidad del forward-fill, prev['m30_bb_lower'] podría referirse a datos de hasta 30+ minutos antes de lo esperado, introduciendo un retardo excesivo en la condición de entrada y reduciendo la calidad de las señales.",
+          "code": "prev = df.shift(1)\nlong_cond = (\n    (prev['low'] <= prev['m30_bb_lower']) &\n    (prev['m30_rsi14'] < 30) &\n    ...\n)",
+          "fix": "# Verificar que la condicion de 'la vela anterior toco la banda' se evalua\n# sobre las columnas de precio M5 (prev['low']) pero con el valor de la banda\n# que corresponde a ESA vela M5 (df['m30_bb_lower'] sin shift adicional).\n# Separar claramente: precio M5 shifteado vs indicadores HTF ya alineados.\nprev_price_low = df['low'].shift(1)\nprev_rsi = df['m30_rsi14'].shift(1)  # solo si se quiere la lectura de la vela anterior\ncurrent_bb_lower = df['m30_bb_lower']  # banda vigente en la barra actual",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "Sin validacion de NaNs antes de generar señales",
+          "desc": "Durante el warmup de los indicadores (primeras 200 barras para EMA200, primeras 20 para BB/RSI), las columnas contienen NaN. Las comparaciones booleanas con NaN en pandas devuelven False silenciosamente, pero si align_htf rellena con valores incorrectos o el DataFrame es corto, podrían generarse señales en barras sin datos válidos.",
+          "code": "df['signal'] = 0\ndf.loc[long_cond,  'signal'] =  1\ndf.loc[short_cond, 'signal'] = -1",
+          "fix": "# Añadir mascara de warmup antes de asignar señales:\nwarmup_mask = (\n    df['h4_ema200'].notna() &\n    df['m30_bb_lower'].notna() &\n    df['m30_rsi14'].notna() &\n    df['m30_atr14'].notna()\n)\ndf.loc[long_cond  & warmup_mask, 'signal'] =  1\ndf.loc[short_cond & warmup_mask, 'signal'] = -1",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "ausencia",
+          "title": "Filtro de sesion 01:00-20:00 UTC no implementado en el codigo",
+          "desc": "El docstring especifica operar solo entre 01:00 y 20:00 UTC, pero generate_signals no implementa ninguna restriccion horaria. Si el motor externo no aplica este filtro, la estrategia generará señales en horas de baja liquidez y spread amplio, deteriorando el rendimiento real respecto al diseño.",
+          "code": "# No existe ninguna restriccion de sesion en generate_signals",
+          "fix": "SESSION_START_UTC = 1   # hora\nSESSION_END_UTC   = 20  # hora\n\nhour = df.index.hour  # requiere que el indice sea DatetimeIndex con tz=UTC\nsession_mask = (hour >= SESSION_START_UTC) & (hour < SESSION_END_UTC)\n\ndf.loc[long_cond  & session_mask, 'signal'] =  1\ndf.loc[short_cond & session_mask, 'signal'] = -1",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "ausencia",
+          "title": "Time-stop de 48 barras M5 no generado en las señales",
+          "desc": "El docstring documenta un cierre por tiempo si ninguno de los targets se alcanza en 48 barras M5 (~4 horas). generate_signals no añade ningún campo 'bar_expiry' ni 'expiry_time' que permita al motor gestionar este cierre. Sin él, el comportamiento de backtest y live puede diferir del diseño.",
+          "code": "# No existe campo de expiracion en el DataFrame de salida\nreturn df  # solo contiene signal, sl, tp1, tp2",
+          "fix": "# Añadir columna de expiracion como offset de tiempo:\nSIGNAL_BARS_TTL = 48\nbar_duration = pd.Timedelta(minutes=5)\n\nsignal_mask = df['signal'] != 0\ndf['expiry_time'] = pd.NaT\ndf.loc[signal_mask, 'expiry_time'] = (\n    df.loc[signal_mask].index + SIGNAL_BARS_TTL * bar_duration\n)",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "mejora",
+          "title": "Parametros hardcoded; añadir firma configurable a las funciones",
+          "desc": "Los periodos RSI_PERIOD=14, BB_PERIOD=20, BB_STD=2.0, EMA_PERIOD=200 y ATR_MULT=2.0 están incrustados en el cuerpo de las funciones. Para facilitar optimizacion y reutilizacion, deben exponerse como parametros con valores por defecto.",
+          "code": "def build_features(df_m5: pd.DataFrame) -> pd.DataFrame:\n    ...\n    df_h4['ema200'] = ema(df_h4['close'], 200)\n    bb_lo, bb_mid, bb_hi = bollinger_bands(df_m30['close'], 20, 2.0)\n    df_m30['rsi14']  = rsi(df_m30['close'], 14)\n    df_m30['atr14']  = atr(..., 14)",
+          "fix": "RSI_PERIOD  = 14\nBB_PERIOD   = 20\nBB_STD      = 2.0\nEMA_PERIOD  = 200\nATR_PERIOD  = 14\nATR_SL_MULT = 2.0\n\ndef build_features(\n    df_m5: pd.DataFrame,\n    rsi_period: int = RSI_PERIOD,\n    bb_period: int  = BB_PERIOD,\n    bb_std: float   = BB_STD,\n    ema_period: int = EMA_PERIOD,\n    atr_period: int = ATR_PERIOD,\n) -> pd.DataFrame:\n    ...",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "SL y TP2 calculados con ATR de M30 pero entrada ocurre en M5; unidades de volatilidad mezcladas",
+          "desc": "El SL se define como ATR_MULT * m30_atr14 y TP2 usa la banda opuesta M30, pero la entrada se produce en la apertura de la siguiente vela M5. El ATR de M30 tiene una magnitud aproximadamente raiz(6) veces mayor que el ATR M5, lo que puede hacer el SL sobredimensionado para el timeframe de entrada y reducir drasticamente el ratio riesgo/beneficio efectivo. Ademas, si m30_atr14 contiene NaN en los primeros periodos y align_htf rellena con forward-fill desde el ultimo valor valido, el SL de las primeras barras puede estar calculado con un ATR de una sesion muy diferente.",
+          "code": "df['sl']  = df['close'] - ATR_MULT * df['m30_atr14']  # long\ndf['tp2'] = df['m30_bb_upper']",
+          "fix": "# Documentar explicitamente que el SL esta expresado en unidades de volatilidad M30\n# y verificar que el ratio riesgo/beneficio medio resultante sea >= 1:1.5.\n# Alternativamente, usar ATR del propio M5 para el SL y reservar ATR M30\n# unicamente como filtro de volatilidad de regimen:\ndf['sl_long']  = df['close'] - ATR_MULT * df['m5_atr14']\ndf['sl_short'] = df['close'] + ATR_MULT * df['m5_atr14']\n# Asegurar que m5_atr14 se calcula en build_features sobre df_m5 directamente.",
+          "comment": ""
+        }
+      ],
+      "versions": [
+        "FILE-007"
+      ],
+      "category": "Bot Python | 1 instrumento | Custom Engine | Mean Reversion RSI + Bollinger Bands Multi-TF",
+      "summary": "strategy.py implementa una estrategia de reversión a la media en tres marcos temporales (H4 bias EMA200, M30 setup BB+RSI, M5 entrada de confirmación). Las señales se generan cuando el precio toca una banda de Bollinger con RSI en zona extrema y la vela siguiente cierra de vuelta dentro de las bandas, alineado con la tendencia H4. No se adjuntan datos de backtest, por lo que no es posible evaluar métricas de rendimiento.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Régimen de volatilidad normal favorece la reversión a la media, pero eventos macro clave hoy (Bailey, empleo CAD, salarios USD) exigen cautela inmediata en pares afectados.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "Eventos macro críticos a las 08:30 ET hoy",
+            "desc": "A las 08:30 ET se publican simultáneamente Employment Change CAD, Unemployment Rate CAD y Average Hourly Earnings USD. Estos datos generan expansión abrupta de spreads y velas de alta volatilidad que invalidan las señales de reversión M5. Si el bot opera GBP, CAD o USD, pausa las entradas nuevas desde las 08:15 ET hasta que el mercado consolide al menos dos velas H1 tras la publicación. Reactiva solo cuando el rango de la vela de impacto sea inferior al ATR M30 promedio.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "BOE Bailey habla: riesgo en GBP",
+            "desc": "El gobernador Bailey interviene a las 08:20 ET. Los discursos de bancos centrales generan movimientos direccionales sostenidos que rompen la premisa de reversión a la media. Si el bot incluye pares GBP (GBPUSD, GBPJPY, EURGBP), suspende entradas desde las 08:10 ET. El COT muestra posicionamiento neto bajista en GBP (-20.847 contratos), lo que amplifica el riesgo de un movimiento bajista acelerado si Bailey sorprende con tono hawkish. Reanuda operaciones solo tras confirmar que H4 EMA200 sigue siendo respetada como soporte o resistencia.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "Sentimiento cripto en miedo: sesgo bajista",
+            "desc": "El índice Fear and Greed cripto cayó de 47 a 38 (Miedo), indicando capitulación parcial pero sin rebote confirmado. Si el bot opera pares cripto, las señales de compra en banda inferior de Bollinger tienen mayor probabilidad de fallar porque el momentum bajista puede sostener el precio fuera de la banda. Exige confirmación adicional en M5: la vela de reentrada debe cerrar con mecha inferior prominente y volumen superior al promedio de las últimas 20 velas antes de activar la orden.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "VIX en 17: entorno ideal para reversión",
+            "desc": "El VIX bajó a 17.08 desde 17.39, consolidando un régimen de volatilidad normal-baja. Históricamente este rango favorece estrategias de reversión a la media porque los movimientos de precio son predecibles y las bandas de Bollinger se contraen a anchos operativos. Aprovecha la sesión asiática y europea temprana (antes de los datos de las 08:30 ET) para buscar setups M30 con RSI por encima de 70 o por debajo de 30 alineados con H4 EMA200. La probabilidad de cierre dentro de bandas es superior en este régimen.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "COT: JPY largo neto bajista, oportunidad alcista",
+            "desc": "El posicionamiento especulativo en JPY muestra un neto de -109.383 contratos (fuertemente bajista en JPY, es decir, largo en USDJPY). Cuando el COT está tan extendido en un lado, el riesgo de reversión institucional es alto. Si el bot opera USDJPY, prioriza señales de venta en la banda superior de Bollinger M30 con RSI por encima de 65 y bias H4 bajista (precio bajo EMA200). El desencadenante de reversión podría llegar si los datos de empleo USD de hoy decepcionan.",
+            "horizonte": "48h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "COT EUR casi neutral: sin sesgo claro",
+            "desc": "El posicionamiento neto en EUR es apenas +2.339 contratos, prácticamente sin dirección institucional definida. Para pares EUR el bot puede operar con normalidad siguiendo únicamente la señal técnica multi-TF sin ajustar el sesgo por flujo institucional. Mantén el filtro H4 EMA200 como árbitro de dirección. Situación a revisar la próxima semana si el BCE publica novedades sobre tasas de depósito, dato actualmente no disponible pero relevante para EURUSD.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-08T02:08:45Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 17.08,
+            "prev": 17.39,
+            "change": -0.31,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 38,
+            "label": "Fear",
+            "prev": 47
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Cash Rate",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "4.35%",
+              "previous": "4.10%"
+            },
+            {
+              "event": "RBA Monetary Policy Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Rate Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Press Conference",
+              "currency": "AUD",
+              "date": "2026-05-05T01:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "ISM Services PMI",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "53.7",
+              "previous": "54.0"
+            },
+            {
+              "event": "JOLTS Job Openings",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "6.86M",
+              "previous": "6.88M"
+            },
+            {
+              "event": "Employment Change q/q",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "5.4%",
+              "previous": "5.4%"
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-05-08T08:20:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Employment Change",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "12.9K",
+              "previous": "14.1K"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "6.7%",
+              "previous": "6.7%"
+            },
+            {
+              "event": "Average Hourly Earnings m/m",
+              "currency": "USD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158637",
+              "date": "2026-03"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": 2339,
+              "long": 192030,
+              "short": 189691,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -109383,
+              "long": 100712,
+              "short": 210095,
+              "bias": "bearish",
+              "date": "2026-04-28"
+            },
+            "XAU": {
+              "net": 153504,
+              "long": 204559,
+              "short": 51055,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-08T02:08:45Z"
+        }
+      }
+    },
+    {
       "id": "fsh-f",
       "fsh_class": "fsh-f",
       "name": "RSI + BB",
@@ -2355,21 +2803,575 @@
           "type": "csv"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
       "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "RSI + BB — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "backtest.py · IT40_20260507_1912_report.html · IT40_20260507_1912_trades.csv · NETH25_20260507_1911_report.html · NETH25_20260507_1911_trades.csv · SE30_20260507_1912_report.html · SE30_20260507_1912_trades.csv · strategy.py · XAGUSD_20260507_1911_report.html · XAGUSD_20260507_1911_trades.csv · XAUUSD_20260507_1911_report.html · XAUUSD_20260507_1911_trades.csv"
+        "OPTION A — use when CSV/backtest data is present (type=quality)": {
+          "type": "quality",
+          "last_updated": "2026-05-07T19:12:00Z",
+          "last_updated_meta": "IT40_20260507_1912_report.html · NETH25_20260507_1911_report.html · SE30_20260507_1912_report.html · XAGUSD_20260507_1911_report.html · XAUUSD_20260507_1911_report.html",
+          "fsh_count": "361 trades · 5 instrumentos",
+          "score": {
+            "valor": 2.5,
+            "max": 10,
+            "label": "Estrategia no rentable — requiere rediseño fundamental",
+            "bullets": [
+              {
+                "type": "ok",
+                "text": "Logica de señal clara y bien estructurada: RSI+BB en M30 con filtro H4 EMA(200)"
+              },
+              {
+                "type": "ok",
+                "text": "XAGUSD es el unico instrumento con retorno positivo (+4.82%) y drawdown dentro del objetivo (<10%)"
+              },
+              {
+                "type": "warn",
+                "text": "Win rate promedio de 36.5% esta muy por debajo del objetivo de 65%; la estrategia pierde mas operaciones de las que gana"
+              },
+              {
+                "type": "warn",
+                "text": "Todos los backtests se ejecutaron SIN costos reales — spread, slippage y comisiones en cero — los resultados son optimistas respecto a la realidad"
+              },
+              {
+                "type": "bad",
+                "text": "4 de 5 instrumentos con retorno total negativo: IT40 -17.2%, NETH25 -20.9%, SE30 -25.4%, XAUUSD -6.0%"
+              },
+              {
+                "type": "bad",
+                "text": "Drawdowns catastróficos: SE30 -29.93%, IT40 -28.54%, NETH25 -22.53%, XAUUSD -18.50%; ninguno cumple el objetivo de <10%"
+              },
+              {
+                "type": "bad",
+                "text": "Sharpe negativos extremos en indices europeos: SE30 -40.87, NETH25 -42.92, IT40 -19.01; la estrategia destruye capital de forma sistematica en esos mercados"
+              },
+              {
+                "type": "bad",
+                "text": "Acumulacion masiva de posiciones simultaneas (hasta 4) en la misma direccion amplifica las perdidas en rachas adversas — efecto de correlacion intradiaria sin control"
+              }
+            ]
+          },
+          "metrics": [
+            {
+              "id": "QM-01",
+              "label": "Instrumentos",
+              "value": "5 instrumentos",
+              "status": "bad",
+              "note": "IT40 WR 30.0% PF 0.70 DD -28.54% Ret -17.2% | NETH25 WR 25.0% PF 0.44 DD -22.53% Ret -20.9% | SE30 WR 37.3% PF 0.49 DD -29.93% Ret -25.4% | XAGUSD WR 47.7% PF 1.18 DD -9.44% Ret +4.82% | XAUUSD WR 42.4% PF 0.89 DD -18.50% Ret -6.0%"
+            },
+            {
+              "id": "QM-02",
+              "label": "Total Trades",
+              "value": "361",
+              "status": "warn",
+              "note": "IT40: 80 | NETH25: 64 | SE30: 67 | XAGUSD: 65 | XAUUSD: 85. Muestra suficiente pero concentrada en menos de 6 meses"
+            },
+            {
+              "id": "QM-03",
+              "label": "Avg Win Rate",
+              "value": "36.5%",
+              "status": "bad",
+              "note": "Rango: 25.0% (NETH25) a 47.7% (XAGUSD). Todos por debajo del objetivo de 65%"
+            },
+            {
+              "id": "QM-04",
+              "label": "Avg Profit Factor",
+              "value": "0.74",
+              "status": "bad",
+              "note": "Rango: 0.44 (NETH25) a 1.18 (XAGUSD). Solo XAGUSD supera 1.0; objetivo era >=2.0"
+            },
+            {
+              "id": "QM-05",
+              "label": "Peor Max Drawdown",
+              "value": "-29.93%",
+              "status": "bad",
+              "note": "SE30 -29.93% | IT40 -28.54% | NETH25 -22.53% | XAUUSD -18.50% | XAGUSD -9.44%. Solo XAGUSD cumple objetivo <10%"
+            },
+            {
+              "id": "QM-06",
+              "label": "Costos aplicados",
+              "value": "Sin costos",
+              "status": "bad",
+              "note": "Todos los backtests con spread=0pts, slippage=0, comision=0%. Los resultados reales con costos reales seran significativamente peores. IT40 tiene spread actual de 1000 pts en el reporte."
+            },
+            {
+              "id": "QM-07",
+              "label": "Expectancy promedio",
+              "value": "-0.246%",
+              "status": "bad",
+              "note": "IT40 -0.294% | NETH25 -0.433% | SE30 -0.427% | XAGUSD +0.053% | XAUUSD -0.129%. Expectancy negativa en 4 de 5 instrumentos"
+            },
+            {
+              "id": "QM-08",
+              "label": "Sharpe Ratio",
+              "value": "-20.1 promedio",
+              "status": "bad",
+              "note": "IT40 -19.01 | NETH25 -42.92 | SE30 -40.87 | XAGUSD +8.19 | XAUUSD -6.02. Solo XAGUSD positivo"
+            }
+          ]
+        }
       },
-      "m2": [],
-      "m3": [],
-      "m4": [],
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Backtests ejecutados sin costos — resultados no representan rentabilidad real",
+          "desc": "Los 5 backtests muestran spread=0pts, slippage=0 y comision=0.0%. Los instrumentos tienen spreads reales significativos: IT40 muestra spread actual de 1000pts, XAGUSD 36pts, XAUUSD 15pts, SE30 44pts, NETH25 20pts. El impacto de spreads en M5 con entradas multiples por señal puede ser devastador dado el bajo win rate actual. El unico instrumento levemente positivo (XAGUSD, +4.82%) probablemente se vuelva negativo al incluir costos reales. Es imprescindible reejecutar todos los backtests con modelos de costo reales antes de cualquier evaluacion de viabilidad.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Acumulacion de hasta 4 posiciones simultaneas en la misma direccion sin control de correlacion",
+          "desc": "La configuracion MAX_POS=4 permite abrir hasta 4 trades en la misma direccion casi simultaneamente cuando se genera señal en velas consecutivas. En los logs se observan claramente rachas de 3-4 LONG seguidos en el mismo instrumento que todos alcanzan SL al -2% en el mismo momento, generando perdidas efectivas de hasta -8% en una sola sesion. Esto no es diversificacion — es concentracion encubierta. Se recomienda limitar MAX_POS a 1 o implementar un mecanismo de cooldown de al menos 10-20 barras entre señales del mismo instrumento y misma direccion.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Win rate de 25-37% con SL fijo al 2% hace la estrategia matematicamente perdedora en indices europeos",
+          "desc": "Para que una estrategia con SL del 2% sea rentable con el ratio actual avg_win/avg_loss (~1.1-1.5x), se necesita un win rate de al menos 45-50%. IT40 (30%), NETH25 (25%) y SE30 (37.3%) estan muy por debajo de ese umbral minimo. El filtro H4 EMA(200) aparentemente no esta filtrando de manera efectiva las condiciones de mercado adversas para la reversion a la media en indices europeos. Se recomienda: (1) revisar si la condicion de EMA(200) es demasiado permisiva, (2) agregar filtros de volatilidad (evitar entrar cuando ATR sea excesivamente alto), (3) evaluar si estos instrumentos son compatibles con la estrategia.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "alta",
+          "title": "SL basado en 2xATR M30 puede ser demasiado ajustado para indices europeos en tendencia",
+          "desc": "El stop loss se calcula como bb_lower - 2*ATR(14) en M30 para longs. En mercados en fuerte tendencia bajista (como IT40 en feb-2026 que perdio -32.8% en un mes), este SL queda dentro del rango de ruido normal y se activa repetidamente. Se observan en los logs rachas de 5-8 SL consecutivos a -2% en el mismo dia. Se sugiere evaluar ampliar el multiplicador ATR a 3x o añadir un filtro de tendencia M30 adicional (ej: precio debe estar por encima/debajo del midband para aceptar señales de reversion).",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "alta",
+          "title": "Periodos de prueba muy cortos y heterogeneos entre instrumentos",
+          "desc": "Los periodos de backtest varian significativamente: XAGUSD y XAUUSD solo tienen ~2 meses (mar-may 2026), mientras SE30 tiene ~6 meses y NETH25 ~3.5 meses. Periodos tan cortos no permiten evaluar la robustez estadistica de la estrategia — 65-85 trades en 2 meses pueden ser altamente dependientes del regimen de mercado especifico de ese periodo. Se recomienda extender todos los backtests a un minimo de 2-3 años con N_BARS_DEF=15000 ya configurado, o usar get_all_bars() sin limite.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "El filtro H4 EMA(200) puede generar sesgo en periodos cortos de backtest",
+          "desc": "El filtro de tendencia H4 EMA(200) solo permite longs cuando precio > EMA200 y shorts cuando precio < EMA200. En XAUUSD y XAGUSD el precio estuvo por encima del EMA200 la mayor parte del periodo (mercado alcista de oro en 2026), lo que genera predominancia de señales SHORT en contra de la tendencia principal — visible en el log donde la mayoria de trades son SHORT en estos metales. Esto contradice la logica del filtro. Se debe revisar si el filtro esta correctamente implementado o si la condicion deberia invertirse para instrumentos en fuerte tendencia.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "media",
+          "title": "Cierre SESSION genera perdidas sistematicas al precio de mercado en la hora 20:00 UTC",
+          "desc": "El mecanismo de cierre de sesion a las 20:00 UTC (SESSION_END=20) cierra todas las posiciones abiertas al precio del mercado, generando sistematicamente perdidas en posiciones que todavia estan en drawdown. En el log de IT40 se observan multiples grupos de 2-4 posiciones cerradas por SESSION con perdidas entre -0.2% y -1.3% cada una. Este cierre forzado aumenta el costo efectivo de la estrategia. Se recomienda evaluar si el cierre de sesion es necesario o si se puede permitir que las posiciones alcancen sus niveles TP/SL naturalmente.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "media",
+          "title": "XAUEUR y XAGEUR estan en SYMBOLS pero sin backtests generados",
+          "desc": "El archivo backtest.py define SYMBOLS = ['XAUUSD', 'XAGUSD', 'NETH25', 'SE30', 'IT40', 'XAUEUR', 'XAGEUR'] pero solo se han proporcionado reportes para 5 de los 7 instrumentos. XAUEUR y XAGEUR no tienen backtest disponible. Antes de ampliar el portfolio, es prioritario corregir los problemas fundamentales de la estrategia en los instrumentos ya probados.",
+          "comment": ""
+        },
+        {
+          "id": "R-09",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "Numeros magicos no documentados en backtest.py deben externalizarse a configuracion",
+          "desc": "backtest.py contiene magic numbers hardcodeados: MAX_POS=4, TIME_EXIT=48, SESSION_START=1, SESSION_END=20, N_BARS_DEF=15000. En strategy.py: RSI periodo 14, BB periodo 20, RSI_oversold=30, RSI_overbought=70, EMA=200, ATR multiplicador=2. Ninguno de estos parametros esta en un archivo de configuracion externo, lo que dificulta la optimizacion sistematica. Se recomienda crear un archivo config.py o dict de parametros para facilitar experimentos controlados.",
+          "comment": ""
+        },
+        {
+          "id": "R-10",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "baja",
+          "title": "TP1 (BB midline) no activa el mecanismo de break-even segun documentacion",
+          "desc": "El docstring de strategy.py describe que al alcanzar TP1 se debe mover el SL a break-even ('TP1: BB midline → move SL to BE'). Sin embargo, en el CSV de trades se observan trades cerrados por SL con pnl=0.0% (indicando que el BE fue activado correctamente en algunos casos), pero no es posible confirmar que el mecanismo funcione para todos los casos sin revisar el codigo del BacktestEngine. Se recomienda verificar que el engine implementa correctamente el trailing BE despues de TP1 y agregar una metrica de 'TP1 hit rate' en los reportes.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "TIME_EXIT=48 como numero magico puede cerrar posiciones por tiempo antes de alcanzar TP",
+          "desc": "backtest.py contiene el magic number 48 (barras M5 = 4 horas) como limite temporal de cierre de posiciones. Este valor no aparece documentado ni mencionado en ningun hallazgo del analisis. Si una posicion abre cerca del TP pero el movimiento es lento, se cerrara a las 4 horas con perdida o ganancia parcial antes de que el precio llegue al objetivo. Esto distorsiona la relacion riesgo/beneficio real de la estrategia y puede explicar parte del bajo profit factor observado. Se debe documentar este parametro, evaluar su impacto en los resultados y considerar si un cierre por tiempo tiene logica en la estrategia de reversion a la media.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "error",
+          "origin": "IT40_20260507_1912_report.html",
+          "title": "IT40: Profit Factor de 0.70 y Sharpe de -19 — instrumento incompatible con la estrategia actual",
+          "desc": "IT40 muestra los peores resultados absolutos en terminos de consistencia: 30% win rate, PF 0.70, Sharpe -19.01, retorno -17.2% en solo 3.5 meses. El mes de febrero 2026 fue catastrofico (-32.8%), posiblemente durante una tendencia bajista fuerte donde la estrategia de reversion a la media genero señales LONG repetidamente contra el movimiento principal. La combinacion de mercado en tendencia + acumulacion de 4 posiciones simultaneas explica el drawdown extremo de -28.54%.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "error",
+          "origin": "NETH25_20260507_1911_report.html",
+          "title": "NETH25: Sharpe de -42.92 es el peor del portfolio — señal de reversal en contra de tendencia sistematica",
+          "desc": "Un Sharpe de -42.92 indica que la estrategia en NETH25 no solo pierde dinero sino que lo hace con extraordinaria consistencia negativa. La expectancy de -0.433% por trade con 64 trades implica una curva de equity practicamente lineal hacia abajo. Febrero 2026 (-20.0%) y mayo 2026 (-9.3%) fueron los meses criticos. Este nivel de Sharpe negativo sugiere que la estrategia esta haciendo exactamente lo opuesto a lo correcto en este instrumento.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "XAGUSD_20260507_1911_report.html",
+          "title": "XAGUSD es el unico instrumento viable pero con solo 2 meses de datos — muestra insuficiente",
+          "desc": "XAGUSD es el unico instrumento con resultados positivos: +4.82% retorno, Sharpe +8.19, DD -9.44% (unico dentro del objetivo). Sin embargo, el periodo de prueba es solo marzo-mayo 2026 (aprox. 8 semanas), lo que es estadisticamente insuficiente para confirmar robustez. Ademas, abril 2026 genero un excepcional +18% que puede ser un outlier de mercado (volatilidad de plata en periodo especifico). Se necesitan al menos 12-24 meses de datos para XAGUSD.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "backtest.py · strategy.py",
+          "title": "Señales de entrada en barras consecutivas generan clustering de posiciones correlacionadas",
+          "desc": "La logica en generate_signals() no tiene ninguna restriccion de frecuencia de señal. Si las condiciones RSI+BB se cumplen en 4 barras M5 consecutivas (20 minutos), el engine abrira 4 posiciones casi identicas en el mismo punto de precio con el mismo SL y TP. Esto se observa claramente en los logs: IT40 muestra 4 LONG abiertos entre 17:00-17:30 el 07/05/2026 que todos hacen SL a las 19:05. No es diversificacion — es el mismo trade replicado 4 veces.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "warn",
+          "origin": "SE30_20260507_1912_report.html",
+          "title": "SE30: marzo 2026 fue catastrofico (-18%) con 7 SL consecutivos del 06/03 al 09/03",
+          "desc": "El log de SE30 muestra una racha de 7 SL consecutivos entre el 05 y 09 de marzo 2026 (todos LONG a -2%), durante lo que parece ser una fuerte caida del indice sueco. Con MAX_POS=4, se acumularon perdidas de hasta -8% en una sola sesion. Este tipo de evento indica que la estrategia no tiene mecanismo de circuit breaker ni limite de perdida diaria que detenga las entradas durante rachas adversas prolongadas.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "strategy.py",
+          "title": "Estructura de codigo de strategy.py es limpia y bien documentada",
+          "desc": "strategy.py tiene complejidad ciclomatica minima (0 if_blocks, 0 loops) usando operaciones vectorizadas de pandas de manera eficiente. La separacion entre build_features() y generate_signals() es correcta. El docstring del modulo documenta claramente la jerarquia temporal (H4 bias, M30 setup, M5 entry). Esta es la parte mejor implementada del sistema y sirve como buena base para iterar sobre los parametros y condiciones de señal.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "info",
+          "origin": "XAUUSD_20260507_1911_report.html",
+          "title": "XAUUSD: La estrategia genera señales SHORT en un mercado alcista de oro — sesgo direccional incorrecto",
+          "desc": "En el log de XAUUSD, la gran mayoria de trades son SHORT (se puede observar en la alta proporcion de entradas short durante el periodo), pero el oro estuvo en fuerte tendencia alcista en el periodo marzo-mayo 2026 (precios entre 4400 y 5200 USD). Si el precio esta por encima del EMA(200) H4, el filtro deberia rechazar los shorts — pero el gran numero de SHORTs en el log sugiere que el precio estaba por debajo del EMA200 en H4 (posiblemente por el gap down de marzo), lo que podria indicar un problema de calculo del EMA en el resample H4.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-008",
+          "tipo": "warn",
+          "origin": "backtest.py",
+          "title": "SESSION_START=1 permite operar desde la 1 AM UTC incluyendo sesion asiatica en metales preciosos",
+          "desc": "El horario de sesion 01:00-20:00 UTC es muy amplio para indices europeos (que solo tienen liquidez 08:00-17:00 UTC) pero potencialmente adecuado para metales preciosos. Sin embargo, para IT40, SE30 y NETH25, operar entre 01:00-08:00 UTC implica hacerlo en horario de baja liquidez con spreads ampliados. El log de XAGUSD muestra trades abiertos a las 01:00-06:00 UTC que son apropiados para plata, pero este mismo horario seria inadecuado para los indices europeos si no se segmenta por instrumento.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "warn",
+          "origin": "backtest.py",
+          "title": "TIME_EXIT=48 barras no esta cubierto en ningun hallazgo y puede sesgar la muestra de trades",
+          "desc": "El magic number 48 en backtest.py corresponde a un cierre forzado por tiempo a las 4 horas de vida de la posicion. Ninguna observacion del analisis menciona cuantos trades de los 361 totales fueron cerrados por este mecanismo versus por SL, TP1, TP2 o SESSION. Si una proporcion significativa de trades cierra por TIME_EXIT con resultado negativo, esto contribuye al bajo win rate sin que la logica de entrada sea necesariamente culpable. Se recomienda agregar una columna exit_reason en el CSV de trades y calcular la distribucion de razones de cierre para cada instrumento.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "Posible lookforward bias en align_htf: señal usa datos del bar actual que aun no cerro",
+          "desc": "En generate_signals(), las condiciones usan df['close'] > df['m30_bb_lower'] y df['close'] > df['h4_ema200'] del bar actual, mientras que prev = df.shift(1) se usa para las condiciones de toque de banda. Si align_htf() propaga valores M30/H4 del cierre del bar M30/H4 que contiene al bar M5 actual y ese bar M30/H4 todavia no ha cerrado, existe un potencial lookforward bias donde la señal usa el precio de cierre M30 futuro.",
+          "code": "df = align_htf(df_m5, df_h4, ['ema200'], 'h4')\ndf = align_htf(df, df_m30, ['bb_lower', 'bb_mid', 'bb_upper', 'rsi14', 'atr14'], 'm30')\n# ...\nlong_cond = (\n    (prev['low'] <= prev['m30_bb_lower']) &\n    (prev['m30_rsi14'] < 30) &\n    (df['close'] > df['m30_bb_lower']) &  # usa bb_lower del bar M30 actual\n    (df['close'] > df['h4_ema200'])\n)",
+          "fix": "# Verificar que align_htf use method='ffill' con shift hacia atras (forward fill del cierre anterior)\n# El valor M30 en el bar M5[i] debe ser el cierre del bar M30 que CERRO antes de M5[i]\n# Confirmar en shared/indicators.py que resample_to_tf y align_htf no usan datos futuros\n# Una solucion segura es:\ndf_m30_shifted = df_m30.shift(1)  # usar solo barras M30 ya cerradas\ndf = align_htf(df_m5, df_m30_shifted, ['bb_lower', ...], 'm30')",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "engine.close_all() dentro del loop puede cerrar posiciones antes de process_bar()",
+          "desc": "En el loop principal de backtest.py, cuando !SESSION, se llama engine.close_all() y luego se ejecuta continue sin llamar engine.process_bar(). Esto es correcto para el cierre. Sin embargo, el orden importa: si una posicion alcanzo TP/SL en el bar actual ANTES del cierre de sesion, process_bar() nunca se llama y el trade podria quedar sin el precio correcto de cierre por TP/SL — cerrando siempre al precio del bar 20:00 en lugar del precio exacto de SL/TP.",
+          "code": "for i in range(1, len(df)):\n    bar  = df.iloc[i]\n    ...\n    if not (SESSION_START <= time.hour < SESSION_END):\n        engine.close_all(bar, reason='SESSION')\n        continue  # process_bar() nunca se llama\n    \n    engine.process_bar(bar)  # solo se llama si estamos en sesion",
+          "fix": "# Llamar process_bar() antes de evaluar el cierre de sesion\n# para que SL/TP intrabar tengan prioridad sobre cierre de sesion\nfor i in range(1, len(df)):\n    bar = df.iloc[i]\n    engine.process_bar(bar)  # primero procesar SL/TP\n    \n    if not (SESSION_START <= time.hour < SESSION_END):\n        engine.close_all(bar, reason='SESSION')\n        continue\n    \n    if prev['signal'] != 0:\n        engine.open_trade(...)",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "BOM character en CSV puede causar error de lectura si se usa como nombre de columna directo",
+          "desc": "Todos los CSVs tienen BOM (\\ufeff) en la primera columna: '\\ufeffentry_time'. Si el consumidor del CSV usa df['entry_time'] sin gestionar el BOM, obtendrá KeyError. El pre-análisis confirma este patron en los 5 archivos CSV.",
+          "code": "# En el CSV:\n'\\ufeffentry_time',exit_time,direction,...\n# Si se lee con:\ndf = pd.read_csv('trades.csv')\ndf['entry_time']  # KeyError! La columna real es '\\ufeffentry_time'",
+          "fix": "# Leer el CSV con encoding que gestione el BOM:\ndf = pd.read_csv('trades.csv', encoding='utf-8-sig')\n# O especificar explicitamente:\ndf = pd.read_csv('trades.csv', encoding='utf-8-sig', parse_dates=['entry_time', 'exit_time'])",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "Ausencia total de costos en backtest invalida la evaluacion — los numeros son ficticios",
+          "desc": "Todos los reportes muestran: spread=0pts, deslizamiento_pts=0, comision_pct=0.0000%. Para una estrategia M5 con entradas en el open del bar siguiente, el costo de spread es critico. Con spread real de IT40 de 1000pts y precio ~47000, el spread representa ~2.1% por operacion de ida y vuelta — lo que convierte cualquier resultado positivo en negativo instantaneamente. El XAGUSD con spread de 36pts y precio ~75 implica ~0.048% por trade, lo que sobre los 65 trades del periodo representa ~3.1% de costo adicional total.",
+          "code": "# En el reporte HTML:\n# spread: 0pts\n# deslizamiento_pts: 0\n# comision_pct: 0.0000%\n# Costo: Sin costos\n\n# Pero los valores reales del instrumento son:\n# IT40: Spread act. 1000 pts\n# XAGUSD: Spread act. 36 pts\n# XAUUSD: Spread act. 15 pts",
+          "fix": "# En backtest.py, al llamar run(), pasar un cost_model real:\ncost_model = {\n    'XAUUSD': {'spread_pts': 15, 'slip_pts': 3, 'commission_pct': 0.0},\n    'XAGUSD': {'spread_pts': 36, 'slip_pts': 5, 'commission_pct': 0.0},\n    'NETH25': {'spread_pts': 20, 'slip_pts': 3, 'commission_pct': 0.0},\n    'SE30':   {'spread_pts': 44, 'slip_pts': 5, 'commission_pct': 0.0},\n    'IT40':   {'spread_pts': 1000, 'slip_pts': 50, 'commission_pct': 0.0},\n}\nm, t = run(sym, cost_model=cost_model[sym])",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "ausencia",
+          "title": "Sin limite de perdida diaria ni circuit breaker — rachas de SL se acumulan sin control",
+          "desc": "El sistema no tiene ningun mecanismo que detenga las entradas despues de N perdidas consecutivas o despues de alcanzar un porcentaje de perdida diaria. Esto permite que en un dia de tendencia fuerte el engine acumule 4 posiciones perdedoras seguidas (-8% efectivo) y continue abriendo nuevas posiciones al dia siguiente si se generan señales. Se observan rachas de 7+ SL consecutivos en SE30.",
+          "code": "# En el loop actual no existe nada como:\n# if engine.daily_loss > 0.04: continue  # skip new entries\n# if engine.consecutive_losses > 3: continue\n\nengine.process_bar(bar)\nif prev['signal'] != 0:\n    engine.open_trade(...)  # siempre abre si hay señal",
+          "fix": "# Agregar en BacktestEngine o en el loop:\nMAX_DAILY_LOSS = 0.04  # 4% maximo diario\nMAX_CONSECUTIVE_LOSSES = 4\n\nif (engine.get_daily_pnl(date) < -MAX_DAILY_LOSS or\n    engine.consecutive_losses >= MAX_CONSECUTIVE_LOSSES):\n    continue  # no abrir nuevas posiciones",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "ausencia",
+          "title": "Sin filtro de volatilidad — la estrategia entra en mercados con ATR extremo",
+          "desc": "La estrategia no tiene ningun control sobre la volatilidad absoluta del mercado. Durante eventos de alta volatilidad (caidas bruscas de indices, movimientos rapidos de metales preciosos), el ATR se dispara y el SL calculado como bb_lower - 2*ATR puede quedar muy lejos del precio de entrada, aumentando el riesgo real por trade mucho mas alla del 2% nominal.",
+          "code": "# En generate_signals(), el SL se calcula sin verificar si el ATR es anormalmente alto:\ndf.loc[lm, 'sl'] = df.loc[lm, 'm30_bb_lower'] - 2 * df.loc[lm, 'm30_atr14']\n# Si ATR14 M30 es 5x su valor normal, el SL puede estar muy lejos\n# y el riesgo real por trade excede el 2% nominal",
+          "fix": "# Agregar filtro de ATR relativo antes de generar señal:\ndf_m30['atr_pct'] = df_m30['atr14'] / df_m30['close']\natr_normal = df_m30['atr_pct'].rolling(50).median()\nlow_vol_cond = df_m30['atr_pct'] < 2.0 * atr_normal  # solo operar con volatilidad normal\n# Incluir low_vol_cond (alineado a M5) en long_cond y short_cond",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "mejora",
+          "title": "SESSION_START hardcodeado a 01:00 UTC no es optimo para indices europeos",
+          "desc": "El horario de sesion SESSION_START=1 aplica por igual a todos los instrumentos. Para IT40, NETH25 y SE30, el horario optimo de operacion es tipicamente 08:00-17:30 UTC (horario europeo). Permitir entradas desde las 01:00 UTC en estos indices implica operar en horario asiatico con baja liquidez, spreads ampliados y movimientos no representativos del comportamiento europeo. Parametrizar el horario por instrumento mejoraria significativamente la calidad de las señales.",
+          "code": "# Configuracion actual en backtest.py:\nSESSION_START = 1  # aplica a todos\nSESSION_END   = 20\n\n# Y en el loop:\nif not (SESSION_START <= time.hour < SESSION_END):",
+          "fix": "# Parametrizar por instrumento:\nSESSION_CONFIG = {\n    'XAUUSD': (1, 20),   # metales: sesion amplia\n    'XAGUSD': (1, 20),\n    'IT40':   (8, 17),   # indices europeos: solo horario europeo\n    'NETH25': (8, 17),\n    'SE30':   (8, 17),\n    'XAUEUR': (1, 20),\n    'XAGEUR': (1, 20),\n}\nsess_start, sess_end = SESSION_CONFIG.get(symbol, (1, 20))\nif not (sess_start <= time.hour < sess_end):",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "strategy.py tiene 5 magic numbers no externalizados que contradicen la recomendacion R-09",
+          "desc": "Los hechos del pre-analisis confirman que strategy.py contiene los magic numbers 14, 20, 30, 70 y 200 hardcodeados directamente en el codigo (periodos RSI, BB, umbrales de sobrecompra/sobreventa y EMA). La recomendacion R-09 menciona estos valores pero los lista como ejemplos sin senalar que son un hallazgo de codigo verificado. Dado que strategy.py tiene complejidad ciclomatica cero (sin if_blocks ni loops), cualquier ajuste de estos parametros requiere editar el codigo fuente directamente, lo que hace imposible realizar optimizaciones sistematicas o pruebas de robustez parametrica sin riesgo de introducir errores. Esto es especialmente critico porque los resultados negativos en 4 de 5 instrumentos sugieren que los parametros actuales no son optimos.",
+          "code": "# En strategy.py (confirmado por pre-analisis):\n# magic_numbers: [14, 20, 30, 70, 200]\n# Ejemplo probable en el codigo:\ndf['rsi14'] = ta.rsi(df['close'], length=14)   # 14 hardcodeado\ndf['bb_upper'], df['bb_mid'], df['bb_lower'] = ta.bbands(df['close'], length=20)  # 20 hardcodeado\nlong_cond = rsi < 30  # 30 hardcodeado\nshort_cond = rsi > 70  # 70 hardcodeado\ndf['ema200'] = ta.ema(df['close'], length=200)  # 200 hardcodeado",
+          "fix": "# Crear un dataclass o dict de parametros en config.py:\nfrom dataclasses import dataclass\n\n@dataclass\nclass StrategyParams:\n    rsi_period: int = 14\n    bb_period: int = 20\n    rsi_oversold: int = 30\n    rsi_overbought: int = 70\n    ema_period: int = 200\n    atr_period: int = 14\n    atr_sl_mult: float = 2.0\n\n# En strategy.py:\ndef build_features(df_m5, df_m30, df_h4, params: StrategyParams = StrategyParams()):\n    ...",
+          "comment": ""
+        }
+      ],
       "versions": [
         "FILE-008"
-      ]
+      ],
+      "category": "Backtest | 5 instrumentos | ICMarkets MT5 | RSI+BB Mean Reversion M5",
+      "summary": "Sistema de reversión a la media RSI+Bollinger Bands en M5 con filtro de tendencia H4 EMA(200) y setup en M30, probado en 5 instrumentos (XAUUSD, XAGUSD, NETH25, SE30, IT40) con un total de 361 operaciones entre noviembre 2025 y mayo 2026. Los backtests se ejecutaron completamente sin costos (spread=0, slippage=0, comisión=0%), lo que invalida cualquier conclusión sobre rentabilidad real. Los resultados son mayoritariamente negativos: 4 de 5 instrumentos presentan retorno total negativo, win rate entre 25-48%, y drawdowns que superan ampliamente el objetivo del 10%; solo XAGUSD muestra un resultado levemente positivo y dentro del drawdown target.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Condiciones mixtas para el bot RSI+BB: VIX en zona normal favorece la reversión a la media, pero eventos macroeconómicos de alto impacto hoy (datos laborales USD y CAD, Bailey BoE) exigen precaución especial en los índices europeos y metales durante la apertura de Londres.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "Eventos macro críticos hoy a las 08:30 ET",
+            "desc": "A las 08:30 ET (12:30 UTC) se publican Average Hourly Earnings USD (prev 0.2%, est 0.3%), Employment Change CAD y Unemployment Rate CAD. Simultáneamente habla el gobernador Bailey del BoE. Estos catalizadores pueden generar picos de volatilidad abruptos que invalidan las señales de reversión a la media en M5. Pausa el bot en XAUUSD, XAGUSD, IT40, SE30 y NETH25 desde las 12:15 UTC hasta las 13:00 UTC. Reanuda solo si el spread vuelve a niveles normales y el precio no se aleja mas de 1 ATR(14) del BB medio en M5.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "Bailey BoE habla: riesgo en índices europeos",
+            "desc": "El gobernador Bailey tiene declaraciones programadas a las 08:20 ET (12:20 UTC). Sus comentarios sobre política monetaria pueden mover bruscamente IT40, SE30 y NETH25 al amplificar o contradecir el sentimiento post-datos laborales. El bot no tiene filtro de noticias incorporado. Desactiva manualmente los tres índices europeos entre 12:15 y 13:15 UTC. Si tras el evento el precio regresa al BB medio con RSI en zona de reversión sin momentum extendido, se puede reactivar.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "COT oro: posicionamiento especulativo extremo largo",
+            "desc": "El informe COT al 28 de abril muestra net long de 153.504 contratos en XAU, con longs en 204.559 frente a shorts en 51.055. Este nivel de concentracion especulativa larga es históricamente elevado e implica riesgo de corrección brusca si aparece cualquier catalizador bajista (datos USD fuertes hoy). Para XAUUSD y XAGUSD, el bot opera en M5 con filtro H4 EMA(200): verifica que la EMA(200) H4 en XAUUSD soporte el sesgo bajista antes de tomar señales de reversión al alza; si el precio rompe soporte clave, desactiva entradas long hasta confirmar estabilización.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "VIX en zona normal: entorno favorable para reversión",
+            "desc": "El VIX se ubica en 17.08 (baja desde 17.39), dentro del régimen normal. Históricamente, valores de VIX entre 15 y 20 son óptimos para estrategias de reversión a la media ya que la volatilidad es predecible y los rangos de Bollinger Bands son estables. Una vez superados los eventos macro de hoy (después de las 13:15 UTC), el entorno de baja volatilidad relativa es favorable para operar XAGUSD, el único instrumento con resultado positivo en backtest. Prioriza ese par durante la sesión de Nueva York post-datos.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "XAGUSD: único instrumento con backtest positivo",
+            "desc": "Dentro del universo de 5 instrumentos, XAGUSD es el único con retorno total positivo y drawdown dentro del objetivo del 10% en el backtest. El COT muestra sesgo bullish en XAU (correlacionado con XAG). Con VIX estable y ausencia de eventos macro directos sobre plata, XAGUSD es el instrumento prioritario para operar hoy en las ventanas post-noticias. Confirma que el filtro H4 EMA(200) permite entradas y que el RSI en M5 esté en zona de sobreventa o sobrecompra antes de ejecutar.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "Contexto macro: NFP y CPI sin señales de alarma",
+            "desc": "Los últimos datos BLS disponibles muestran nóminas no agrícolas de 158.637K en marzo 2026 y CPI en 330.213. Sin datos de DXY ni curva de rendimientos disponibles hoy, no es posible evaluar el sesgo del dólar con precisión. El sentimiento cripto (Fear & Greed en 38, zona de miedo) no es directamente relevante para este bot, pero refleja aversión al riesgo global moderada que puede presionar ligeramente los índices europeos. Mantén el bot con tamaños de posición estándar y no incrementes el riesgo por operación mas allá del parametro definido en el backtest.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-08T02:18:24Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 17.08,
+            "prev": 17.39,
+            "change": -0.31,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 38,
+            "label": "Fear",
+            "prev": 47
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Cash Rate",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "4.35%",
+              "previous": "4.10%"
+            },
+            {
+              "event": "RBA Monetary Policy Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Rate Statement",
+              "currency": "AUD",
+              "date": "2026-05-05T00:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "RBA Press Conference",
+              "currency": "AUD",
+              "date": "2026-05-05T01:30:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "ISM Services PMI",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "53.7",
+              "previous": "54.0"
+            },
+            {
+              "event": "JOLTS Job Openings",
+              "currency": "USD",
+              "date": "2026-05-05T10:00:00-04:00",
+              "time": "",
+              "forecast": "6.86M",
+              "previous": "6.88M"
+            },
+            {
+              "event": "Employment Change q/q",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "NZD",
+              "date": "2026-05-05T18:45:00-04:00",
+              "time": "",
+              "forecast": "5.4%",
+              "previous": "5.4%"
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-05-08T08:20:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Employment Change",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "12.9K",
+              "previous": "14.1K"
+            },
+            {
+              "event": "Unemployment Rate",
+              "currency": "CAD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "6.7%",
+              "previous": "6.7%"
+            },
+            {
+              "event": "Average Hourly Earnings m/m",
+              "currency": "USD",
+              "date": "2026-05-08T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158637",
+              "date": "2026-03"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": 2339,
+              "long": 192030,
+              "short": 189691,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -109383,
+              "long": 100712,
+              "short": 210095,
+              "bias": "bearish",
+              "date": "2026-04-28"
+            },
+            "XAU": {
+              "net": 153504,
+              "long": 204559,
+              "short": 51055,
+              "bias": "bullish",
+              "date": "2026-04-28"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-08T02:18:24Z"
+        }
+      }
     }
   ],
   "folders": [
