@@ -374,7 +374,27 @@ function loadExample() {
   });
   chatHistory.length = 0;
   document.getElementById('chat-msgs').innerHTML = '';
-  addMsg('sys', 'Ejemplo cargado: RSI Divergencia MR · EURUSD/GBPUSD/USDJPY/AUDUSD · M15 · 14/14 campos completos.\nHacé clic en "⚡ Generar Estrategia + Backtest" para iniciar los 3 passes.');
+  const labels = {
+    'instrumentos' : 'Instrumentos',
+    'hipotesis'    : 'Hipótesis',
+    'direccion'    : 'Dirección',
+    'tf-entrada'   : 'TF entrada',
+    'tf-apoyo'     : 'TF apoyo',
+    'sesion'       : 'Sesión',
+    'senal'        : 'Señal',
+    'ejecucion'    : 'Ejecución',
+    'sl'           : 'Stop Loss',
+    'tp'           : 'Take Profit',
+    'timeout'      : 'Timeout',
+    'filtros'      : 'Filtros',
+    'params-fijos' : 'Params fijos',
+    'params-opt'   : 'Params optimizables',
+  };
+  const lines = ['RSI Divergencia MR — spec completa\n'];
+  FIELDS.forEach(f => {
+    lines.push((labels[f] || f) + ': ' + (ex[f] || '—'));
+  });
+  addMsg('bot', lines.join('\n'));
   updateProgress();
 }
 
