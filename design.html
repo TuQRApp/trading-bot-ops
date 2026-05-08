@@ -233,6 +233,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         </div>
       </div>
 
+      <div class="ctx-section" id="saved-specs-section" style="display:none">
+        <div class="ctx-section-title">Specs guardadas</div>
+        <div id="saved-specs-list"></div>
+      </div>
+
       <div class="ctx-section">
         <div class="ctx-section-title">Mi contexto</div>
         <div class="ctx-drop" id="ctx-drop"
@@ -443,6 +448,65 @@ function populateAutoCtx() {
   const tp = dataJson.trader_profile;
   if (tp && tp.cycles >= 2)
     document.getElementById('ctx-perfil-badge').textContent = `${tp.cycles} ciclos`;
+
+  renderSavedSpecs();
+}
+
+function renderSavedSpecs() {
+  const specs = dataJson?.bot_specs || [];
+  const section = document.getElementById('saved-specs-section');
+  const list    = document.getElementById('saved-specs-list');
+  if (!specs.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = specs.map((s, i) =>
+    `<div class="ctx-toggle" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer" onclick="loadSavedSpec(${i})">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <span style="font-size:11.5px;font-weight:600;color:var(--text)">${s.name || s.id}</span>
+        <span class="ctx-badge">${s.created || s.status || 'draft'}</span>
+      </div>
+      ${s.summary ? `<span style="font-size:10px;color:var(--muted);line-height:1.4">${s.summary.slice(0,90)}…</span>` : ''}
+    </div>`
+  ).join('');
+}
+
+function loadSavedSpec(i) {
+  const s = (dataJson?.bot_specs || [])[i];
+  if (!s) return;
+  const fieldMap = {
+    'instrumentos':'instrumentos','hipotesis':'hipotesis','direccion':'direccion',
+    'tf_entrada':'tf-entrada','tf_apoyo':'tf-apoyo','sesion':'sesion',
+    'senal':'senal','ejecucion':'ejecucion','sl':'sl','tp':'tp',
+    'timeout':'timeout','filtros':'filtros','params_fijos':'params-fijos','params_opt':'params-opt',
+  };
+  const spec = s.spec || {};
+  let loaded = 0;
+  Object.entries(fieldMap).forEach(([srcKey, fid]) => {
+    const val = spec[srcKey] || spec[fid];
+    if (val && val !== 'NO_CONSIDERAR') {
+      specState[fid] = { value: val, noConsiderar: false };
+      loaded++;
+    } else if (val === 'NO_CONSIDERAR') {
+      specState[fid] = { value: null, noConsiderar: true };
+      loaded++;
+    }
+  });
+  chatHistory.length = 0;
+  document.getElementById('chat-msgs').innerHTML = '';
+  const labels = {
+    'instrumentos':'Instrumentos','hipotesis':'Hipótesis','direccion':'Dirección',
+    'tf-entrada':'TF entrada','tf-apoyo':'TF apoyo','sesion':'Sesión',
+    'senal':'Señal','ejecucion':'Ejecución','sl':'Stop Loss','tp':'Take Profit',
+    'timeout':'Timeout','filtros':'Filtros','params-fijos':'Params fijos','params-opt':'Params optimizables',
+  };
+  const lines = [`${s.name || s.id} — spec recuperada (${s.created || 'draft'})\n`];
+  FIELDS.forEach(f => {
+    const st = specState[f];
+    lines.push((labels[f] || f) + ': ' + (st.noConsiderar ? 'No aplica' : st.value || '—'));
+  });
+  addMsg('bot', lines.join('\n'));
+  updateProgress();
+  const wrap = document.getElementById('generar-wrap');
+  wrap.innerHTML = `<div style="padding:9px;border-radius:7px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.3);font-family:var(--mono);font-size:11px;color:var(--trader);text-align:center">✓ Estrategia guardada — siguiente paso: Fase 2 (correr backtest)</div>`;
 }
 
 // ── Contexto auto ───────────────────────────────────────────
