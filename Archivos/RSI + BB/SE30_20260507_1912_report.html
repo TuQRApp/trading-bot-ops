@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtest — RSI+BB Mean Reversion | SE30</title>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: #0d1117; color: #c9d1d9;
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    font-size: 14px; padding: 24px;
+}
+h1 { font-size: 22px; color: #58a6ff; font-weight: 600; }
+h2 { font-size: 15px; color: #8b949e; font-weight: 500;
+     text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.header { border-bottom: 1px solid #21262d; padding-bottom: 16px; margin-bottom: 24px; }
+.header p { color: #8b949e; font-size: 13px; margin-top: 4px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
+         font-size: 12px; font-weight: 600; margin-right: 6px; }
+.badge-blue { background: #1f3a5f; color: #58a6ff; }
+.badge-green { background: #1a3a2a; color: #3fb950; }
+.badge-yellow { background: #3a2f1a; color: #d29922; }
+
+/* Metrics grid */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 12px; margin-bottom: 28px; }
+.metric-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px;
+               padding: 14px 16px; }
+.metric-label { font-size: 11px; color: #8b949e; text-transform: uppercase;
+                letter-spacing: 0.5px; margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 700; }
+.metric-target { font-size: 11px; color: #8b949e; margin-top: 4px; }
+.green  { color: #3fb950; }
+.red    { color: #f85149; }
+.yellow { color: #d29922; }
+.white  { color: #e6edf3; }
+
+/* Cost breakdown */
+.cost-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+.cost-table th { background: #161b22; padding: 10px 14px; text-align: left;
+                  color: #8b949e; font-size: 12px; font-weight: 600;
+                  text-transform: uppercase; border-bottom: 2px solid #21262d; }
+.cost-table td { padding: 10px 14px; border-bottom: 1px solid #21262d; }
+.cost-table tr:hover td { background: #161b22; }
+
+/* Charts */
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-box { background: #161b22; border: 1px solid #21262d; border-radius: 8px;
+             padding: 16px; }
+.chart-full { background: #161b22; border: 1px solid #21262d; border-radius: 8px;
+              padding: 16px; margin-bottom: 24px; }
+.section-title { font-size: 13px; color: #8b949e; font-weight: 600;
+                 text-transform: uppercase; letter-spacing: 0.8px;
+                 margin-bottom: 14px; padding-bottom: 8px;
+                 border-bottom: 1px solid #21262d; }
+
+/* Monthly table */
+.monthly-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.monthly-table th { background: #161b22; padding: 8px 10px; text-align: center;
+                    color: #8b949e; border: 1px solid #21262d; }
+.monthly-table td { padding: 8px 10px; text-align: center; border: 1px solid #21262d;
+                    font-weight: 600; }
+
+/* Trade log */
+.trade-table-wrap { overflow-x: auto; margin-bottom: 24px; }
+table.trade-log { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.trade-log th { background: #161b22; padding: 8px 12px; text-align: left;
+                     color: #8b949e; border-bottom: 2px solid #21262d;
+                     cursor: pointer; user-select: none; white-space: nowrap; }
+table.trade-log th:hover { color: #58a6ff; }
+table.trade-log td { padding: 7px 12px; border-bottom: 1px solid #21262d;
+                     white-space: nowrap; }
+table.trade-log tr:hover td { background: #161b22; }
+.dir-long  { color: #3fb950; font-weight: 600; }
+.dir-short { color: #f85149; font-weight: 600; }
+.pnl-pos   { color: #3fb950; font-weight: 600; }
+.pnl-neg   { color: #f85149; font-weight: 600; }
+.reason-sl  { color: #f85149; }
+.reason-tp  { color: #3fb950; }
+.reason-tm  { color: #d29922; }
+.search-bar { width: 100%; padding: 8px 14px; background: #161b22;
+              border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;
+              font-size: 13px; margin-bottom: 12px; outline: none; }
+.search-bar:focus { border-color: #58a6ff; }
+.pagination { display: flex; gap: 8px; align-items: center;
+              justify-content: flex-end; margin-top: 12px; }
+.page-btn { padding: 5px 12px; background: #21262d; border: 1px solid #30363d;
+            border-radius: 5px; color: #c9d1d9; cursor: pointer; font-size: 12px; }
+.page-btn:hover { background: #30363d; }
+.page-info { color: #8b949e; font-size: 12px; }
+footer { text-align: center; color: #484f58; font-size: 11px;
+         margin-top: 32px; padding-top: 16px; border-top: 1px solid #21262d; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>RSI+BB Mean Reversion &nbsp;|&nbsp; SE30</h1>
+  <p>
+    <span class="badge badge-blue">ICMarkets MT5</span>
+    <span class="badge badge-green">2025-11-13 → 2026-05-07</span>
+    <span class="badge badge-yellow">67 trades</span>
+  </p>
+  <p style="margin-top:8px;font-size:12px;color:#484f58">
+    Generado: 2026-05-07 19:12 &nbsp;·&nbsp; Costo: Sin costos
+  </p>
+</div>
+
+<!-- METRICS -->
+<h2>Métricas de Performance</h2>
+<div class="metrics-grid">
+<div class="metric-card">
+  <div class="metric-label">Win Rate</div>
+  <div class="metric-value red">37.3%</div>
+  <div class="metric-target">Target ≥65%  ✗</div>
+</div>
+<div class="metric-card">
+  <div class="metric-label">Profit Factor</div>
+  <div class="metric-value red">0.49</div>
+  <div class="metric-target">Target ≥2.0  ✗</div>
+</div>
+<div class="metric-card">
+  <div class="metric-label">Max Drawdown</div>
+  <div class="metric-value red">29.93%</div>
+  <div class="metric-target">Target <10%  ✗</div>
+</div>
+<div class="metric-card">
+  <div class="metric-label">Sharpe Ratio</div>
+  <div class="metric-value red">-40.87</div>
+  
+</div>
+<div class="metric-card">
+  <div class="metric-label">Retorno Total</div>
+  <div class="metric-value red">-25.43%</div>
+  
+</div>
+<div class="metric-card">
+  <div class="metric-label">Total Trades</div>
+  <div class="metric-value white">67</div>
+  
+</div>
+<div class="metric-card">
+  <div class="metric-label">Avg Win</div>
+  <div class="metric-value green">1.081%</div>
+  
+</div>
+<div class="metric-card">
+  <div class="metric-label">Avg Loss</div>
+  <div class="metric-value red">1.324%</div>
+  
+</div>
+<div class="metric-card">
+  <div class="metric-label">Expectancy</div>
+  <div class="metric-value red">-0.427%</div>
+  
+</div></div>
+
+<!-- COST COMPARISON -->
+<h2>Impacto de Costos &amp; Info del Instrumento</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">
+  <div class="chart-box">
+    <div class="section-title">Bruto vs Neto</div>
+    <table class="cost-table">
+      <thead><tr><th>Métrica</th><th style="color:#58a6ff">Bruto</th><th style="color:#3fb950">Neto</th></tr></thead>
+      <tbody><tr><td>Win Rate (%)</td><td class="green">37.3</td><td class="yellow">37.3</td></tr><tr><td>Profit Factor</td><td class="green">0.49</td><td class="yellow">0.49</td></tr><tr><td>Max Drawdown (%)</td><td class="green">29.93</td><td class="yellow">29.93</td></tr><tr><td>Sharpe Ratio</td><td class="green">-40.87</td><td class="yellow">-40.87</td></tr><tr><td>Retorno Total (%)</td><td class="green">-25.43</td><td class="yellow">-25.43</td></tr><tr><td>Total Trades</td><td class="green">67</td><td class="yellow">67</td></tr></tbody>
+    </table>
+  </div>
+  <div class="chart-box">
+    <div class="section-title">Instrumento &amp; Costos Aplicados</div>
+    <table class="cost-table">
+      <thead><tr><th>Parámetro</th><th colspan="2">Valor</th></tr></thead>
+      <tbody><tr><td>Símbolo</td><td colspan="2">SE30</td></tr><tr><td>Punto</td><td colspan="2">0.01</td></tr><tr><td>Spread act.</td><td colspan="2">44 pts</td></tr><tr><td>Swap long</td><td colspan="2">-0.184</td></tr><tr><td>Swap short</td><td colspan="2">0.151</td></tr><tr><td>Descripción</td><td colspan="2">Sweden 30 Index</td></tr><tr><td>nombre</td><td colspan="2">Sin costos</td></tr><tr><td>spread</td><td colspan="2">0pts</td></tr><tr><td>deslizamiento_pts</td><td colspan="2">0</td></tr><tr><td>comision_pct</td><td colspan="2">0.0000%</td></tr><tr><td>swap</td><td colspan="2">no aplica (intraday)</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EQUITY + DRAWDOWN -->
+<div class="charts-row">
+  <div class="chart-box"><div id="chart-equity" style="height:280px"></div></div>
+  <div class="chart-box"><div id="chart-dd" style="height:280px"></div></div>
+</div>
+
+<!-- HOURLY + EXITS -->
+<div class="charts-row">
+  <div class="chart-box"><div id="chart-hourly" style="height:280px"></div></div>
+  <div class="chart-box"><div id="chart-exits" style="height:280px"></div></div>
+</div>
+
+<!-- PNL DISTRIBUTION -->
+<div class="chart-full"><div id="chart-hist" style="height:220px"></div></div>
+
+<!-- MONTHLY RETURNS -->
+<div class="chart-full">
+  <div class="section-title">Retornos Mensuales</div>
+  
+<table class="monthly-table">
+  <thead><tr><th>Año</th><th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th><th>Anual</th></tr></thead>
+  <tbody><tr><td style="color:#c9d1d9;font-weight:600">2026</td><td style="background: rgba(248,81,73,0.00); color: #e6edf3;">-0.0%</td><td style="background: rgba(248,81,73,0.24); color: #e6edf3;">-4.1%</td><td style="background: rgba(248,81,73,0.71); color: #e6edf3;">-18.0%</td><td style="background: rgba(248,81,73,0.32); color: #e6edf3;">-5.5%</td><td style="background: rgba(248,81,73,0.12); color: #e6edf3;">-2.0%</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="background: rgba(248,81,73,0.71); color: #e6edf3;;font-weight:700">-29.6%</td></tr><tr><td style="color:#c9d1d9;font-weight:600">2025</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="color: #484f58;">—</td><td style="background: rgba(248,81,73,0.67); color: #e6edf3;">-11.4%</td><td style="background: rgba(63,185,80,0.71); color: #e6edf3;">+12.4%</td><td style="background: rgba(63,185,80,0.06); color: #e6edf3;;font-weight:700">+1.1%</td></tr></tbody>
+</table>
+</div>
+
+<!-- TRADE LOG -->
+<h2>Log de Trades (últimos 500)</h2>
+<input class="search-bar" id="tradeSearch" type="text"
+       placeholder="Filtrar por fecha, dirección, razón de salida...">
+<div class="trade-table-wrap">
+<table class="trade-log" id="tradeTable">
+  <thead>
+    <tr>
+      <th onclick="sortTable(0)">Entrada ↕</th>
+      <th onclick="sortTable(1)">Dir ↕</th>
+      <th onclick="sortTable(2)">Precio Entr.</th>
+      <th onclick="sortTable(3)">Precio Sal.</th>
+      <th onclick="sortTable(4)">Razón ↕</th>
+      <th onclick="sortTable(5)">P&amp;L Bruto ↕</th>
+      <th onclick="sortTable(6)">P&amp;L Neto ↕</th>
+      <th onclick="sortTable(7)">Barras ↕</th>
+      <th onclick="sortTable(8)">Salida ↕</th>
+    </tr>
+  </thead>
+  <tbody id="tradeBody"><tr><td>2026-05-07 17:00:00</td><td class="dir-long">LONG</td><td>3130.7</td><td>3112</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>13</td><td>2026-05-07 18:05:00</td></tr><tr><td>2026-04-28 15:05:00</td><td class="dir-long">LONG</td><td>3044.4</td><td>3046.6</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.177%</td><td class="pnl-pos">+0.177%</td><td>48</td><td>2026-04-29 10:45:00</td></tr><tr><td>2026-04-28 14:35:00</td><td class="dir-long">LONG</td><td>3055.3</td><td>3054</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.087%</td><td class="pnl-neg">-0.087%</td><td>48</td><td>2026-04-29 10:15:00</td></tr><tr><td>2026-04-28 11:15:00</td><td class="dir-long">LONG</td><td>3071.5</td><td>3053.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>39</td><td>2026-04-28 14:30:00</td></tr><tr><td>2026-04-28 11:10:00</td><td class="dir-long">LONG</td><td>3072.2</td><td>3053.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>40</td><td>2026-04-28 14:30:00</td></tr><tr><td>2026-04-28 10:40:00</td><td class="dir-long">LONG</td><td>3075.7</td><td>3057</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>45</td><td>2026-04-28 14:25:00</td></tr><tr><td>2026-04-28 10:35:00</td><td class="dir-long">LONG</td><td>3075.3</td><td>3057</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>46</td><td>2026-04-28 14:25:00</td></tr><tr><td>2026-04-23 13:35:00</td><td class="dir-long">LONG</td><td>3115.4</td><td>3135.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.623%</td><td class="pnl-pos">+1.623%</td><td>48</td><td>2026-04-23 17:35:00</td></tr><tr><td>2026-04-22 10:05:00</td><td class="dir-long">LONG</td><td>3152.7</td><td>3138.7</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.805%</td><td class="pnl-neg">-0.805%</td><td>48</td><td>2026-04-22 14:05:00</td></tr><tr><td>2026-04-21 18:20:00</td><td class="dir-long">LONG</td><td>3137.9</td><td>3143.5</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.562%</td><td class="pnl-pos">+0.562%</td><td>48</td><td>2026-04-22 14:00:00</td></tr><tr><td>2026-04-21 18:15:00</td><td class="dir-long">LONG</td><td>3136.4</td><td>3142.9</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.705%</td><td class="pnl-pos">+0.705%</td><td>48</td><td>2026-04-22 13:55:00</td></tr><tr><td>2026-04-16 10:40:00</td><td class="dir-long">LONG</td><td>3114</td><td>3118.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.471%</td><td class="pnl-pos">+0.471%</td><td>48</td><td>2026-04-16 14:40:00</td></tr><tr><td>2026-04-16 10:35:00</td><td class="dir-long">LONG</td><td>3113.6</td><td>3117.4</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.451%</td><td class="pnl-pos">+0.451%</td><td>48</td><td>2026-04-16 14:35:00</td></tr><tr><td>2026-04-16 10:20:00</td><td class="dir-long">LONG</td><td>3116.8</td><td>3116.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.084%</td><td class="pnl-neg">-0.084%</td><td>48</td><td>2026-04-16 14:20:00</td></tr><tr><td>2026-04-16 10:10:00</td><td class="dir-long">LONG</td><td>3120.7</td><td>3115.5</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.523%</td><td class="pnl-neg">-0.523%</td><td>48</td><td>2026-04-16 14:10:00</td></tr><tr><td>2026-03-31 13:00:00</td><td class="dir-short">SHORT</td><td>2922.9</td><td>2934.8</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.928%</td><td class="pnl-neg">-0.928%</td><td>48</td><td>2026-03-31 17:00:00</td></tr><tr><td>2026-03-31 11:35:00</td><td class="dir-short">SHORT</td><td>2917</td><td>2928.8</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.931%</td><td class="pnl-neg">-0.931%</td><td>48</td><td>2026-03-31 15:35:00</td></tr><tr><td>2026-03-31 11:30:00</td><td class="dir-short">SHORT</td><td>2917.7</td><td>2930.6</td><td class="reason-tm">TIME</td><td class="pnl-pos">-1.124%</td><td class="pnl-neg">-1.124%</td><td>48</td><td>2026-03-31 15:30:00</td></tr><tr><td>2026-03-25 12:35:00</td><td class="dir-short">SHORT</td><td>2951.3</td><td>2952.4</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.060%</td><td class="pnl-neg">-0.060%</td><td>48</td><td>2026-03-25 16:35:00</td></tr><tr><td>2026-03-06 16:45:00</td><td class="dir-long">LONG</td><td>3016.2</td><td>2980.9</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>21</td><td>2026-03-09 11:00:00</td></tr><tr><td>2026-03-06 16:35:00</td><td class="dir-long">LONG</td><td>3018.6</td><td>2980.9</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>23</td><td>2026-03-09 11:00:00</td></tr><tr><td>2026-03-06 16:30:00</td><td class="dir-long">LONG</td><td>3019.7</td><td>2986.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>24</td><td>2026-03-09 11:00:00</td></tr><tr><td>2026-03-06 16:05:00</td><td class="dir-long">LONG</td><td>3024</td><td>2986.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>29</td><td>2026-03-09 11:00:00</td></tr><tr><td>2026-03-06 14:05:00</td><td class="dir-long">LONG</td><td>3041.3</td><td>3011.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>30</td><td>2026-03-06 16:35:00</td></tr><tr><td>2026-03-06 12:00:00</td><td class="dir-long">LONG</td><td>3071.4</td><td>3039.8</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>25</td><td>2026-03-06 14:05:00</td></tr><tr><td>2026-03-06 10:05:00</td><td class="dir-long">LONG</td><td>3095.2</td><td>3053.3</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>43</td><td>2026-03-06 13:40:00</td></tr><tr><td>2026-03-05 18:15:00</td><td class="dir-long">LONG</td><td>3082.1</td><td>3057.1</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>46</td><td>2026-03-06 13:35:00</td></tr><tr><td>2026-03-03 12:35:00</td><td class="dir-long">LONG</td><td>3054.8</td><td>3078.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.202%</td><td class="pnl-pos">+1.202%</td><td>48</td><td>2026-03-03 16:35:00</td></tr><tr><td>2026-03-03 12:05:00</td><td class="dir-long">LONG</td><td>3075.4</td><td>3071.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.177%</td><td class="pnl-neg">-0.177%</td><td>48</td><td>2026-03-03 16:05:00</td></tr><tr><td>2026-02-17 11:35:00</td><td class="dir-long">LONG</td><td>3115.5</td><td>3098.8</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>18</td><td>2026-02-17 13:05:00</td></tr><tr><td>2026-02-17 11:05:00</td><td class="dir-long">LONG</td><td>3119.5</td><td>3100.8</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>22</td><td>2026-02-17 12:55:00</td></tr><tr><td>2026-02-17 10:55:00</td><td class="dir-long">LONG</td><td>3115.3</td><td>3102.5</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>22</td><td>2026-02-17 12:45:00</td></tr><tr><td>2026-02-17 10:50:00</td><td class="dir-long">LONG</td><td>3116.8</td><td>3102.5</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>23</td><td>2026-02-17 12:45:00</td></tr><tr><td>2026-02-13 12:00:00</td><td class="dir-long">LONG</td><td>3109.2</td><td>3111.3</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.228%</td><td class="pnl-pos">+0.228%</td><td>48</td><td>2026-02-13 16:00:00</td></tr><tr><td>2026-02-13 11:50:00</td><td class="dir-long">LONG</td><td>3110.8</td><td>3112.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.125%</td><td class="pnl-pos">+0.125%</td><td>48</td><td>2026-02-13 15:50:00</td></tr><tr><td>2026-02-13 11:35:00</td><td class="dir-long">LONG</td><td>3109.1</td><td>3109.3</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.021%</td><td class="pnl-pos">+0.021%</td><td>48</td><td>2026-02-13 15:35:00</td></tr><tr><td>2026-02-13 11:25:00</td><td class="dir-long">LONG</td><td>3113.5</td><td>3096.3</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>28</td><td>2026-02-13 13:45:00</td></tr><tr><td>2026-02-11 10:35:00</td><td class="dir-long">LONG</td><td>3133.5</td><td>3144.5</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.276%</td><td class="pnl-pos">+1.276%</td><td>48</td><td>2026-02-11 14:35:00</td></tr><tr><td>2026-02-11 10:30:00</td><td class="dir-long">LONG</td><td>3132</td><td>3146</td><td class="reason-tm">TIME</td><td class="pnl-pos">+2.040%</td><td class="pnl-pos">+2.040%</td><td>48</td><td>2026-02-11 14:30:00</td></tr><tr><td>2026-02-11 10:10:00</td><td class="dir-long">LONG</td><td>3131</td><td>3145.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">+2.216%</td><td class="pnl-pos">+2.216%</td><td>48</td><td>2026-02-11 14:10:00</td></tr><tr><td>2026-01-19 12:20:00</td><td class="dir-long">LONG</td><td>2979.7</td><td>2981.8</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.180%</td><td class="pnl-pos">+0.180%</td><td>48</td><td>2026-01-19 16:20:00</td></tr><tr><td>2026-01-19 12:15:00</td><td class="dir-long">LONG</td><td>2978.8</td><td>2980</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.109%</td><td class="pnl-pos">+0.109%</td><td>48</td><td>2026-01-19 16:15:00</td></tr><tr><td>2026-01-19 12:10:00</td><td class="dir-long">LONG</td><td>2976</td><td>2981.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.500%</td><td class="pnl-pos">+0.500%</td><td>48</td><td>2026-01-19 16:10:00</td></tr><tr><td>2026-01-19 12:05:00</td><td class="dir-long">LONG</td><td>2979.8</td><td>2981.3</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.119%</td><td class="pnl-pos">+0.119%</td><td>48</td><td>2026-01-19 16:05:00</td></tr><tr><td>2026-01-08 12:10:00</td><td class="dir-long">LONG</td><td>2940.3</td><td>2938.5</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.234%</td><td class="pnl-neg">-0.234%</td><td>48</td><td>2026-01-08 16:10:00</td></tr><tr><td>2026-01-08 12:05:00</td><td class="dir-long">LONG</td><td>2941.8</td><td>2941.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.091%</td><td class="pnl-neg">-0.091%</td><td>48</td><td>2026-01-08 16:05:00</td></tr><tr><td>2026-01-08 11:40:00</td><td class="dir-long">LONG</td><td>2943</td><td>2941.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.241%</td><td class="pnl-neg">-0.241%</td><td>48</td><td>2026-01-08 15:40:00</td></tr><tr><td>2026-01-08 11:35:00</td><td class="dir-long">LONG</td><td>2942.5</td><td>2940</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.350%</td><td class="pnl-neg">-0.350%</td><td>48</td><td>2026-01-08 15:35:00</td></tr><tr><td>2025-12-22 16:00:00</td><td class="dir-long">LONG</td><td>2830.3</td><td>2846.1</td><td class="reason-tp">TP2</td><td class="pnl-pos">+3.094%</td><td class="pnl-pos">+3.094%</td><td>29</td><td>2025-12-23 10:00:00</td></tr><tr><td>2025-12-22 15:55:00</td><td class="dir-long">LONG</td><td>2828.8</td><td>2846.1</td><td class="reason-tp">TP2</td><td class="pnl-pos">+3.968%</td><td class="pnl-pos">+3.968%</td><td>30</td><td>2025-12-23 10:00:00</td></tr><tr><td>2025-12-18 10:00:00</td><td class="dir-long">LONG</td><td>2791.7</td><td>2803.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">+2.386%</td><td class="pnl-pos">+2.386%</td><td>48</td><td>2025-12-18 14:00:00</td></tr><tr><td>2025-12-17 18:10:00</td><td class="dir-long">LONG</td><td>2795</td><td>2803.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.263%</td><td class="pnl-pos">+1.263%</td><td>48</td><td>2025-12-18 13:45:00</td></tr><tr><td>2025-12-17 18:05:00</td><td class="dir-long">LONG</td><td>2794.7</td><td>2802.7</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.279%</td><td class="pnl-pos">+1.279%</td><td>48</td><td>2025-12-18 13:40:00</td></tr><tr><td>2025-12-17 18:00:00</td><td class="dir-long">LONG</td><td>2794.9</td><td>2802.8</td><td class="reason-tm">TIME</td><td class="pnl-pos">+1.407%</td><td class="pnl-pos">+1.407%</td><td>48</td><td>2025-12-18 13:35:00</td></tr><tr><td>2025-12-17 14:05:00</td><td class="dir-long">LONG</td><td>2802</td><td>2795.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">-1.101%</td><td class="pnl-neg">-1.101%</td><td>48</td><td>2025-12-17 18:05:00</td></tr><tr><td>2025-12-15 10:05:00</td><td class="dir-long">LONG</td><td>2828.7</td><td>2837</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.965%</td><td class="pnl-pos">+0.965%</td><td>48</td><td>2025-12-15 14:05:00</td></tr><tr><td>2025-12-10 11:30:00</td><td class="dir-long">LONG</td><td>2798.5</td><td>2802.3</td><td class="reason-tm">TIME</td><td class="pnl-pos">+0.658%</td><td class="pnl-pos">+0.658%</td><td>48</td><td>2025-12-10 15:30:00</td></tr><tr><td>2025-12-10 11:05:00</td><td class="dir-long">LONG</td><td>2802</td><td>2800.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.266%</td><td class="pnl-neg">-0.266%</td><td>48</td><td>2025-12-10 15:05:00</td></tr><tr><td>2025-12-10 11:00:00</td><td class="dir-long">LONG</td><td>2804</td><td>2799</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.687%</td><td class="pnl-neg">-0.687%</td><td>48</td><td>2025-12-10 15:00:00</td></tr><tr><td>2025-12-10 10:50:00</td><td class="dir-long">LONG</td><td>2801.5</td><td>2798.2</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.544%</td><td class="pnl-neg">-0.544%</td><td>48</td><td>2025-12-10 14:50:00</td></tr><tr><td>2025-11-20 11:05:00</td><td class="dir-short">SHORT</td><td>2708.2</td><td>2711.1</td><td class="reason-tm">TIME</td><td class="pnl-pos">-0.290%</td><td class="pnl-neg">-0.290%</td><td>48</td><td>2025-11-20 15:05:00</td></tr><tr><td>2025-11-19 17:40:00</td><td class="dir-short">SHORT</td><td>2697.7</td><td>2713.5</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>10</td><td>2025-11-20 10:00:00</td></tr><tr><td>2025-11-19 17:35:00</td><td class="dir-short">SHORT</td><td>2699.5</td><td>2713.5</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>11</td><td>2025-11-20 10:00:00</td></tr><tr><td>2025-11-19 17:20:00</td><td class="dir-short">SHORT</td><td>2699.3</td><td>2712.4</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>14</td><td>2025-11-20 10:00:00</td></tr><tr><td>2025-11-19 17:05:00</td><td class="dir-short">SHORT</td><td>2697.8</td><td>2712.4</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>17</td><td>2025-11-20 10:00:00</td></tr><tr><td>2025-11-14 12:05:00</td><td class="dir-long">LONG</td><td>2741.3</td><td>2729.9</td><td class="reason-tm">TIME</td><td class="pnl-pos">-1.078%</td><td class="pnl-neg">-1.078%</td><td>48</td><td>2025-11-14 16:05:00</td></tr><tr><td>2025-11-13 17:40:00</td><td class="dir-long">LONG</td><td>2790</td><td>2778.7</td><td class="reason-sl">SL</td><td class="pnl-pos">-2.000%</td><td class="pnl-neg">-2.000%</td><td>10</td><td>2025-11-14 10:00:00</td></tr></tbody>
+</table>
+</div>
+<div class="pagination">
+  <span class="page-info" id="pageInfo"></span>
+  <button class="page-btn" onclick="changePage(-1)">◀ Prev</button>
+  <button class="page-btn" onclick="changePage(1)">Next ▶</button>
+</div>
+
+<footer>
+  Claude Bots — Backtest Engine v1.0 &nbsp;·&nbsp;
+  ICMarkets MT5 &nbsp;·&nbsp; 2026-05-07 19:12
+</footer>
+
+<script>
+// ── Chart rendering ─────────────────────────────────────────────────────────
+Plotly.newPlot('chart-equity', [{"x": ["2025-11-14 10:00:00", "2025-11-14 16:05:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 15:05:00", "2025-12-10 14:50:00", "2025-12-10 15:00:00", "2025-12-10 15:05:00", "2025-12-10 15:30:00", "2025-12-15 14:05:00", "2025-12-17 18:05:00", "2025-12-18 13:35:00", "2025-12-18 13:40:00", "2025-12-18 13:45:00", "2025-12-18 14:00:00", "2025-12-23 10:00:00", "2025-12-23 10:00:00", "2026-01-08 15:35:00", "2026-01-08 15:40:00", "2026-01-08 16:05:00", "2026-01-08 16:10:00", "2026-01-19 16:05:00", "2026-01-19 16:10:00", "2026-01-19 16:15:00", "2026-01-19 16:20:00", "2026-02-11 14:10:00", "2026-02-11 14:30:00", "2026-02-11 14:35:00", "2026-02-13 13:45:00", "2026-02-13 15:35:00", "2026-02-13 15:50:00", "2026-02-13 16:00:00", "2026-02-17 12:45:00", "2026-02-17 12:45:00", "2026-02-17 12:55:00", "2026-02-17 13:05:00", "2026-03-03 16:05:00", "2026-03-03 16:35:00", "2026-03-06 13:35:00", "2026-03-06 13:40:00", "2026-03-06 14:05:00", "2026-03-06 16:35:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-25 16:35:00", "2026-03-31 15:30:00", "2026-03-31 15:35:00", "2026-03-31 17:00:00", "2026-04-16 14:10:00", "2026-04-16 14:20:00", "2026-04-16 14:35:00", "2026-04-16 14:40:00", "2026-04-22 13:55:00", "2026-04-22 14:00:00", "2026-04-22 14:05:00", "2026-04-23 17:35:00", "2026-04-28 14:25:00", "2026-04-28 14:25:00", "2026-04-28 14:30:00", "2026-04-28 14:30:00", "2026-04-29 10:15:00", "2026-04-29 10:45:00", "2026-05-07 18:05:00"], "y": [9800.0, 9694.354574317176, 9500.467482830833, 9310.458133174216, 9124.248970510731, 8941.763991100515, 8915.821056542982, 8867.3223425596, 8806.418969144817, 8783.019987607588, 8840.783661806354, 8926.055812303528, 8827.768300911703, 8951.933273377246, 9066.400632069706, 9180.868811994702, 9399.91040320735, 9772.929649342337, 10075.261398827686, 10039.972617543748, 10015.782279055935, 10006.65812226676, 9983.224613337166, 9995.069687917521, 10045.03381991101, 10055.935956767906, 10074.024780782134, 10297.283051496901, 10507.361059080231, 10641.389975535825, 10428.562176025109, 10430.799841866974, 10443.824331418558, 10467.601067985242, 10258.249046625537, 10053.084065693025, 9852.022384379165, 9654.981936691582, 9637.90955759611, 9753.72633672279, 9558.651809988334, 9367.478773788567, 9180.129198312796, 8996.52661434654, 8816.596082059608, 8640.264160418415, 8467.458877210047, 8298.109699665845, 8293.12361748444, 8199.882549611764, 8123.522483676044, 8048.1395536014825, 8006.053075963134, 7999.359627071612, 8035.468681956047, 8073.315069651184, 8130.24493944231, 8175.945659961155, 8110.1352334123885, 8241.750899268769, 8076.915881283394, 7915.377563657726, 7757.070012384571, 7601.92861213688, 7595.285446442794, 7608.734810821964, 7456.560114605524], "type": "scatter", "mode": "lines", "name": "Bruto (sin costos)", "line": {"color": "#58a6ff", "width": 1.5, "dash": "dot"}}, {"x": ["2025-11-14 10:00:00", "2025-11-14 16:05:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 15:05:00", "2025-12-10 14:50:00", "2025-12-10 15:00:00", "2025-12-10 15:05:00", "2025-12-10 15:30:00", "2025-12-15 14:05:00", "2025-12-17 18:05:00", "2025-12-18 13:35:00", "2025-12-18 13:40:00", "2025-12-18 13:45:00", "2025-12-18 14:00:00", "2025-12-23 10:00:00", "2025-12-23 10:00:00", "2026-01-08 15:35:00", "2026-01-08 15:40:00", "2026-01-08 16:05:00", "2026-01-08 16:10:00", "2026-01-19 16:05:00", "2026-01-19 16:10:00", "2026-01-19 16:15:00", "2026-01-19 16:20:00", "2026-02-11 14:10:00", "2026-02-11 14:30:00", "2026-02-11 14:35:00", "2026-02-13 13:45:00", "2026-02-13 15:35:00", "2026-02-13 15:50:00", "2026-02-13 16:00:00", "2026-02-17 12:45:00", "2026-02-17 12:45:00", "2026-02-17 12:55:00", "2026-02-17 13:05:00", "2026-03-03 16:05:00", "2026-03-03 16:35:00", "2026-03-06 13:35:00", "2026-03-06 13:40:00", "2026-03-06 14:05:00", "2026-03-06 16:35:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-25 16:35:00", "2026-03-31 15:30:00", "2026-03-31 15:35:00", "2026-03-31 17:00:00", "2026-04-16 14:10:00", "2026-04-16 14:20:00", "2026-04-16 14:35:00", "2026-04-16 14:40:00", "2026-04-22 13:55:00", "2026-04-22 14:00:00", "2026-04-22 14:05:00", "2026-04-23 17:35:00", "2026-04-28 14:25:00", "2026-04-28 14:25:00", "2026-04-28 14:30:00", "2026-04-28 14:30:00", "2026-04-29 10:15:00", "2026-04-29 10:45:00", "2026-05-07 18:05:00"], "y": [9800.0, 9694.354574317176, 9500.467482830833, 9310.458133174216, 9124.248970510731, 8941.763991100515, 8915.821056542982, 8867.3223425596, 8806.418969144817, 8783.019987607588, 8840.783661806354, 8926.055812303528, 8827.768300911703, 8951.933273377246, 9066.400632069706, 9180.868811994702, 9399.91040320735, 9772.929649342337, 10075.261398827686, 10039.972617543748, 10015.782279055935, 10006.65812226676, 9983.224613337166, 9995.069687917521, 10045.03381991101, 10055.935956767906, 10074.024780782134, 10297.283051496901, 10507.361059080231, 10641.389975535825, 10428.562176025109, 10430.799841866974, 10443.824331418558, 10467.601067985242, 10258.249046625537, 10053.084065693025, 9852.022384379165, 9654.981936691582, 9637.90955759611, 9753.72633672279, 9558.651809988334, 9367.478773788567, 9180.129198312796, 8996.52661434654, 8816.596082059608, 8640.264160418415, 8467.458877210047, 8298.109699665845, 8293.12361748444, 8199.882549611764, 8123.522483676044, 8048.1395536014825, 8006.053075963134, 7999.359627071612, 8035.468681956047, 8073.315069651184, 8130.24493944231, 8175.945659961155, 8110.1352334123885, 8241.750899268769, 8076.915881283394, 7915.377563657726, 7757.070012384571, 7601.92861213688, 7595.285446442794, 7608.734810821964, 7456.560114605524], "type": "scatter", "mode": "lines", "name": "Neto (con costos)", "line": {"color": "#3fb950", "width": 2}}], {"paper_bgcolor": "#161b22", "plot_bgcolor": "#161b22", "font": {"color": "#8b949e", "family": "Segoe UI, sans-serif", "size": 12}, "xaxis": {"gridcolor": "#21262d", "linecolor": "#30363d", "showgrid": true}, "yaxis": {"title": "Equity (USD)"}, "margin": {"l": 50, "r": 20, "t": 30, "b": 40}, "legend": {"bgcolor": "rgba(0,0,0,0)", "bordercolor": "#30363d"}, "hovermode": "x unified", "title": {"text": "Curva de Equity", "font": {"color": "#c9d1d9", "size": 14}}}, {responsive: true, displayModeBar: false});
+Plotly.newPlot('chart-dd', [{"x": ["2025-11-14 10:00:00", "2025-11-14 16:05:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 15:05:00", "2025-12-10 14:50:00", "2025-12-10 15:00:00", "2025-12-10 15:05:00", "2025-12-10 15:30:00", "2025-12-15 14:05:00", "2025-12-17 18:05:00", "2025-12-18 13:35:00", "2025-12-18 13:40:00", "2025-12-18 13:45:00", "2025-12-18 14:00:00", "2025-12-23 10:00:00", "2025-12-23 10:00:00", "2026-01-08 15:35:00", "2026-01-08 15:40:00", "2026-01-08 16:05:00", "2026-01-08 16:10:00", "2026-01-19 16:05:00", "2026-01-19 16:10:00", "2026-01-19 16:15:00", "2026-01-19 16:20:00", "2026-02-11 14:10:00", "2026-02-11 14:30:00", "2026-02-11 14:35:00", "2026-02-13 13:45:00", "2026-02-13 15:35:00", "2026-02-13 15:50:00", "2026-02-13 16:00:00", "2026-02-17 12:45:00", "2026-02-17 12:45:00", "2026-02-17 12:55:00", "2026-02-17 13:05:00", "2026-03-03 16:05:00", "2026-03-03 16:35:00", "2026-03-06 13:35:00", "2026-03-06 13:40:00", "2026-03-06 14:05:00", "2026-03-06 16:35:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-25 16:35:00", "2026-03-31 15:30:00", "2026-03-31 15:35:00", "2026-03-31 17:00:00", "2026-04-16 14:10:00", "2026-04-16 14:20:00", "2026-04-16 14:35:00", "2026-04-16 14:40:00", "2026-04-22 13:55:00", "2026-04-22 14:00:00", "2026-04-22 14:05:00", "2026-04-23 17:35:00", "2026-04-28 14:25:00", "2026-04-28 14:25:00", "2026-04-28 14:30:00", "2026-04-28 14:30:00", "2026-04-29 10:15:00", "2026-04-29 10:45:00", "2026-05-07 18:05:00"], "y": [0.0, -1.078014547783916, -3.0564542568282396, -4.995325171691677, -6.895418668257848, -8.7575102948927, -9.022234116908349, -9.517118953473462, -10.138581947501864, -10.377347065228697, -9.787921818302511, -8.91779783363747, -9.920731623349972, -8.653742108395447, -7.485707836023406, -6.317665183727532, -4.082546906047448, -0.2762280679353353, 0.0, -0.3502517690314628, -0.590348154924021, -0.6809081555830345, -0.9134927804575754, -0.7959268522749774, -0.3000178131377635, -0.19181082549410675, -0.012273806074111757, 0.0, 0.0, 0.0, -1.9999999999999993, -1.9789720530211785, -1.8565774261770616, -1.6331410459546847, -3.6004782250355993, -5.528468660534897, -7.417899287324198, -9.26954130157771, -9.42997503377549, -8.341613650601495, -10.174781377589461, -11.971285750037676, -13.731860035036924, -15.457222834336187, -17.14807837764947, -18.805116810096486, -20.429014473894558, -22.020434184416672, -22.067289737994432, -22.943501098418526, -23.661077149209532, -24.36947079184329, -24.7649687271234, -24.827868864294484, -24.488542376237486, -24.132889705090722, -23.5979044266449, -23.168442480189512, -23.78688073590669, -22.550052970370793, -24.099051910963375, -25.61707087274411, -27.104729455289235, -28.562634866183444, -28.625062478641578, -28.498675188916362, -29.928701685138044], "type": "scatter", "mode": "lines", "fill": "tozeroy", "name": "Bruto", "line": {"color": "#58a6ff", "width": 1}, "fillcolor": "rgba(88,166,255,0.1)"}, {"x": ["2025-11-14 10:00:00", "2025-11-14 16:05:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 10:00:00", "2025-11-20 15:05:00", "2025-12-10 14:50:00", "2025-12-10 15:00:00", "2025-12-10 15:05:00", "2025-12-10 15:30:00", "2025-12-15 14:05:00", "2025-12-17 18:05:00", "2025-12-18 13:35:00", "2025-12-18 13:40:00", "2025-12-18 13:45:00", "2025-12-18 14:00:00", "2025-12-23 10:00:00", "2025-12-23 10:00:00", "2026-01-08 15:35:00", "2026-01-08 15:40:00", "2026-01-08 16:05:00", "2026-01-08 16:10:00", "2026-01-19 16:05:00", "2026-01-19 16:10:00", "2026-01-19 16:15:00", "2026-01-19 16:20:00", "2026-02-11 14:10:00", "2026-02-11 14:30:00", "2026-02-11 14:35:00", "2026-02-13 13:45:00", "2026-02-13 15:35:00", "2026-02-13 15:50:00", "2026-02-13 16:00:00", "2026-02-17 12:45:00", "2026-02-17 12:45:00", "2026-02-17 12:55:00", "2026-02-17 13:05:00", "2026-03-03 16:05:00", "2026-03-03 16:35:00", "2026-03-06 13:35:00", "2026-03-06 13:40:00", "2026-03-06 14:05:00", "2026-03-06 16:35:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-09 11:00:00", "2026-03-25 16:35:00", "2026-03-31 15:30:00", "2026-03-31 15:35:00", "2026-03-31 17:00:00", "2026-04-16 14:10:00", "2026-04-16 14:20:00", "2026-04-16 14:35:00", "2026-04-16 14:40:00", "2026-04-22 13:55:00", "2026-04-22 14:00:00", "2026-04-22 14:05:00", "2026-04-23 17:35:00", "2026-04-28 14:25:00", "2026-04-28 14:25:00", "2026-04-28 14:30:00", "2026-04-28 14:30:00", "2026-04-29 10:15:00", "2026-04-29 10:45:00", "2026-05-07 18:05:00"], "y": [0.0, -1.078014547783916, -3.0564542568282396, -4.995325171691677, -6.895418668257848, -8.7575102948927, -9.022234116908349, -9.517118953473462, -10.138581947501864, -10.377347065228697, -9.787921818302511, -8.91779783363747, -9.920731623349972, -8.653742108395447, -7.485707836023406, -6.317665183727532, -4.082546906047448, -0.2762280679353353, 0.0, -0.3502517690314628, -0.590348154924021, -0.6809081555830345, -0.9134927804575754, -0.7959268522749774, -0.3000178131377635, -0.19181082549410675, -0.012273806074111757, 0.0, 0.0, 0.0, -1.9999999999999993, -1.9789720530211785, -1.8565774261770616, -1.6331410459546847, -3.6004782250355993, -5.528468660534897, -7.417899287324198, -9.26954130157771, -9.42997503377549, -8.341613650601495, -10.174781377589461, -11.971285750037676, -13.731860035036924, -15.457222834336187, -17.14807837764947, -18.805116810096486, -20.429014473894558, -22.020434184416672, -22.067289737994432, -22.943501098418526, -23.661077149209532, -24.36947079184329, -24.7649687271234, -24.827868864294484, -24.488542376237486, -24.132889705090722, -23.5979044266449, -23.168442480189512, -23.78688073590669, -22.550052970370793, -24.099051910963375, -25.61707087274411, -27.104729455289235, -28.562634866183444, -28.625062478641578, -28.498675188916362, -29.928701685138044], "type": "scatter", "mode": "lines", "fill": "tozeroy", "name": "Neto", "line": {"color": "#f85149", "width": 1.5}, "fillcolor": "rgba(248,81,73,0.15)"}], {"paper_bgcolor": "#161b22", "plot_bgcolor": "#161b22", "font": {"color": "#8b949e", "family": "Segoe UI, sans-serif", "size": 12}, "xaxis": {"gridcolor": "#21262d", "linecolor": "#30363d", "showgrid": true}, "yaxis": {"title": "Drawdown %"}, "margin": {"l": 50, "r": 20, "t": 30, "b": 40}, "legend": {"bgcolor": "rgba(0,0,0,0)", "bordercolor": "#30363d"}, "hovermode": "x unified", "title": {"text": "Drawdown (%)", "font": {"color": "#c9d1d9", "size": 14}}}, {responsive: true, displayModeBar: false});
+Plotly.newPlot('chart-hourly', [{"x": ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"], "y": [-2.151, -13.085, -1.304, 0.695, -3.189, 4.145, -4.906, -12.0, 3.215], "type": "bar", "name": "P&L %", "marker": {"color": ["#f85149", "#f85149", "#f85149", "#3fb950", "#f85149", "#3fb950", "#f85149", "#f85149", "#3fb950"]}, "text": ["WR: 43.8%<br>N: 16", "WR: 20.0%<br>N: 15", "WR: 50.0%<br>N: 12", "WR: 50.0%<br>N: 2", "WR: 0.0%<br>N: 3", "WR: 100.0%<br>N: 2", "WR: 20.0%<br>N: 5", "WR: 0.0%<br>N: 6", "WR: 83.3%<br>N: 6"], "hovertemplate": "%{x}<br>P&L: %{y:.3f}%<br>%{text}<extra></extra>"}], {"paper_bgcolor": "#161b22", "plot_bgcolor": "#161b22", "font": {"color": "#8b949e", "family": "Segoe UI, sans-serif", "size": 12}, "xaxis": {"gridcolor": "#21262d", "linecolor": "#30363d", "showgrid": true}, "yaxis": {"title": "P&L acumulado %"}, "margin": {"l": 50, "r": 20, "t": 30, "b": 40}, "legend": {"bgcolor": "rgba(0,0,0,0)", "bordercolor": "#30363d"}, "hovermode": "x unified", "title": {"text": "P&L por Hora (UTC)", "font": {"color": "#c9d1d9", "size": 14}}}, {responsive: true, displayModeBar: false});
+Plotly.newPlot('chart-exits', [{"labels": ["TIME", "SL", "TP2"], "values": [42, 23, 2], "type": "pie", "marker": {"colors": ["#d29922", "#f85149", "#00e676"]}, "textinfo": "label+percent", "hole": 0.4}], {"paper_bgcolor": "#161b22", "plot_bgcolor": "#161b22", "font": {"color": "#8b949e", "family": "Segoe UI, sans-serif", "size": 12}, "xaxis": {"gridcolor": "#21262d", "linecolor": "#30363d", "showgrid": true}, "yaxis": {"gridcolor": "#21262d", "linecolor": "#30363d", "showgrid": true}, "margin": {"l": 20, "r": 20, "t": 40, "b": 20}, "legend": {"bgcolor": "rgba(0,0,0,0)", "bordercolor": "#30363d"}, "hovermode": "x unified", "title": {"text": "Razones de Salida", "font": {"color": "#c9d1d9", "size": 14}}, "showlegend": false}, {responsive: true, displayModeBar: false});
+Plotly.newPlot('chart-hist', [{"x": [-1.9005, -1.7016, -1.5026, -1.3037, -1.1048, -0.9058, -0.7069, -0.5079, -0.309, -0.11, 0.0889, 0.2879, 0.4868, 0.6857, 0.8847, 1.0836, 1.2826, 1.4815, 1.6805, 1.8794, 2.0784, 2.2773, 2.4762, 2.6752, 2.8741, 3.0731, 3.272, 3.471, 3.6699, 3.8689], "y": [23, 0, 0, 0, 3, 2, 2, 2, 5, 5, 6, 1, 4, 2, 1, 0, 4, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1], "type": "bar", "name": "Frecuencia", "marker": {"color": ["#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950"]}}], {"paper_bgcolor": "#161b22", "plot_bgcolor": "#161b22", "font": {"color": "#8b949e", "family": "Segoe UI, sans-serif", "size": 12}, "xaxis": {"title": "P&L %"}, "yaxis": {"title": "Frecuencia"}, "margin": {"l": 50, "r": 20, "t": 30, "b": 40}, "legend": {"bgcolor": "rgba(0,0,0,0)", "bordercolor": "#30363d"}, "hovermode": "x unified", "title": {"text": "Distribuci\u00f3n P&L por Trade", "font": {"color": "#c9d1d9", "size": 14}}}, {responsive: true, displayModeBar: false});
+
+// ── Table search ─────────────────────────────────────────────────────────────
+const ROWS_PER_PAGE = 50;
+let currentPage = 1;
+let filteredRows = [];
+
+function initTable() {
+  filteredRows = Array.from(document.querySelectorAll('#tradeBody tr'));
+  renderPage();
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  const end   = start + ROWS_PER_PAGE;
+  filteredRows.forEach((r, i) => r.style.display = (i >= start && i < end) ? '' : 'none');
+  const total = filteredRows.length;
+  document.getElementById('pageInfo').textContent =
+    `Mostrando ${Math.min(start+1,total)}–${Math.min(end,total)} de ${total}`;
+}
+
+function changePage(dir) {
+  const maxPage = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+  currentPage = Math.max(1, Math.min(currentPage + dir, maxPage));
+  renderPage();
+}
+
+document.getElementById('tradeSearch').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const allRows = Array.from(document.querySelectorAll('#tradeBody tr'));
+  filteredRows = allRows.filter(r => r.textContent.toLowerCase().includes(q));
+  currentPage = 1;
+  allRows.forEach(r => r.style.display = 'none');
+  renderPage();
+});
+
+// ── Table sort ───────────────────────────────────────────────────────────────
+let sortAsc = true;
+function sortTable(col) {
+  const tbody = document.getElementById('tradeBody');
+  const rows  = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    const av = a.cells[col]?.textContent.trim() || '';
+    const bv = b.cells[col]?.textContent.trim() || '';
+    const an = parseFloat(av.replace('%','').replace('+',''));
+    const bn = parseFloat(bv.replace('%','').replace('+',''));
+    if (!isNaN(an) && !isNaN(bn)) return sortAsc ? an - bn : bn - an;
+    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  sortAsc = !sortAsc;
+  rows.forEach(r => tbody.appendChild(r));
+  filteredRows = rows;
+  currentPage = 1;
+  renderPage();
+}
+
+window.onload = initTable;
+</script>
+</body>
+</html>
