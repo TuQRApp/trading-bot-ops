@@ -506,8 +506,21 @@ function loadSavedSpec(i) {
   });
   addMsg('bot', lines.join('\n'));
   updateProgress();
+  showSavedWrap(wrap);
+}
+
+function showSavedWrap(wrap) {
+  wrap.style.display = 'block';
+  wrap.innerHTML = `<div style="padding:9px;border-radius:7px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.3);font-family:var(--mono);font-size:11px;color:var(--trader);display:flex;align-items:center;justify-content:space-between">
+    <span>✓ Estrategia guardada — siguiente paso: Fase 2 (correr backtest)</span>
+    <span onclick="resetGenerar()" style="cursor:pointer;color:var(--muted);font-size:10px;text-decoration:underline;white-space:nowrap;margin-left:10px">Regenerar</span>
+  </div>`;
+}
+
+function resetGenerar() {
   const wrap = document.getElementById('generar-wrap');
-  wrap.innerHTML = `<div style="padding:9px;border-radius:7px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.3);font-family:var(--mono);font-size:11px;color:var(--trader);text-align:center">✓ Estrategia guardada — siguiente paso: Fase 2 (correr backtest)</div>`;
+  wrap.innerHTML = '<button class="btn-generar" onclick="openGenerar()">⚡ Generar Estrategia + Backtest</button>';
+  wrap.style.display = 'block';
 }
 
 // ── Contexto auto ───────────────────────────────────────────
@@ -1014,8 +1027,7 @@ async function saveSpec() {
     if (r.ok) {
       addMsg('sys', `Estrategia guardada como ${generatedSpec.id} — siguiente paso: correr el backtest y subirlo al sistema.`);
       closeModal();
-      const wrap = document.getElementById('generar-wrap');
-      wrap.innerHTML = `<div style="padding:9px;border-radius:7px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.3);font-family:var(--mono);font-size:11px;color:var(--trader);text-align:center">✓ Estrategia guardada — siguiente paso: Fase 2 (correr backtest)</div>`;
+      showSavedWrap(document.getElementById('generar-wrap'));
     } else {
       alert('Error al guardar: ' + r.status);
     }
