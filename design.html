@@ -1008,6 +1008,19 @@ function closeModal() {
   document.getElementById('gen-overlay').classList.remove('show');
   const nameInp = document.getElementById('mf-name');
   if (nameInp) { nameInp.value = ''; nameInp.classList.remove('mf-err'); }
+  ['pass1','pass2','pass3'].forEach(p => {
+    document.getElementById(p + '-card').style.display = '';
+  });
+}
+
+function openSaveModal() {
+  document.getElementById('gen-overlay').classList.add('show');
+  document.getElementById('spec-output').style.display = 'none';
+  document.getElementById('modal-foot').style.display = 'none';
+  ['pass1','pass2','pass3'].forEach(p => {
+    document.getElementById(p + '-card').style.display = 'none';
+  });
+  showSpecOutput();
 }
 
 function resetPasses() {
@@ -1271,9 +1284,9 @@ async function handlePyImport(input) {
 
     const nCampos = Object.keys(spec).length;
     statusEl.className = 'import-status ok';
-    statusEl.textContent = `✓ ${nCampos} campo${nCampos !== 1 ? 's' : ''} extraído${nCampos !== 1 ? 's' : ''} — revisá el panel derecho`;
+    statusEl.textContent = `✓ ${nCampos} campo${nCampos !== 1 ? 's' : ''} extraído${nCampos !== 1 ? 's' : ''} — revisá y guardá`;
 
-    addMsg('sys', `Spec importada desde "${file.name}" — ${nCampos} campos. Revisá y guardá cuando esté completo.`);
+    openSaveModal();
 
   } catch (e) {
     statusEl.className = 'import-status err';
