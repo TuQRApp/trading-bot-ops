@@ -198,7 +198,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .btn-download:hover{background:rgba(5,150,105,.14)}
 
 .modal-foot{padding:11px 17px;border-top:1px solid var(--border);
-            display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:var(--bg3)}
+            display:flex;gap:8px;align-items:center;flex-shrink:0;background:var(--bg3)}
+.mf-name-row{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.mf-name-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
+.mf-name-inp{flex:1;min-width:0;padding:5px 8px;border-radius:6px;border:1px solid var(--border);
+             background:var(--surface);color:var(--text);font-size:12px;font-family:var(--font)}
+.mf-name-inp:focus{outline:none;border-color:var(--nico)}
+.mf-name-inp.mf-err{border-color:var(--red)}
 .btn-sec{padding:7px 14px;border-radius:7px;border:1px solid var(--border);
          background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-family:var(--font)}
 .btn-sec:hover{border-color:var(--nico)}
@@ -355,8 +361,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       <div class="spec-output" id="spec-output" style="display:none"></div>
     </div>
     <div class="modal-foot" id="modal-foot" style="display:none">
+      <div class="mf-name-row">
+        <span class="mf-name-lbl">Nombre:</span>
+        <input class="mf-name-inp" id="mf-name" type="text" placeholder="Nombre de la estrategia" oninput="this.classList.remove('mf-err')">
+      </div>
       <button class="btn-sec" onclick="closeModal()">Cerrar</button>
-      <button class="btn-pri" onclick="saveSpec()">Guardar en data.json</button>
+      <button class="btn-pri" onclick="saveSpec()">Guardar</button>
     </div>
   </div>
 </div>
@@ -975,6 +985,8 @@ function openGenerar() {
 
 function closeModal() {
   document.getElementById('gen-overlay').classList.remove('show');
+  const nameInp = document.getElementById('mf-name');
+  if (nameInp) { nameInp.value = ''; nameInp.classList.remove('mf-err'); }
 }
 
 function resetPasses() {
@@ -1133,6 +1145,9 @@ function showSpecOutput() {
     ${crits}${warns}${mt5ns}` : ''}
     ${codeHtml}
   `;
+  const defaultName = s.name || s.spec_fields?.instrumentos || s.spec?.instrumentos || '';
+  const nameInp = document.getElementById('mf-name');
+  if (nameInp && !nameInp.value) nameInp.value = defaultName;
   document.getElementById('modal-foot').style.display = 'flex';
 }
 
@@ -1156,12 +1171,19 @@ function escapeHtml(str) {
 
 async function saveSpec() {
   if (!generatedSpec || !dataJson) return;
+  const nameInp = document.getElementById('mf-name');
+  const specName = nameInp?.value.trim();
+  if (!specName) {
+    nameInp?.classList.add('mf-err');
+    nameInp?.focus();
+    return;
+  }
   const specs = dataJson.bot_specs || [];
   generatedSpec.id           = `SPEC-${Date.now()}`;
   generatedSpec.created      = new Date().toISOString().slice(0, 10);
   generatedSpec.status       = 'draft';
   generatedSpec.spec_fields  = buildSpecSummary();   // raw specState — fallback si spec falla
-  if (!generatedSpec.name)   generatedSpec.name = generatedSpec.spec_fields['instrumentos'] || generatedSpec.id;
+  generatedSpec.name         = specName;
   specs.push(generatedSpec);
   dataJson.bot_specs = specs;
 
