@@ -44,6 +44,7 @@ export default {
     if (pathname === '/chat'          && method === 'POST') return handleChat(request, env);
     if (pathname === '/generate-spec' && method === 'POST') return handleGenerateSpec(request, env);
     if (pathname === '/generate-bot'  && method === 'POST') return handleGenerateBot(request, env);
+    if (pathname === '/extract-spec'  && method === 'POST') return handleExtractSpec(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -610,6 +611,52 @@ async function handleChat(request, env) {
 // ── /generate-spec  POST — un pass de generacion de spec ────────────────────
 // Body: { pass, spec, context, chat_history, generated_spec? }
 // pass: 'pass1' (Claude genera) | 'pass2' (Claude critica) | 'pass3' (GPT-4o MT5)
+
+async function handleExtractSpec(request, env) {
+  try {
+    if (!env.ANTHROPIC_API_KEY)
+      return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+    const { code } = await request.json();
+    if (!code || code.length < 50)
+      return json({ error: 'Código vacío o demasiado corto' }, 400);
+
+    const system =
+      'Sos un analizador de estrategias de trading. ' +
+      'Dado el código fuente de un backtest en Python, extraés los parámetros de la estrategia. ' +
+      'Respondés SOLO con JSON válido, sin texto adicional, sin bloques markdown.';
+
+    const userMsg =
+      'Analizá este backtest en Python y extraé la información de la estrategia.\n\n' +
+      'Devolvé SOLO este JSON (sin markdown):\n' +
+      '{\n' +
+      '  "name": "nombre descriptivo (instrumento + lógica principal)",\n' +
+      '  "summary": "1-2 oraciones: qué hace, qué indicadores usa, cómo genera señales",\n' +
+      '  "spec": {\n' +
+      '    "instrumentos": "símbolo(s) que opera",\n' +
+      '    "hipotesis": "hipótesis de mercado que explota",\n' +
+      '    "direccion": "long / short / ambas",\n' +
+      '    "tf-entrada": "timeframe de entrada (M1, M5, M15, H1…)",\n' +
+      '    "tf-apoyo": "timeframe de confirmación o contexto",\n' +
+      '    "sesion": "horario / sesión operativa",\n' +
+      '    "senal": "condición exacta que genera la señal de entrada",\n' +
+      '    "ejecucion": "tipo de orden (market, limite) y detalles de entrada",\n' +
+      '    "sl": "stop loss (fijo, ATR, nivel…)",\n' +
+      '    "tp": "take profit (ratio, nivel, trailing…)",\n' +
+      '    "timeout": "máximo tiempo en posición abierta",\n' +
+      '    "filtros": "filtros adicionales (volumen, tendencia, horario, etc.)",\n' +
+      '    "params-fijos": "todas las constantes numéricas detectadas con sus valores (RISK_PCT, TP_MULT, SL_MULT, ATR_MULT, periodos, etc.)",\n' +
+      '    "params-opt": "parámetros candidatos a optimización con rango sugerido"\n' +
+      '  }\n' +
+      '}\n\n' +
+      'Omití los campos que no se puedan inferir del código. Incluí en params-fijos todas las variables en MAYÚSCULAS con valores numéricos que encuentres.\n\n' +
+      'CÓDIGO:\n' + code.slice(0, 40000);
+
+    const result = await claudeJsonCall(system, userMsg, env, 2048);
+    return json(result);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
 
 async function handleGenerateSpec(request, env) {
   try {

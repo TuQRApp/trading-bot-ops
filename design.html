@@ -142,6 +142,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .send-btn:hover{background:#1d51c0}
 
+/* ── Importar .py ───────────────────────────────────── */
+.btn-import-py{width:100%;padding:7px 10px;border-radius:7px;
+               border:1px dashed var(--border);background:none;
+               color:var(--muted);font-size:11.5px;font-family:var(--font);
+               cursor:pointer;text-align:left;transition:all .15s}
+.btn-import-py:hover{border-color:rgba(37,99,235,.4);color:var(--nico);
+                     background:rgba(37,99,235,.04)}
+.import-status{font-size:10.5px;padding:5px 2px;line-height:1.5;color:var(--muted)}
+.import-status.ok{color:var(--trader)}
+.import-status.err{color:var(--red)}
+
 /* ── Botón Generar (en chat-foot) ───────────────────── */
 .generar-wrap{padding:9px 11px;border-top:1px solid var(--border);
               background:rgba(5,150,105,.04);display:none}
@@ -260,6 +271,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       <div class="ctx-section" id="saved-specs-section" style="display:none">
         <div class="ctx-section-title">Specs guardadas</div>
         <div id="saved-specs-list"></div>
+      </div>
+
+      <div class="ctx-section">
+        <div class="ctx-section-title">Importar estrategia</div>
+        <button class="btn-import-py" onclick="document.getElementById('import-py-input').click()">
+          ↑ Importar .py del backtest
+        </button>
+        <input type="file" id="import-py-input" accept=".py" style="display:none"
+               onchange="handlePyImport(this)">
+        <div id="import-py-status" class="import-status" style="display:none"></div>
       </div>
 
       <div class="ctx-section">
@@ -1202,6 +1223,61 @@ async function saveSpec() {
     }
   } catch (e) {
     alert('Error de conexión: ' + e.message);
+  }
+}
+
+async function handlePyImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const statusEl = document.getElementById('import-py-status');
+  statusEl.style.display = 'block';
+  statusEl.className = 'import-status';
+  statusEl.textContent = `Analizando ${file.name}…`;
+
+  try {
+    const code = await file.text();
+    const res = await fetch(`${WORKER}/extract-spec`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Poblar specState con los campos extraídos
+    const spec = data.spec || {};
+    FIELDS.forEach(f => {
+      if (spec[f] && String(spec[f]).trim()) {
+        specState[f] = { value: String(spec[f]).trim(), noConsiderar: false };
+      }
+    });
+
+    // Guardar en generatedSpec para que saveSpec() pueda usarlo
+    generatedSpec = {
+      name   : data.name || file.name.replace(/\.py$/i, ''),
+      summary: data.summary || '',
+      spec   : spec,
+    };
+
+    // Pre-rellenar el nombre en el modal footer si ya está visible
+    const nameInp = document.getElementById('mf-name');
+    if (nameInp && !nameInp.value) nameInp.value = generatedSpec.name;
+
+    // Llenar el panel derecho (igual que "Llenar parámetros" post-chat)
+    fillFromChat();
+
+    const nCampos = Object.keys(spec).length;
+    statusEl.className = 'import-status ok';
+    statusEl.textContent = `✓ ${nCampos} campo${nCampos !== 1 ? 's' : ''} extraído${nCampos !== 1 ? 's' : ''} — revisá el panel derecho`;
+
+    addMsg('sys', `Spec importada desde "${file.name}" — ${nCampos} campos. Revisá y guardá cuando esté completo.`);
+
+  } catch (e) {
+    statusEl.className = 'import-status err';
+    statusEl.textContent = `Error: ${e.message}`;
   }
 }
 
