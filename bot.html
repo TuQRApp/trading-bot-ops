@@ -147,6 +147,13 @@ select.sf-input{cursor:pointer}
 .nc-row input{accent-color:var(--shared);cursor:pointer}
 .nc-row label{font-size:10px;color:var(--muted);cursor:pointer}
 
+/* ── Llenar params btn (en chat) ────────────────────── */
+.llenar-wrap{padding:8px 11px;border-top:1px solid var(--border);background:rgba(37,99,235,.04);flex-shrink:0}
+.btn-llenar{width:100%;padding:8px;border-radius:7px;border:1px solid rgba(37,99,235,.3);
+            background:rgba(37,99,235,.07);color:var(--nico);font-size:12px;font-weight:600;
+            cursor:pointer;font-family:var(--font)}
+.btn-llenar:hover{background:rgba(37,99,235,.14)}
+
 /* ── Generar btn ────────────────────────────────────── */
 .generar-wrap{padding:9px 11px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg3)}
 .btn-generar{width:100%;padding:9px;border-radius:7px;border:none;
@@ -290,7 +297,10 @@ select.sf-input{cursor:pointer}
     <div class="col-header">Configuración del bot live</div>
     <div class="chat-msgs" id="chat-msgs"></div>
     <div class="chat-foot">
-      <div class="chat-row">
+      <div class="llenar-wrap" id="llenar-wrap" style="display:none">
+        <button class="btn-llenar" onclick="fillBotFromDefaults()">↓ Llenar parámetros del bot</button>
+      </div>
+      <div class="chat-row" style="padding:9px 11px">
         <textarea class="chat-textarea" id="chat-input" rows="1"
                   placeholder="Preguntá sobre la configuración del bot…"
                   onkeydown="onChatKey(event)"
@@ -325,7 +335,7 @@ select.sf-input{cursor:pointer}
         </div>
         <div class="sf-sub">
           <input class="sf-input" id="fv-riesgo" type="number"
-                 min="0.1" max="5" step="0.05" placeholder="0.25"
+                 min="0.1" max="5" step="0.05" placeholder="0.25" value="0.25"
                  oninput="onFieldChange('riesgo', this.value)">
           <select class="sf-input" id="fv-riesgo-fase" style="max-width:140px"
                   onchange="onRiesgoFaseChange()">
@@ -350,7 +360,7 @@ select.sf-input{cursor:pointer}
           <span class="sf-dot" id="dot-maxpos"></span>
         </div>
         <input class="sf-input" id="fv-maxpos" type="number"
-               min="1" max="20" placeholder="1"
+               min="1" max="20" placeholder="1" value="1"
                oninput="onFieldChange('maxpos', this.value)">
         <div class="sf-hint">OBV bot usa 6 · Canal Fib usa 1 por símbolo</div>
         <div class="nc-row">
@@ -370,7 +380,7 @@ select.sf-input{cursor:pointer}
         </div>
         <div class="sf-sub">
           <input class="sf-input" id="fv-cb-diario" type="number"
-                 min="1" max="30" step="0.5" placeholder="10"
+                 min="1" max="30" step="0.5" placeholder="10" value="10"
                  oninput="onFieldChange('cb-diario', buildCbDiarioVal())">
           <span class="sf-input" style="max-width:30px;border:none;background:none;
                 padding-left:4px;color:var(--muted)">%</span>
@@ -390,7 +400,7 @@ select.sf-input{cursor:pointer}
           <span class="sf-dot" id="dot-cb-semanal"></span>
         </div>
         <input class="sf-input" id="fv-cb-semanal" type="number"
-               min="1" max="50" step="0.5" placeholder="20"
+               min="1" max="50" step="0.5" placeholder="20" value="20"
                oninput="onFieldChange('cb-semanal', this.value ? this.value + '%' : '')">
         <div class="nc-row">
           <input type="checkbox" id="nc-cb-semanal" onchange="toggleNC('cb-semanal')">
@@ -407,7 +417,7 @@ select.sf-input{cursor:pointer}
         </div>
         <div class="sf-sub">
           <input class="sf-input" id="fv-cb-cooldown" type="number"
-                 min="1" max="168" placeholder="4"
+                 min="1" max="168" placeholder="4" value="4"
                  oninput="onFieldChange('cb-cooldown', this.value ? this.value + 'h' : '')">
           <span style="font-size:11px;color:var(--muted);padding:4px 6px;flex-shrink:0">horas</span>
         </div>
@@ -492,7 +502,7 @@ select.sf-input{cursor:pointer}
     <div class="generar-wrap">
       <button class="btn-generar" id="btn-generar" disabled onclick="openGenerar()">
         <span id="btn-generar-icon">🔒</span>
-        <span id="btn-generar-text">Generar Bot Live .py</span>
+        <span id="btn-generar-text">Generar Bot</span>
       </button>
       <div class="generar-pending" id="generar-pending">Completá o marcá "No considerar" los 8 campos</div>
     </div>
@@ -555,10 +565,29 @@ let selectedSpec = null;
 let generatedBot = null;
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateProgress();
+  initDefaultValues();
   loadDataJson();
   showWelcome();
 });
+
+function initDefaultValues() {
+  onFieldChange('riesgo',     '0.25');
+  onFieldChange('maxpos',     '1');
+  onFieldChange('cb-diario',  '10%');
+  onFieldChange('cb-semanal', '20%');
+  onFieldChange('cb-cooldown','4h');
+}
+
+function fillBotFromDefaults() {
+  initDefaultValues();
+  ['alertas','estado','reconexion'].forEach(f => {
+    if (!botState[f].value && !botState[f].noConsiderar) {
+      document.getElementById('nc-' + f).checked = true;
+      toggleNC(f);
+    }
+  });
+  document.getElementById('llenar-wrap').style.display = 'none';
+}
 
 async function loadDataJson() {
   try {
@@ -595,6 +624,7 @@ function selectSpec(i) {
   selectedSpec = (dataJson?.bot_specs || [])[i];
   addMsg('sys', `Estrategia seleccionada: ${selectedSpec?.name || selectedSpec?.id}`);
   updateGates();
+  document.getElementById('llenar-wrap').style.display = 'block';
 }
 
 function updateGates() {

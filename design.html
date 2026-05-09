@@ -36,8 +36,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .nav-a:hover{color:var(--text);border-color:var(--border)}
 .nav-a.active{color:var(--nico);border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.06)}
 
-/* ── Layout 2 columnas ──────────────────────────────── */
-.main{display:grid;grid-template-columns:256px 1fr;flex:1;overflow:hidden}
+/* ── Layout 3 columnas ──────────────────────────────── */
+.main{display:grid;grid-template-columns:256px 1fr 260px;flex:1;overflow:hidden}
+
+/* ── Panel derecho — parámetros ─────────────────────── */
+.col-right{border-left:1px solid var(--border);background:var(--surface)}
+.rp-body{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.rp-item{border:1px solid var(--border);border-radius:7px;padding:8px 10px;
+         background:var(--bg);transition:border-color .2s,background .2s}
+.rp-item.rp-ok{border-color:rgba(5,150,105,.4);background:rgba(5,150,105,.03)}
+.rp-item.rp-nc{opacity:.55;background:var(--bg3);border-style:dashed}
+.rp-item.rp-error{border-color:var(--red);background:rgba(220,38,38,.04)}
+.rp-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.5px;
+        color:var(--muted);margin-bottom:3px}
+.rp-ta{width:100%;background:transparent;border:none;outline:none;font-size:11px;
+       font-family:var(--font);color:var(--text);resize:none;line-height:1.45;min-height:28px}
+.rp-nc-row{display:flex;align-items:center;gap:4px;margin-top:4px;border-top:1px solid var(--border);
+           padding-top:4px;font-size:10px;color:var(--muted)}
+.rp-nc-row input{accent-color:var(--muted);cursor:pointer}
+.rp-count{font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto}
+.rp-footer{padding:9px 10px;border-top:1px solid var(--border);background:var(--bg3);flex-shrink:0}
 
 /* ── Panel base ─────────────────────────────────────── */
 .col{display:flex;flex-direction:column;overflow:hidden}
@@ -272,8 +290,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
     <div class="chat-msgs" id="chat-msgs"></div>
     <div class="chat-foot">
       <div class="generar-wrap" id="generar-wrap">
-        <button class="btn-generar" onclick="openGenerar()">
-          ⚡ Generar Estrategia + Backtest
+        <button class="btn-generar" onclick="fillFromChat()" style="background:var(--nico)">
+          ↓ Llenar parámetros de la estrategia
         </button>
       </div>
       <div class="chat-input-area">
@@ -288,6 +306,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           <button class="send-btn" id="send-btn" onclick="sendChat()">➤</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── COL DERECHA: Parámetros ──────────────────────── -->
+  <div class="col col-right">
+    <div class="col-header" style="display:flex;align-items:center">
+      Parámetros
+      <span class="rp-count" id="rp-count">0 / 14</span>
+    </div>
+    <div class="rp-body" id="rp-body"></div>
+    <div class="rp-footer" id="rp-footer" style="display:none">
+      <button class="btn-generar" onclick="openGenerar()">⚡ Generar Estrategia + Backtest</button>
     </div>
   </div>
 
@@ -343,6 +373,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 const WORKER = 'https://trading-upload.nestragues.workers.dev';
 
 // ── Estado ──────────────────────────────────────────────────
+const SPEC_LABELS = {
+  'instrumentos':'Instrumentos','hipotesis':'Hipótesis','direccion':'Dirección',
+  'tf-entrada':'TF Entrada','tf-apoyo':'TF Apoyo','sesion':'Sesión',
+  'senal':'Señal','ejecucion':'Ejecución','sl':'Stop Loss','tp':'Take Profit',
+  'timeout':'Timeout','filtros':'Filtros','params-fijos':'Params fijos','params-opt':'Params opt.'
+};
+
 const FIELDS = [
   'instrumentos','hipotesis','direccion',
   'tf-entrada','tf-apoyo','sesion',
@@ -401,6 +438,7 @@ function loadExample() {
   });
   addMsg('bot', lines.join('\n'));
   updateProgress();
+  fillFromChat();
 }
 
 const autoCtx   = { bots: true, m5: true, perfil: true };
@@ -414,6 +452,7 @@ let   dataJson = null;
 
 // ── Init ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  initRightPanel();
   updateProgress();
   loadDataJson();
   showWelcome();
@@ -506,6 +545,7 @@ function loadSavedSpec(i) {
   });
   addMsg('bot', lines.join('\n'));
   updateProgress();
+  fillFromChat();
   showSavedWrap(wrap);
 }
 
@@ -608,6 +648,76 @@ function updateProgress() {
 
   const wrap = document.getElementById('generar-wrap');
   wrap.style.display = answered === total ? 'block' : 'none';
+}
+
+// ── Panel derecho ────────────────────────────────────────────
+function initRightPanel() {
+  document.getElementById('rp-body').innerHTML = FIELDS.map(f => `
+    <div class="rp-item" id="rpi-${f}">
+      <div class="rp-lbl">${SPEC_LABELS[f]}</div>
+      <textarea class="rp-ta" id="rpt-${f}" rows="2"
+                oninput="onRightInput('${f}', this.value)"
+                placeholder="—"></textarea>
+      <div class="rp-nc-row">
+        <input type="checkbox" id="rpn-${f}" onchange="onRightNC('${f}', this.checked)">
+        <label for="rpn-${f}">No considerar</label>
+      </div>
+    </div>`).join('');
+}
+
+function fillFromChat() {
+  FIELDS.forEach(f => {
+    const s   = specState[f];
+    const ta  = document.getElementById('rpt-' + f);
+    const nc  = document.getElementById('rpn-' + f);
+    if (!ta || !nc) return;
+    if (s.noConsiderar) {
+      nc.checked = true; ta.disabled = true;
+    } else if (s.value) {
+      ta.value = s.value; nc.checked = false; ta.disabled = false;
+    } else {
+      specState[f].noConsiderar = true;
+      nc.checked = true; ta.disabled = true;
+    }
+    updateRpItem(f);
+  });
+  updateRightFooter();
+  document.getElementById('generar-wrap').style.display = 'none';
+}
+
+function onRightInput(id, val) {
+  specState[id].value = val.trim() || null;
+  updateRpItem(id);
+  updateRightFooter();
+}
+
+function onRightNC(id, checked) {
+  specState[id].noConsiderar = checked;
+  const ta = document.getElementById('rpt-' + id);
+  if (ta) ta.disabled = checked;
+  if (checked) specState[id].value = null;
+  updateRpItem(id);
+  updateRightFooter();
+}
+
+function updateRpItem(id) {
+  const item = document.getElementById('rpi-' + id);
+  if (!item) return;
+  const s = specState[id];
+  item.classList.remove('rp-ok','rp-nc','rp-error');
+  if (s.noConsiderar)       item.classList.add('rp-nc');
+  else if (s.value)         item.classList.add('rp-ok');
+  else                      item.classList.add('rp-error');
+}
+
+function checkRightReady() {
+  return FIELDS.every(f => specState[f].noConsiderar || (specState[f].value !== null && specState[f].value !== ''));
+}
+
+function updateRightFooter() {
+  const done = FIELDS.filter(f => specState[f].noConsiderar || (specState[f].value !== null && specState[f].value !== '')).length;
+  document.getElementById('rp-count').textContent = `${done} / 14`;
+  document.getElementById('rp-footer').style.display = checkRightReady() ? 'block' : 'none';
 }
 
 // ── Anotaciones ||SPEC:{...}|| ───────────────────────────────
