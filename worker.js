@@ -45,6 +45,7 @@ export default {
     if (pathname === '/generate-spec' && method === 'POST') return handleGenerateSpec(request, env);
     if (pathname === '/generate-bot'  && method === 'POST') return handleGenerateBot(request, env);
     if (pathname === '/extract-spec'  && method === 'POST') return handleExtractSpec(request, env);
+    if (pathname === '/improve-bot'   && method === 'POST') return handleImproveBot(request, env);
 
     return new Response('Not found', { status: 404, headers: CORS });
   },
@@ -611,6 +612,63 @@ async function handleChat(request, env) {
 // ── /generate-spec  POST — un pass de generacion de spec ────────────────────
 // Body: { pass, spec, context, chat_history, generated_spec? }
 // pass: 'pass1' (Claude genera) | 'pass2' (Claude critica) | 'pass3' (GPT-4o MT5)
+
+async function handleImproveBot(request, env) {
+  try {
+    if (!env.ANTHROPIC_API_KEY)
+      return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
+    const { py_code, group_badge } = await request.json();
+    if (!py_code || !group_badge)
+      return json({ error: 'py_code y group_badge son requeridos' }, 400);
+
+    const { data } = await readData(env);
+    const groups = Array.isArray(data.groups) ? data.groups
+                 : Array.isArray(data)        ? data
+                 : Object.values(data);
+    const group = groups.find(g => g.badge === group_badge);
+    if (!group) return json({ error: `Grupo ${group_badge} no encontrado` }, 404);
+
+    const m2 = group.m2 || [];
+    const m3 = group.m3 || [];
+    const m4 = group.m4 || [];
+
+    const m2text = m2.map(r =>
+      `[${r.prioridad || ''}] ${r.title || ''}: ${r.desc || ''}`
+    ).join('\n');
+    const m3text = m3.map(o =>
+      `[${o.tipo || ''}] ${o.title || ''}: ${o.desc || ''}`
+    ).join('\n');
+    const m4text = m4.map(h =>
+      `[${h.categoria || ''}] ${h.title || ''}\n` +
+      `  Problema: ${h.desc || ''}\n` +
+      `  Fix: ${h.fix || ''}\n` +
+      `  Código: ${h.code || ''}`
+    ).join('\n\n');
+
+    const system =
+      'Sos un desarrollador experto en Python y bots de trading algoritmico. ' +
+      'Dado el codigo de un bot y el analisis de sus problemas, devuelves una version mejorada ' +
+      'que incorpora todos los fixes de alta prioridad y correcciones de codigo. ' +
+      'Respondes SOLO con JSON valido, sin bloques markdown.';
+
+    const userMsg =
+      'Mejora este bot incorporando los hallazgos del analisis.\n\n' +
+      'CODIGO ORIGINAL:\n```python\n' + py_code.slice(0, 30000) + '\n```\n\n' +
+      (m4text ? 'FEEDBACK DE CODIGO (M4) — aplicar todos:\n' + m4text + '\n\n' : '') +
+      (m2text ? 'RECOMENDACIONES (M2):\n' + m2text + '\n\n' : '') +
+      (m3text ? 'OBSERVACIONES (M3):\n' + m3text + '\n\n' : '') +
+      'Devuelve SOLO este JSON (sin markdown):\n' +
+      '{\n' +
+      '  "improved_code": "codigo Python completo mejorado (reemplaza el original)",\n' +
+      '  "summary": "2-3 oraciones: que cambios se incorporaron y por que"\n' +
+      '}';
+
+    const result = await claudeJsonCall(system, userMsg, env, 8192);
+    return json(result);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
 
 async function handleExtractSpec(request, env) {
   try {
