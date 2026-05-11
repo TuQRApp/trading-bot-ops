@@ -227,6 +227,47 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── Group cards ────────────────────────────────────────── */
+.group-card{border:1px solid var(--border);border-radius:8px;padding:9px 11px;
+            cursor:pointer;transition:border-color .15s,background .15s}
+.group-card:hover{border-color:rgba(37,99,235,.3)}
+.group-card.selected{border-color:rgba(37,99,235,.5);background:rgba(37,99,235,.04)}
+.group-card-badge{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--nico);margin-bottom:3px}
+.group-card-name{font-size:11.5px;font-weight:600;margin-bottom:3px}
+.group-card-sum{font-size:10.5px;color:var(--muted);line-height:1.4}
+
+/* ── Spec cards ──────────────────────────────────────────── */
+.spec-card{border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+           cursor:pointer;transition:border-color .15s,background .15s}
+.spec-card:hover{border-color:rgba(124,58,237,.3)}
+.spec-card.selected{border-color:rgba(124,58,237,.5);background:rgba(124,58,237,.04)}
+.spec-card-name{font-size:12px;font-weight:700;color:var(--nico);margin-bottom:4px}
+.spec-card-sum{font-size:10.5px;color:var(--muted);line-height:1.5}
+.spec-card-date{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
+
+/* ── Mejorar .py section ────────────────────────────────── */
+.improve-hd{padding:8px 0 6px;display:flex;align-items:center;justify-content:space-between;
+            cursor:pointer;font-family:var(--mono);font-size:9.5px;font-weight:700;
+            text-transform:uppercase;letter-spacing:.8px;color:var(--muted);user-select:none}
+.improve-hd:hover{color:var(--nico)}
+.improve-bd{display:flex;flex-direction:column;gap:7px}
+.improve-group-sel{font-size:11px;color:var(--muted);padding:6px 9px;border-radius:6px;
+                   border:1px solid var(--border);background:var(--bg);width:100%;
+                   font-family:var(--font)}
+.improve-py-lbl{font-size:11px;color:var(--trader)}
+.btn-improve{width:100%;padding:8px;border-radius:7px;border:none;font-size:12px;
+             font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-improve:not(:disabled){background:var(--shared);color:#fff}
+.btn-improve:not(:disabled):hover{background:#b45309}
+.btn-improve:disabled{background:var(--bg);border:1px solid var(--border);
+                      color:var(--muted);cursor:not-allowed}
+.improve-sel{font-size:11px;color:var(--muted);padding:6px 9px;border-radius:6px;
+             border:1px solid var(--border);background:var(--bg)}
+.improve-sel.active{color:var(--nico);border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.04)}
+.improve-note{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;min-height:14px}
+.improve-out{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+             padding:9px;font-size:11px;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
@@ -268,9 +309,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         </div>
       </div>
 
+      <div class="ctx-section" id="grupos-section">
+        <div class="ctx-section-title">Bots activos</div>
+        <div id="grupos-list" style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--muted)">Cargando…</div>
+        </div>
+      </div>
+
       <div class="ctx-section" id="saved-specs-section" style="display:none">
         <div class="ctx-section-title">Specs guardadas</div>
-        <div id="saved-specs-list"></div>
+        <div id="saved-specs-list" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
 
       <div class="ctx-section">
@@ -281,6 +329,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         <input type="file" id="import-py-input" accept=".py" style="display:none"
                onchange="handlePyImport(this)">
         <div id="import-py-status" class="import-status" style="display:none"></div>
+      </div>
+
+      <div class="ctx-section">
+        <div class="improve-hd" onclick="toggleImprove()">
+          <span>⚙ Mejorar .py con feedback</span>
+          <span class="ctx-caret" id="caret-improve">▾</span>
+        </div>
+        <div class="improve-bd" id="improve-bd" style="display:none">
+          <div class="improve-sel" id="improve-sel">Seleccioná un bot del panel izquierdo</div>
+          <button class="btn-import-py" onclick="document.getElementById('improve-py-inp').click()">
+            ↑ Subir .py a mejorar
+          </button>
+          <input type="file" id="improve-py-inp" accept=".py" style="display:none"
+                 onchange="handleImprovePy(this)">
+          <div class="improve-py-lbl" id="improve-py-lbl" style="display:none"></div>
+          <button class="btn-improve" id="btn-improve" disabled onclick="runImprove()">
+            Generar .py mejorado
+          </button>
+          <div class="improve-note" id="improve-note">Seleccioná un grupo + subí el .py</div>
+          <div class="improve-out" id="improve-out" style="display:none"></div>
+        </div>
       </div>
 
       <div class="ctx-section">
@@ -519,6 +588,7 @@ function populateAutoCtx() {
   if (tp && tp.cycles >= 2)
     document.getElementById('ctx-perfil-badge').textContent = `${tp.cycles} ciclos`;
 
+  renderGroups();
   renderSavedSpecs();
 }
 
@@ -529,14 +599,18 @@ function renderSavedSpecs() {
   if (!specs.length) { section.style.display = 'none'; return; }
   section.style.display = 'block';
   list.innerHTML = specs.map((s, i) =>
-    `<div class="ctx-toggle" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer" onclick="loadSavedSpec(${i})">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-        <span style="font-size:11.5px;font-weight:600;color:var(--text)">${s.name || s.id}</span>
-        <span class="ctx-badge">${s.created || s.status || 'draft'}</span>
-      </div>
-      ${s.summary ? `<span style="font-size:10px;color:var(--muted);line-height:1.4">${s.summary.slice(0,90)}…</span>` : ''}
+    `<div class="spec-card" id="sc-${i}" onclick="selectSavedSpec(${i})">
+      <div class="spec-card-name">${s.name || s.id || 'Sin nombre'}</div>
+      ${s.summary ? `<div class="spec-card-sum">${s.summary.slice(0, 100)}${s.summary.length > 100 ? '…' : ''}</div>` : ''}
+      <div class="spec-card-date">${s.created || ''} · ${s.status || 'draft'}</div>
     </div>`
   ).join('');
+}
+
+function selectSavedSpec(i) {
+  document.querySelectorAll('#saved-specs-list .spec-card').forEach((c, j) =>
+    c.classList.toggle('selected', i === j));
+  loadSavedSpec(i);
 }
 
 function loadSavedSpec(i) {
@@ -1295,6 +1369,125 @@ async function handlePyImport(input) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Grupos seleccionables ─────────────────────────────────
+let selectedGroup = null;
+
+function renderGroups() {
+  const list = document.getElementById('grupos-list');
+  if (!list || !dataJson) return;
+  const grupos = dataJson.groups || dataJson;
+  const activos = Array.isArray(grupos)
+    ? grupos.filter(g => g.status === 'activo')
+    : Object.values(grupos).filter(g => g && g.status === 'activo');
+  if (!activos.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted)">Sin bots activos</div>';
+    return;
+  }
+  list.innerHTML = activos.map((g, i) =>
+    `<div class="group-card" id="gc-${i}" onclick="selectGroup(${i})">
+       <div class="group-card-badge">${g.badge}</div>
+       <div class="group-card-name">${g.name || 'Sin nombre'}</div>
+       ${g.summary ? `<div class="group-card-sum">${(g.summary || '').slice(0, 90)}${(g.summary || '').length > 90 ? '…' : ''}</div>` : ''}
+     </div>`
+  ).join('');
+}
+
+function selectGroup(i) {
+  const grupos = dataJson.groups || dataJson;
+  const activos = Array.isArray(grupos)
+    ? grupos.filter(g => g.status === 'activo')
+    : Object.values(grupos).filter(g => g && g.status === 'activo');
+  selectedGroup = activos[i] || null;
+  document.querySelectorAll('#grupos-list .group-card').forEach((c, j) =>
+    c.classList.toggle('selected', i === j));
+  const sel = document.getElementById('improve-sel');
+  if (sel) {
+    sel.textContent = selectedGroup
+      ? `${selectedGroup.badge} — ${selectedGroup.name || 'Sin nombre'}`
+      : 'Seleccioná un bot del panel izquierdo';
+    sel.classList.toggle('active', !!selectedGroup);
+  }
+  updateImproveBtn();
+}
+
+// ── Mejorar .py con feedback ──────────────────────────────
+let improveCode  = null;
+let improvedCode = null;
+
+function toggleImprove() {
+  const bd = document.getElementById('improve-bd');
+  const c  = document.getElementById('caret-improve');
+  const open = bd.style.display !== 'none';
+  bd.style.display = open ? 'none' : 'flex';
+  c.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function handleImprovePy(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    improveCode = e.target.result;
+    const lbl = document.getElementById('improve-py-lbl');
+    lbl.style.display = 'block';
+    lbl.textContent = `✓ ${file.name}`;
+    updateImproveBtn();
+  };
+  reader.readAsText(file);
+}
+
+function updateImproveBtn() {
+  const btn  = document.getElementById('btn-improve');
+  const note = document.getElementById('improve-note');
+  if (!btn) return;
+  const ready = selectedGroup && improveCode;
+  btn.disabled = !ready;
+  if (ready)                              note.textContent = 'Listo para generar';
+  else if (!selectedGroup && !improveCode) note.textContent = 'Seleccioná un grupo + subí el .py';
+  else if (!selectedGroup)                note.textContent = 'Seleccioná un bot del panel izquierdo';
+  else                                    note.textContent = 'Subí el .py a mejorar';
+}
+
+async function runImprove() {
+  if (!selectedGroup || !improveCode) return;
+  const btn  = document.getElementById('btn-improve');
+  const note = document.getElementById('improve-note');
+  const out  = document.getElementById('improve-out');
+  btn.disabled = true;
+  note.textContent = 'Generando…';
+  out.style.display = 'none';
+  try {
+    const res = await fetch(`${WORKER}/improve-bot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ py_code: improveCode, group_badge: selectedGroup.badge })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    improvedCode = data.improved_code;
+    out.style.display = 'block';
+    out.innerHTML = (data.summary ? `<div style="margin-bottom:7px">${escapeHtml(data.summary)}</div>` : '') +
+      `<button class="btn-download" onclick="downloadImproved()">⬇ Descargar .py mejorado</button>`;
+    note.textContent = 'Listo — descargá el .py mejorado';
+  } catch (e) {
+    note.textContent = `Error: ${e.message}`;
+    btn.disabled = false;
+  }
+}
+
+function downloadImproved() {
+  if (!improvedCode) return;
+  const name = ((selectedGroup?.name || 'bot') + '_mejorado').replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+  const blob = new Blob([improvedCode], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}.py`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 </script>
 
 </body>
