@@ -387,6 +387,18 @@ body.uploading { padding-top: 42px; }
 }
 .btn-delete:hover { background: rgba(220,38,38,0.14); border-color: rgba(220,38,38,0.5); }
 .btn-delete:disabled { opacity: 0.4; cursor: default; }
+.btn-reprocesar {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(217,119,6,0.4);
+  background: rgba(217,119,6,0.07);
+  color: #92400e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-reprocesar:hover { background: rgba(217,119,6,0.16); }
 .btn-view-link {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -756,7 +768,7 @@ footer {
         <label>Carpeta</label>
         <div style="display:flex;gap:6px;align-items:center;">
           <select id="upload-folder-select" class="upload-input" style="flex:1;min-width:160px;">
-            <option value="" disabled selected>— Selecciona o crea una carpeta —</option>
+            <option value="" disabled selected>Elige o crea una nueva carpeta</option>
           </select>
           <button type="button" class="upload-btn" style="padding:9px 14px;" onclick="createFolderForUpload()">+ Nueva</button>
         </div>
@@ -1035,6 +1047,10 @@ function _renderFileRow(g, folders) {
       (isOldVersion
         ? '<button class="btn-delete" onclick="deleteVersion(\'' + g.badge + '\',\'' + dg.badge + '\',\'' + dg.name.replace(/'/g, "\\'") + '\')">Eliminar versión</button>'
         : '<button class="btn-delete" onclick="deleteGroup(\'' + g.badge + '\',\'' + g.name.replace(/'/g, "\\'") + '\')">Eliminar</button>') +
+      (!isOldVersion && dg.status === 'activo'
+        ? '<button class="btn-reprocesar" onclick="triggerReprocesar(\'' + g.badge + '\',\'' + (g.folder_id || '') + '\',\'' + (g.folder || '').replace(/'/g, "\\'") + '\')">⚙ Reprocesar con feedback</button>' +
+          (dg.reprocesado ? '<a class="btn-view-link" href="' + dg.reprocesado.url + '" target="_blank" download>⬇ Descargar .py reprocesado</a>' : '')
+        : '') +
     '</div>' +
   '</div>';
 }
@@ -1557,6 +1573,84 @@ async function startVersionUpload() {
     prog.textContent = '✗ Error: ' + e.message;
     btn.disabled = false;
     btn.textContent = 'Reintentar';
+  }
+}
+
+// ── Reprocesar con feedback ───────────────────────────────────────────────────
+var _reprocesarBadge   = null;
+var _reprocesarFolder  = null;
+var _reprocesarFolderN = null;
+
+function triggerReprocesar(badge, folderId, folderName) {
+  if (!folderId) {
+    alert('Este grupo no tiene carpeta asignada. Movelo a una carpeta primero.');
+    return;
+  }
+  _reprocesarBadge   = badge;
+  _reprocesarFolder  = folderId;
+  _reprocesarFolderN = folderName;
+  var inp = document.getElementById('reprocesar-input');
+  inp.dataset.badge = badge;
+  inp.click();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.py'; inp.id = 'reprocesar-input';
+  inp.style.display = 'none';
+  inp.addEventListener('change', function() {
+    var file = inp.files[0];
+    if (!file) return;
+    inp.value = '';
+    doReprocesar(file, inp.dataset.badge);
+  });
+  document.body.appendChild(inp);
+});
+
+async function doReprocesar(file, badge) {
+  var btn = document.querySelector('#row-' + badge + ' .btn-reprocesar');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Generando…'; }
+  try {
+    var code = await file.text();
+    var res  = await fetch(WORKER + '/improve-bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ py_code: code, group_badge: badge })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    var improved = data.improved_code;
+    if (!improved) throw new Error('Sin código mejorado en la respuesta');
+
+    // Subir el archivo mejorado al folder del grupo
+    var fileName  = badge.toLowerCase() + '_reprocesado.py';
+    var blob      = new Blob([improved], { type: 'text/plain' });
+    var formFile  = new File([blob], fileName, { type: 'text/plain' });
+    var fd = new FormData();
+    fd.append('file',   formFile);
+    fd.append('folder', _reprocesarFolder);
+
+    var upRes = await fetch(WORKER + '/upload', { method: 'POST', body: fd });
+    if (!upRes.ok) throw new Error('Upload HTTP ' + upRes.status);
+    var upData = await upRes.json();
+
+    // Guardar referencia en el grupo vía PATCH
+    var rawUrl = 'https://raw.githubusercontent.com/TuQRApp/trading-bot-ops/main/Archivos/'
+      + encodeURIComponent(_reprocesarFolderN) + '/' + fileName;
+    await fetch(WORKER + '/group', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        badge: badge,
+        reprocesado: { url: rawUrl, file: fileName, date: new Date().toISOString().slice(0,10) }
+      })
+    });
+
+    loadFileList();
+  } catch(e) {
+    alert('Error al reprocesar: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '⚙ Reprocesar con feedback'; }
   }
 }
 
