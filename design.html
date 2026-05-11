@@ -243,6 +243,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
                  font-weight:700;cursor:pointer;font-family:var(--font);
                  transition:background .15s,color .15s}
 .btn-improve-bar:hover{background:var(--shared);color:#fff}
+.improve-bar-lbl{font-size:11px;color:var(--trader);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.improve-bar-out{margin-top:6px;padding:8px 10px;border-radius:7px;border:1px solid var(--border);
+                 background:var(--bg);font-size:11px;color:var(--muted);line-height:1.6}
 
 /* ── Group cards ────────────────────────────────────────── */
 .group-card{border:1px solid var(--border);border-radius:8px;padding:9px 11px;
@@ -368,9 +371,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   <div class="col">
     <div class="col-header">Conversación de diseño · 14 puntos</div>
     <div class="improve-bar">
-      <button class="btn-improve-bar" onclick="openImproveModal()">
-        ⚙ Mejorar .py con feedback del análisis
-      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-improve-bar" onclick="document.getElementById('improve-py-inp').click()">
+          ⚙ Mejorar .py con feedback
+        </button>
+        <span class="improve-bar-lbl" id="improve-bar-lbl"></span>
+      </div>
+      <input type="file" id="improve-py-inp" accept=".py" style="display:none"
+             onchange="handleImprovePy(this)">
+      <div class="improve-bar-out" id="improve-bar-out" style="display:none"></div>
     </div>
     <div class="chat-prog">
       <div class="chat-prog-track">
@@ -414,29 +423,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   </div>
 
 </div><!-- /main -->
-
-<!-- ── Modal mejorar .py ────────────────────────────── -->
-<div class="overlay" id="improve-overlay" style="display:none" onclick="closeImproveModal()"></div>
-<div class="modal" id="improve-modal" style="display:none">
-  <div class="modal-head">
-    <span class="modal-title">⚙ Mejorar .py con feedback del análisis</span>
-    <button class="modal-close" onclick="closeImproveModal()">✕</button>
-  </div>
-  <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
-    <div class="improve-sel" id="improve-sel">Seleccioná un bot del panel izquierdo</div>
-    <button class="btn-import-py" onclick="document.getElementById('improve-py-inp').click()">
-      ↑ Subir .py a mejorar
-    </button>
-    <input type="file" id="improve-py-inp" accept=".py" style="display:none"
-           onchange="handleImprovePy(this)">
-    <div class="improve-py-lbl" id="improve-py-lbl" style="display:none"></div>
-    <button class="btn-improve" id="btn-improve" disabled onclick="runImprove()">
-      Generar .py mejorado
-    </button>
-    <div class="improve-note" id="improve-note">Seleccioná un bot + subí el .py</div>
-    <div class="improve-out" id="improve-out" style="display:none"></div>
-  </div>
-</div>
 
 <!-- ── Modal de generación ──────────────────────────── -->
 <div class="overlay" id="gen-overlay">
@@ -1428,7 +1414,6 @@ function selectGroup(i) {
   }
   const btnAgregar = document.getElementById('btn-agregar');
   if (btnAgregar) btnAgregar.disabled = !selectedGroup;
-  updateImproveBtn();
 }
 
 // ── Agregar a nueva estrategia ────────────────────────────
@@ -1452,17 +1437,6 @@ function agregarEstrategia() {
   addMsg('sys', lines.join('\n'));
 }
 
-// ── Modal mejorar .py ─────────────────────────────────────
-function openImproveModal() {
-  document.getElementById('improve-overlay').style.display = 'block';
-  document.getElementById('improve-modal').style.display   = 'flex';
-}
-
-function closeImproveModal() {
-  document.getElementById('improve-overlay').style.display = 'none';
-  document.getElementById('improve-modal').style.display   = 'none';
-}
-
 // ── Mejorar .py con feedback ──────────────────────────────
 let improveCode  = null;
 let improvedCode = null;
@@ -1471,55 +1445,36 @@ function handleImprovePy(input) {
   const file = input.files[0];
   if (!file) return;
   input.value = '';
+  const lbl = document.getElementById('improve-bar-lbl');
+  const out = document.getElementById('improve-bar-out');
+  if (!selectedGroup) {
+    lbl.textContent = '⚠ Seleccioná un bot primero';
+    return;
+  }
+  lbl.textContent = `✓ ${file.name} · generando…`;
+  out.style.display = 'none';
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     improveCode = e.target.result;
-    const lbl = document.getElementById('improve-py-lbl');
-    lbl.style.display = 'block';
-    lbl.textContent = `✓ ${file.name}`;
-    updateImproveBtn();
+    try {
+      const res = await fetch(`${WORKER}/improve-bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ py_code: improveCode, group_badge: selectedGroup.badge })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      improvedCode = data.improved_code;
+      lbl.textContent = `✓ ${file.name}`;
+      out.style.display = 'block';
+      out.innerHTML = (data.summary ? `<div style="margin-bottom:6px">${escapeHtml(data.summary)}</div>` : '') +
+        `<button class="btn-download" onclick="downloadImproved()">⬇ Descargar .py mejorado</button>`;
+    } catch (err) {
+      lbl.textContent = `Error: ${err.message}`;
+    }
   };
   reader.readAsText(file);
-}
-
-function updateImproveBtn() {
-  const btn  = document.getElementById('btn-improve');
-  const note = document.getElementById('improve-note');
-  if (!btn) return;
-  const ready = selectedGroup && improveCode;
-  btn.disabled = !ready;
-  if (ready)                              note.textContent = 'Listo para generar';
-  else if (!selectedGroup && !improveCode) note.textContent = 'Seleccioná un grupo + subí el .py';
-  else if (!selectedGroup)                note.textContent = 'Seleccioná un bot del panel izquierdo';
-  else                                    note.textContent = 'Subí el .py a mejorar';
-}
-
-async function runImprove() {
-  if (!selectedGroup || !improveCode) return;
-  const btn  = document.getElementById('btn-improve');
-  const note = document.getElementById('improve-note');
-  const out  = document.getElementById('improve-out');
-  btn.disabled = true;
-  note.textContent = 'Generando…';
-  out.style.display = 'none';
-  try {
-    const res = await fetch(`${WORKER}/improve-bot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ py_code: improveCode, group_badge: selectedGroup.badge })
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    improvedCode = data.improved_code;
-    out.style.display = 'block';
-    out.innerHTML = (data.summary ? `<div style="margin-bottom:7px">${escapeHtml(data.summary)}</div>` : '') +
-      `<button class="btn-download" onclick="downloadImproved()">⬇ Descargar .py mejorado</button>`;
-    note.textContent = 'Listo — descargá el .py mejorado';
-  } catch (e) {
-    note.textContent = `Error: ${e.message}`;
-    btn.disabled = false;
-  }
 }
 
 function downloadImproved() {
