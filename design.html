@@ -228,6 +228,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
+/* ── Agregar a nueva estrategia ─────────────────────────── */
+.btn-agregar{width:100%;padding:9px;border-radius:8px;border:none;font-size:12px;
+             font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-agregar:not(:disabled){background:var(--nico);color:#fff}
+.btn-agregar:not(:disabled):hover{background:#1d51c0}
+.btn-agregar:disabled{background:var(--bg);border:1px solid var(--border);
+                      color:var(--muted);cursor:not-allowed}
+
+/* ── Barra mejorar .py (sobre chat) ─────────────────────── */
+.improve-bar{padding:7px 14px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.btn-improve-bar{width:100%;padding:8px 12px;border-radius:7px;border:1px solid var(--shared);
+                 background:rgba(217,119,6,.07);color:var(--shared);font-size:12px;
+                 font-weight:700;cursor:pointer;font-family:var(--font);
+                 transition:background .15s,color .15s}
+.btn-improve-bar:hover{background:var(--shared);color:#fff}
+
 /* ── Group cards ────────────────────────────────────────── */
 .group-card{border:1px solid var(--border);border-radius:8px;padding:9px 11px;
             cursor:pointer;transition:border-color .15s,background .15s}
@@ -290,13 +306,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
     <div class="col-header">Contexto</div>
     <div class="col-body">
 
+      <div class="ctx-section" style="padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px">
+        <button class="btn-agregar" id="btn-agregar" onclick="agregarEstrategia()" disabled>
+          + Agregar a nueva estrategia
+        </button>
+      </div>
+
+      <div class="ctx-section" id="grupos-section">
+        <div class="ctx-section-title">Bots activos</div>
+        <div id="grupos-list" style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--muted)">Cargando…</div>
+        </div>
+      </div>
+
       <div class="ctx-section">
         <div class="ctx-section-title">Automático</div>
-        <div class="ctx-toggle">
-          <input type="checkbox" id="ctx-bots" checked onchange="toggleAutoCtx('bots')">
-          <span class="ctx-toggle-label">Bots activos</span>
-          <span class="ctx-badge" id="ctx-bots-badge">cargando…</span>
-        </div>
         <div class="ctx-toggle">
           <input type="checkbox" id="ctx-m5" checked onchange="toggleAutoCtx('m5')">
           <span class="ctx-toggle-label">Contexto de mercado (M5)</span>
@@ -309,18 +333,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         </div>
       </div>
 
-      <div class="ctx-section" id="grupos-section">
-        <div class="ctx-section-title">Bots activos</div>
-        <div id="grupos-list" style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-size:11px;color:var(--muted)">Cargando…</div>
-        </div>
-      </div>
-
-      <div class="ctx-section" id="saved-specs-section" style="display:none">
-        <div class="ctx-section-title">Specs guardadas</div>
-        <div id="saved-specs-list" style="display:flex;flex-direction:column;gap:6px"></div>
-      </div>
-
       <div class="ctx-section">
         <div class="ctx-section-title">Importar estrategia</div>
         <button class="btn-import-py" onclick="document.getElementById('import-py-input').click()">
@@ -329,27 +341,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         <input type="file" id="import-py-input" accept=".py" style="display:none"
                onchange="handlePyImport(this)">
         <div id="import-py-status" class="import-status" style="display:none"></div>
-      </div>
-
-      <div class="ctx-section">
-        <div class="improve-hd" onclick="toggleImprove()">
-          <span>⚙ Mejorar .py con feedback</span>
-          <span class="ctx-caret" id="caret-improve">▾</span>
-        </div>
-        <div class="improve-bd" id="improve-bd" style="display:none">
-          <div class="improve-sel" id="improve-sel">Seleccioná un bot del panel izquierdo</div>
-          <button class="btn-import-py" onclick="document.getElementById('improve-py-inp').click()">
-            ↑ Subir .py a mejorar
-          </button>
-          <input type="file" id="improve-py-inp" accept=".py" style="display:none"
-                 onchange="handleImprovePy(this)">
-          <div class="improve-py-lbl" id="improve-py-lbl" style="display:none"></div>
-          <button class="btn-improve" id="btn-improve" disabled onclick="runImprove()">
-            Generar .py mejorado
-          </button>
-          <div class="improve-note" id="improve-note">Seleccioná un grupo + subí el .py</div>
-          <div class="improve-out" id="improve-out" style="display:none"></div>
-        </div>
       </div>
 
       <div class="ctx-section">
@@ -376,6 +367,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   <!-- ── COL CENTRAL: Chat ───────────────────────────── -->
   <div class="col">
     <div class="col-header">Conversación de diseño · 14 puntos</div>
+    <div class="improve-bar">
+      <button class="btn-improve-bar" onclick="openImproveModal()">
+        ⚙ Mejorar .py con feedback del análisis
+      </button>
+    </div>
     <div class="chat-prog">
       <div class="chat-prog-track">
         <div class="chat-prog-fill" id="prog-fill"></div>
@@ -418,6 +414,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   </div>
 
 </div><!-- /main -->
+
+<!-- ── Modal mejorar .py ────────────────────────────── -->
+<div class="overlay" id="improve-overlay" style="display:none" onclick="closeImproveModal()"></div>
+<div class="modal" id="improve-modal" style="display:none">
+  <div class="modal-head">
+    <span class="modal-title">⚙ Mejorar .py con feedback del análisis</span>
+    <button class="modal-close" onclick="closeImproveModal()">✕</button>
+  </div>
+  <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+    <div class="improve-sel" id="improve-sel">Seleccioná un bot del panel izquierdo</div>
+    <button class="btn-import-py" onclick="document.getElementById('improve-py-inp').click()">
+      ↑ Subir .py a mejorar
+    </button>
+    <input type="file" id="improve-py-inp" accept=".py" style="display:none"
+           onchange="handleImprovePy(this)">
+    <div class="improve-py-lbl" id="improve-py-lbl" style="display:none"></div>
+    <button class="btn-improve" id="btn-improve" disabled onclick="runImprove()">
+      Generar .py mejorado
+    </button>
+    <div class="improve-note" id="improve-note">Seleccioná un bot + subí el .py</div>
+    <div class="improve-out" id="improve-out" style="display:none"></div>
+  </div>
+</div>
 
 <!-- ── Modal de generación ──────────────────────────── -->
 <div class="overlay" id="gen-overlay">
@@ -566,19 +585,12 @@ async function loadDataJson() {
     dataJson = await r.json();
     populateAutoCtx();
   } catch (e) {
-    document.getElementById('ctx-bots-badge').textContent = 'sin conexión';
     document.getElementById('ctx-m5-badge').textContent = 'sin conexión';
   }
 }
 
 function populateAutoCtx() {
   if (!dataJson) return;
-  const grupos = dataJson.groups || dataJson;
-  const activos = Array.isArray(grupos)
-    ? grupos.filter(g => g.status === 'activo')
-    : Object.values(grupos).filter(g => g && g.status === 'activo');
-  document.getElementById('ctx-bots-badge').textContent =
-    activos.length ? `${activos.length} activo${activos.length > 1 ? 's' : ''}` : '0 activos';
 
   const mc = dataJson.market_context;
   if (mc && mc.date)
@@ -589,7 +601,6 @@ function populateAutoCtx() {
     document.getElementById('ctx-perfil-badge').textContent = `${tp.cycles} ciclos`;
 
   renderGroups();
-  renderSavedSpecs();
 }
 
 function renderSavedSpecs() {
@@ -1386,9 +1397,14 @@ function renderGroups() {
   }
   list.innerHTML = activos.map((g, i) =>
     `<div class="group-card" id="gc-${i}" onclick="selectGroup(${i})">
-       <div class="group-card-badge">${g.badge}</div>
-       <div class="group-card-name">${g.name || 'Sin nombre'}</div>
-       ${g.summary ? `<div class="group-card-sum">${(g.summary || '').slice(0, 90)}${(g.summary || '').length > 90 ? '…' : ''}</div>` : ''}
+       <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;pointer-events:none">
+         <input type="radio" name="bot-select" value="${i}" style="margin-top:3px;flex-shrink:0">
+         <div>
+           <div class="group-card-badge">${g.badge}</div>
+           <div class="group-card-name">${g.name || 'Sin nombre'}</div>
+           ${g.summary ? `<div class="group-card-sum">${(g.summary || '').slice(0, 90)}${(g.summary || '').length > 90 ? '…' : ''}</div>` : ''}
+         </div>
+       </label>
      </div>`
   ).join('');
 }
@@ -1401,6 +1417,8 @@ function selectGroup(i) {
   selectedGroup = activos[i] || null;
   document.querySelectorAll('#grupos-list .group-card').forEach((c, j) =>
     c.classList.toggle('selected', i === j));
+  const radio = document.querySelector(`input[name="bot-select"][value="${i}"]`);
+  if (radio) radio.checked = true;
   const sel = document.getElementById('improve-sel');
   if (sel) {
     sel.textContent = selectedGroup
@@ -1408,20 +1426,46 @@ function selectGroup(i) {
       : 'Seleccioná un bot del panel izquierdo';
     sel.classList.toggle('active', !!selectedGroup);
   }
+  const btnAgregar = document.getElementById('btn-agregar');
+  if (btnAgregar) btnAgregar.disabled = !selectedGroup;
   updateImproveBtn();
+}
+
+// ── Agregar a nueva estrategia ────────────────────────────
+function agregarEstrategia() {
+  if (!selectedGroup) return;
+  const g = selectedGroup;
+  const lines = [`[Contexto extraído de ${g.badge} — ${g.name || 'Sin nombre'}]`];
+  if (g.category) lines.push(`Tipo: ${g.category}`);
+  if (g.summary)  lines.push(`\n${g.summary}`);
+  const m1 = g.m1;
+  if (m1?.score)    lines.push(`\nCalidad del backtest: ${m1.score.valor}/${m1.score.max} — ${m1.score.label}`);
+  if (m1?.metrics?.length) {
+    lines.push('Métricas:');
+    m1.metrics.slice(0, 6).forEach(m => lines.push(`  • ${m.label}: ${m.value}${m.note ? ' — ' + m.note : ''}`));
+  }
+  const m2 = (g.m2 || []).filter(r => r.estado === 'pendiente');
+  if (m2.length) {
+    lines.push('\nRecomendaciones pendientes:');
+    m2.slice(0, 5).forEach(r => lines.push(`  • [${r.prioridad}] ${r.title}`));
+  }
+  addMsg('sys', lines.join('\n'));
+}
+
+// ── Modal mejorar .py ─────────────────────────────────────
+function openImproveModal() {
+  document.getElementById('improve-overlay').style.display = 'block';
+  document.getElementById('improve-modal').style.display   = 'flex';
+}
+
+function closeImproveModal() {
+  document.getElementById('improve-overlay').style.display = 'none';
+  document.getElementById('improve-modal').style.display   = 'none';
 }
 
 // ── Mejorar .py con feedback ──────────────────────────────
 let improveCode  = null;
 let improvedCode = null;
-
-function toggleImprove() {
-  const bd = document.getElementById('improve-bd');
-  const c  = document.getElementById('caret-improve');
-  const open = bd.style.display !== 'none';
-  bd.style.display = open ? 'none' : 'flex';
-  c.style.transform = open ? '' : 'rotate(180deg)';
-}
 
 function handleImprovePy(input) {
   const file = input.files[0];
