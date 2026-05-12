@@ -239,6 +239,20 @@ select.sf-input{cursor:pointer}
 .spec-out-val{font-size:12px}
 .spec-out-warn{font-size:11px;color:var(--shared);margin-top:3px}
 .spec-out-crit{font-size:11px;color:var(--gate);margin-top:3px}
+.obs-item{margin-top:4px;padding:7px 10px;border-radius:6px}
+.obs-item-crit{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.obs-item-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.obs-item-text{font-size:11px;line-height:1.5}
+.obs-item-crit .obs-item-text{color:var(--gate)}
+.obs-item-warn .obs-item-text{color:var(--shared)}
+.obs-comment-ta{width:100%;margin-top:5px;padding:5px 8px;font-size:11px;font-family:var(--font);
+                border:1px solid var(--border);border-radius:5px;background:var(--bg);
+                color:var(--text);resize:vertical;min-height:30px;line-height:1.4}
+.obs-comment-ta:focus{outline:none;border-color:var(--bot)}
+.btn-regen{padding:7px 16px;border-radius:7px;border:1px solid rgba(220,38,38,.4);
+           background:rgba(220,38,38,.07);color:var(--gate);font-size:12px;
+           font-weight:600;cursor:pointer;font-family:var(--font)}
+.btn-regen:hover{background:rgba(220,38,38,.14)}
 .code-block{background:var(--bg);border:1px solid var(--border);border-radius:7px;
             padding:12px;font-family:var(--mono);font-size:10.5px;color:var(--bot);
             overflow:auto;white-space:pre;max-height:280px;margin-bottom:8px}
@@ -624,6 +638,10 @@ select.sf-input{cursor:pointer}
     </div>
     <div class="modal-foot" id="modal-foot" style="display:none">
       <button class="btn-sec" onclick="closeGenModal()">Cerrar</button>
+      <button class="btn-download" id="btn-dl-footer" onclick="downloadBot()"
+              style="display:none;width:auto;padding:7px 16px;margin:0">⬇ Descargar .py</button>
+      <button class="btn-regen" id="btn-regen-footer" onclick="rerunWithCorrections()"
+              style="display:none">↺ Regenerar</button>
     </div>
   </div>
 </div>
@@ -1086,11 +1104,12 @@ function closeGenModal() {
   document.getElementById('gen-overlay').classList.remove('show');
 }
 
-async function runGeneration() {
+async function runGeneration(corrections = []) {
   const payload = {
     bot_config  : buildBotSummary(),
     estrategia  : selectedSpec || {},
     chat_history: chatHistory,
+    corrections,
   };
   try {
     const r1 = await runPass('pass1', { ...payload, pass:'bot-pass1' });
@@ -1133,9 +1152,14 @@ function showBotOutput() {
   const el = document.getElementById('spec-output');
   el.style.display = 'block';
   const b = generatedBot;
-  const warns = (b.warnings  ||[]).map(w => `<div class="spec-out-warn">⚠ ${w}</div>`).join('');
-  const crits = (b.critical  ||[]).map(c => `<div class="spec-out-crit">✖ ${c}</div>`).join('');
-  const mt5ns = (b.mt5_notes ||[]).map(n => `<div class="spec-out-warn">🔧 ${n}</div>`).join('');
+  const mkObs = (items, cls, icon) => items.map(t =>
+    `<div class="obs-item ${cls}" data-obs-text="${escapeAttr(t)}">
+       <div class="obs-item-text">${icon} ${escapeHtml(t)}</div>
+       <textarea class="obs-comment-ta" placeholder="Agregar comentario…" rows="2"></textarea>
+     </div>`).join('');
+  const warns = mkObs(b.warnings  ||[], 'obs-item-warn', '⚠');
+  const crits = mkObs(b.critical  ||[], 'obs-item-crit', '✖');
+  const mt5ns = mkObs(b.mt5_notes ||[], 'obs-item-warn', '🔧');
   const codeHtml = b.bot_code
     ? `<div class="spec-out-title" style="margin-top:16px">Código del bot live</div>
        <pre class="code-block">${escapeHtml(b.bot_code)}</pre>
@@ -1145,7 +1169,29 @@ function showBotOutput() {
     ${b.summary ? `<div class="spec-out-card"><div class="spec-out-label">Resumen operativo</div><div class="spec-out-val">${b.summary}</div></div>` : ''}
     ${crits || warns || mt5ns ? `<div class="spec-out-title">Observaciones</div>${crits}${warns}${mt5ns}` : ''}
     ${codeHtml}`;
+  const dlBtn = document.getElementById('btn-dl-footer');
+  if (dlBtn) dlBtn.style.display = b.bot_code ? 'inline-block' : 'none';
+  const regenBtn = document.getElementById('btn-regen-footer');
+  const hasObs = !!(warns || crits || mt5ns);
+  if (regenBtn) regenBtn.style.display = hasObs ? 'inline-block' : 'none';
   document.getElementById('modal-foot').style.display = 'flex';
+}
+
+function rerunWithCorrections() {
+  const corrections = [...document.querySelectorAll('.obs-item')].map(item => {
+    const obsText = item.dataset.obsText || '';
+    const comment = item.querySelector('.obs-comment-ta')?.value.trim() || '';
+    return comment ? `${obsText} — Nota: ${comment}` : obsText;
+  }).filter(Boolean);
+  document.getElementById('spec-output').style.display = 'none';
+  document.getElementById('modal-foot').style.display  = 'none';
+  ['pass1','pass2','pass3'].forEach(p => {
+    const card = document.getElementById(p + '-card');
+    const icon = document.getElementById(p + '-icon');
+    card.className = 'pass-card idle'; card.style.display = '';
+    icon.textContent = '○';
+  });
+  runGeneration(corrections);
 }
 
 function downloadBot() {
@@ -1161,6 +1207,9 @@ function downloadBot() {
 
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

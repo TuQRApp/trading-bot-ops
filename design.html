@@ -227,23 +227,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
               cursor:pointer;margin-bottom:6px;font-family:var(--font);font-weight:600}
 .btn-download:hover{background:rgba(5,150,105,.14)}
 
-/* ── Correcciones ───────────────────────────────────── */
-.corrections-wrap{margin-top:14px;padding-top:12px;border-top:1px solid rgba(220,38,38,.2)}
-.corrections-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.corrections-title{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gate);
-                   text-transform:uppercase;letter-spacing:.5px}
-.corrections-sub{font-size:10.5px;color:var(--muted);margin-bottom:8px;line-height:1.5}
-.corr-item{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
-.corr-ta{flex:1;background:var(--bg);border:1px solid rgba(220,38,38,.25);border-radius:6px;
-         padding:6px 8px;font-size:11.5px;font-family:var(--font);color:var(--text);
-         resize:vertical;min-height:36px;line-height:1.4}
-.corr-ta:focus{outline:none;border-color:var(--gate)}
-.btn-del-corr{padding:4px 7px;border:1px solid transparent;border-radius:5px;
-              background:transparent;color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0}
-.btn-del-corr:hover{border-color:rgba(220,38,38,.3);color:var(--gate)}
-.btn-add-corr{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:5px;
-              border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
-.btn-add-corr:hover{border-color:var(--nico);color:var(--nico)}
+/* ── Observaciones con comentario inline ────────────── */
+.obs-item{margin-top:4px;padding:7px 10px;border-radius:6px}
+.obs-item-crit{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.obs-item-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.obs-item-text{font-size:11px;line-height:1.5}
+.obs-item-crit .obs-item-text{color:var(--gate)}
+.obs-item-warn .obs-item-text{color:var(--shared)}
+.obs-comment-ta{width:100%;margin-top:5px;padding:5px 8px;font-size:11px;font-family:var(--font);
+                border:1px solid var(--border);border-radius:5px;background:var(--bg);
+                color:var(--text);resize:vertical;min-height:30px;line-height:1.4}
+.obs-comment-ta:focus{outline:none;border-color:var(--nico)}
 .btn-regen{padding:7px 16px;border-radius:7px;border:1px solid rgba(220,38,38,.4);
            background:rgba(220,38,38,.07);color:var(--gate);font-size:12px;
            font-weight:600;cursor:pointer;font-family:var(--font)}
@@ -421,14 +415,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         </div>
       </div>
       <div class="spec-output" id="spec-output" style="display:none"></div>
-      <div class="corrections-wrap" id="corrections-wrap" style="display:none">
-        <div class="corrections-hdr">
-          <span class="corrections-title">Correcciones</span>
-          <button class="btn-add-corr" onclick="addCorrectionItem('')">+ Agregar</button>
-        </div>
-        <p class="corrections-sub">Editá o eliminá cada ítem. Al regenerar, Claude los incorpora como instrucciones obligatorias.</p>
-        <div id="corrections-list"></div>
-      </div>
     </div>
     <div class="modal-foot" id="modal-foot" style="display:none">
       <div class="mf-name-row">
@@ -958,10 +944,8 @@ function renderPendingFiles() {
 // ── Generación ───────────────────────────────────────────────
 function openGenerar() {
   document.getElementById('gen-overlay').classList.add('show');
-  document.getElementById('spec-output').style.display      = 'none';
-  document.getElementById('corrections-wrap').style.display = 'none';
-  document.getElementById('corrections-list').innerHTML     = '';
-  document.getElementById('modal-foot').style.display       = 'none';
+  document.getElementById('spec-output').style.display = 'none';
+  document.getElementById('modal-foot').style.display  = 'none';
   ['pass1','pass2','pass3'].forEach(p => {
     const card = document.getElementById(p + '-card');
     const icon = document.getElementById(p + '-icon');
@@ -1038,25 +1022,14 @@ function mergePassResult(data) {
   if (data.mt5_notes) generatedSpec.mt5_notes  = [...(generatedSpec.mt5_notes || []), ...data.mt5_notes];
 }
 
-function addCorrectionItem(text) {
-  const list = document.getElementById('corrections-list');
-  const item = document.createElement('div');
-  item.className = 'corr-item';
-  const ta = document.createElement('textarea');
-  ta.className = 'corr-ta'; ta.rows = 2; ta.value = text || '';
-  const btn = document.createElement('button');
-  btn.className = 'btn-del-corr'; btn.textContent = '✕';
-  btn.onclick = () => item.remove();
-  item.appendChild(ta); item.appendChild(btn);
-  list.appendChild(item);
-}
-
 function rerunWithCorrections() {
-  const corrections = [...document.querySelectorAll('.corr-ta')]
-    .map(ta => ta.value.trim()).filter(Boolean);
-  document.getElementById('spec-output').style.display      = 'none';
-  document.getElementById('corrections-wrap').style.display = 'none';
-  document.getElementById('modal-foot').style.display       = 'none';
+  const corrections = [...document.querySelectorAll('.obs-item')].map(item => {
+    const obsText = item.dataset.obsText || '';
+    const comment = item.querySelector('.obs-comment-ta')?.value.trim() || '';
+    return comment ? `${obsText} — Nota: ${comment}` : obsText;
+  }).filter(Boolean);
+  document.getElementById('spec-output').style.display = 'none';
+  document.getElementById('modal-foot').style.display  = 'none';
   ['pass1','pass2','pass3'].forEach(p => {
     const card = document.getElementById(p + '-card');
     const icon = document.getElementById(p + '-icon');
@@ -1102,9 +1075,14 @@ function showSpecOutput() {
     const extracted = tryExtractBacktestCode(s.raw_response);
     if (extracted) s.backtest_code = extracted;
   }
-  const warns = (s.warnings  || []).map(w => `<div class="spec-out-warn">⚠ ${w}</div>`).join('');
-  const crits = (s.critical  || []).map(c => `<div class="spec-out-crit">✖ ${c}</div>`).join('');
-  const mt5ns = (s.mt5_notes || []).map(n => `<div class="spec-out-warn">🔧 ${n}</div>`).join('');
+  const mkObs = (items, cls, icon) => items.map(t =>
+    `<div class="obs-item ${cls}" data-obs-text="${escapeAttr(t)}">
+       <div class="obs-item-text">${icon} ${escapeHtml(t)}</div>
+       <textarea class="obs-comment-ta" placeholder="Agregar comentario…" rows="2"></textarea>
+     </div>`).join('');
+  const warns = mkObs(s.warnings  || [], 'obs-item-warn', '⚠');
+  const crits = mkObs(s.critical  || [], 'obs-item-crit', '✖');
+  const mt5ns = mkObs(s.mt5_notes || [], 'obs-item-warn', '🔧');
   const fieldRows = Object.entries(s.spec || {}).map(([k, v]) =>
     `<div class="spec-out-card"><div class="spec-out-label">${k}</div><div class="spec-out-val">${v}</div></div>`
   ).join('');
@@ -1123,22 +1101,9 @@ function showSpecOutput() {
   if (ni && !ni.value) ni.value = s.name || s.spec?.instrumentos || '';
   const dlBtn = document.getElementById('btn-dl-footer');
   if (dlBtn) dlBtn.style.display = s.backtest_code ? 'inline-block' : 'none';
-
-  // Correcciones editables
-  const allCorr = [...(s.critical || []), ...(s.warnings || [])];
-  const corrWrap = document.getElementById('corrections-wrap');
-  const corrList = document.getElementById('corrections-list');
   const regenBtn = document.getElementById('btn-regen-footer');
-  corrList.innerHTML = '';
-  if (allCorr.length) {
-    allCorr.forEach(c => addCorrectionItem(c));
-    corrWrap.style.display = 'block';
-    if (regenBtn) regenBtn.style.display = 'inline-block';
-  } else {
-    corrWrap.style.display = 'none';
-    if (regenBtn) regenBtn.style.display = 'none';
-  }
-
+  const hasObs = !!(warns || crits || mt5ns);
+  if (regenBtn) regenBtn.style.display = hasObs ? 'inline-block' : 'none';
   document.getElementById('modal-foot').style.display = 'flex';
 }
 
@@ -1154,7 +1119,9 @@ function downloadBacktest() {
 }
 
 function escapeHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escapeAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function saveSpec() {

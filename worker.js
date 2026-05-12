@@ -1137,7 +1137,7 @@ async function handleGenerateBot(request, env) {
       if (!env.ANTHROPIC_API_KEY)
         return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
       const system  = buildBotPass1System(estrategia);
-      const userMsg = buildBotPass1User(bot_config, estrategia);
+      const userMsg = buildBotPass1User(bot_config, estrategia, body.corrections || []);
       const result  = await claudeJsonCall(system, userMsg, env, 16000, 'claude-opus-4-7');
       return json(result);
     }
@@ -1201,8 +1201,14 @@ FORMATO: JSON sin markdown:
 }`;
 }
 
-function buildBotPass1User(botConfig, estrategia) {
-  return `Configuracion operativa del trader:\n${buildSpecText(botConfig)}\n\nEstrategia aprobada:\n${JSON.stringify(estrategia?.spec || {}, null, 2)}\n\nGenera el bot live completo en JSON.`;
+function buildBotPass1User(botConfig, estrategia, corrections = []) {
+  let msg = `Configuracion operativa del trader:\n${buildSpecText(botConfig)}\n\nEstrategia aprobada:\n${JSON.stringify(estrategia?.spec || {}, null, 2)}`;
+  if (corrections.length) {
+    msg += '\n\nCORRECCIONES OBLIGATORIAS a resolver en esta generacion:\n' +
+      corrections.map((c, i) => `${i + 1}. ${c}`).join('\n');
+  }
+  msg += '\n\nGenera el bot live completo en JSON.';
+  return msg;
 }
 
 function buildBotPass2System() {
