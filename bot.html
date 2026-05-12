@@ -1031,18 +1031,20 @@ async function sendChat() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const reader = res.body.getReader(), decoder = new TextDecoder();
-    let full = '';
+    let full = '', buf = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      decoder.decode(value, { stream:true }).split('\n').forEach(line => {
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+      lines.forEach(line => {
         if (line.startsWith('data: ')) {
           const d = line.slice(6).trim();
           if (d && d !== '[DONE]') {
             try {
               const delta = JSON.parse(d)?.delta?.text || '';
-              full += delta; streamText.textContent = full;
-              streamDiv.closest('.chat-msgs').scrollTop = 99999;
+              if (delta) { full += delta; streamText.textContent = full; streamDiv.closest('.chat-msgs').scrollTop = 99999; }
             } catch (_) {}
           }
         }
