@@ -408,6 +408,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
                oninput="this.classList.remove('mf-err')">
       </div>
       <button class="btn-sec" onclick="closeGenModal()">Cerrar</button>
+      <button class="btn-download" id="btn-dl-footer" onclick="downloadBacktest()"
+              style="display:none;width:auto;padding:7px 16px;margin:0">⬇ Descargar .py</button>
       <button class="btn-pri" onclick="saveSpec()">Guardar</button>
     </div>
   </div>
@@ -1056,6 +1058,8 @@ function showSpecOutput() {
     ${codeHtml}`;
   const ni = document.getElementById('mf-name');
   if (ni && !ni.value) ni.value = s.name || s.spec?.instrumentos || '';
+  const dlBtn = document.getElementById('btn-dl-footer');
+  if (dlBtn) dlBtn.style.display = s.backtest_code ? 'inline-block' : 'none';
   document.getElementById('modal-foot').style.display = 'flex';
 }
 
