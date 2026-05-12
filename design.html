@@ -227,6 +227,28 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
               cursor:pointer;margin-bottom:6px;font-family:var(--font);font-weight:600}
 .btn-download:hover{background:rgba(5,150,105,.14)}
 
+/* ── Correcciones ───────────────────────────────────── */
+.corrections-wrap{margin-top:14px;padding-top:12px;border-top:1px solid rgba(220,38,38,.2)}
+.corrections-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.corrections-title{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gate);
+                   text-transform:uppercase;letter-spacing:.5px}
+.corrections-sub{font-size:10.5px;color:var(--muted);margin-bottom:8px;line-height:1.5}
+.corr-item{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
+.corr-ta{flex:1;background:var(--bg);border:1px solid rgba(220,38,38,.25);border-radius:6px;
+         padding:6px 8px;font-size:11.5px;font-family:var(--font);color:var(--text);
+         resize:vertical;min-height:36px;line-height:1.4}
+.corr-ta:focus{outline:none;border-color:var(--gate)}
+.btn-del-corr{padding:4px 7px;border:1px solid transparent;border-radius:5px;
+              background:transparent;color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0}
+.btn-del-corr:hover{border-color:rgba(220,38,38,.3);color:var(--gate)}
+.btn-add-corr{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:5px;
+              border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.btn-add-corr:hover{border-color:var(--nico);color:var(--nico)}
+.btn-regen{padding:7px 16px;border-radius:7px;border:1px solid rgba(220,38,38,.4);
+           background:rgba(220,38,38,.07);color:var(--gate);font-size:12px;
+           font-weight:600;cursor:pointer;font-family:var(--font)}
+.btn-regen:hover{background:rgba(220,38,38,.14)}
+
 /* ── Confirm modal — campos ─────────────────────────── */
 .confirm-field{background:var(--bg);border:1px solid var(--border);border-radius:6px;
                padding:8px 10px;margin-bottom:5px}
@@ -399,6 +421,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
         </div>
       </div>
       <div class="spec-output" id="spec-output" style="display:none"></div>
+      <div class="corrections-wrap" id="corrections-wrap" style="display:none">
+        <div class="corrections-hdr">
+          <span class="corrections-title">Correcciones</span>
+          <button class="btn-add-corr" onclick="addCorrectionItem('')">+ Agregar</button>
+        </div>
+        <p class="corrections-sub">Editá o eliminá cada ítem. Al regenerar, Claude los incorpora como instrucciones obligatorias.</p>
+        <div id="corrections-list"></div>
+      </div>
     </div>
     <div class="modal-foot" id="modal-foot" style="display:none">
       <div class="mf-name-row">
@@ -410,6 +440,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       <button class="btn-sec" onclick="closeGenModal()">Cerrar</button>
       <button class="btn-download" id="btn-dl-footer" onclick="downloadBacktest()"
               style="display:none;width:auto;padding:7px 16px;margin:0">⬇ Descargar .py</button>
+      <button class="btn-regen" id="btn-regen-footer" onclick="rerunWithCorrections()"
+              style="display:none">↺ Regenerar</button>
       <button class="btn-pri" onclick="saveSpec()">Guardar</button>
     </div>
   </div>
@@ -926,8 +958,10 @@ function renderPendingFiles() {
 // ── Generación ───────────────────────────────────────────────
 function openGenerar() {
   document.getElementById('gen-overlay').classList.add('show');
-  document.getElementById('spec-output').style.display = 'none';
-  document.getElementById('modal-foot').style.display  = 'none';
+  document.getElementById('spec-output').style.display      = 'none';
+  document.getElementById('corrections-wrap').style.display = 'none';
+  document.getElementById('corrections-list').innerHTML     = '';
+  document.getElementById('modal-foot').style.display       = 'none';
   ['pass1','pass2','pass3'].forEach(p => {
     const card = document.getElementById(p + '-card');
     const icon = document.getElementById(p + '-icon');
@@ -953,11 +987,12 @@ function openSaveModal() {
   showSpecOutput();
 }
 
-async function runGeneration() {
+async function runGeneration(corrections = []) {
   const basePayload = {
     spec: buildSpecSummary(),
     context: buildChatPayload().context,
     chat_history: chatHistory,
+    corrections,
   };
   try {
     const spec1 = await runPass('pass1', basePayload);
@@ -1001,6 +1036,34 @@ function mergePassResult(data) {
   if (data.warnings)  generatedSpec.warnings  = [...(generatedSpec.warnings  || []), ...data.warnings];
   if (data.critical)  generatedSpec.critical   = [...(generatedSpec.critical  || []), ...data.critical];
   if (data.mt5_notes) generatedSpec.mt5_notes  = [...(generatedSpec.mt5_notes || []), ...data.mt5_notes];
+}
+
+function addCorrectionItem(text) {
+  const list = document.getElementById('corrections-list');
+  const item = document.createElement('div');
+  item.className = 'corr-item';
+  const ta = document.createElement('textarea');
+  ta.className = 'corr-ta'; ta.rows = 2; ta.value = text || '';
+  const btn = document.createElement('button');
+  btn.className = 'btn-del-corr'; btn.textContent = '✕';
+  btn.onclick = () => item.remove();
+  item.appendChild(ta); item.appendChild(btn);
+  list.appendChild(item);
+}
+
+function rerunWithCorrections() {
+  const corrections = [...document.querySelectorAll('.corr-ta')]
+    .map(ta => ta.value.trim()).filter(Boolean);
+  document.getElementById('spec-output').style.display      = 'none';
+  document.getElementById('corrections-wrap').style.display = 'none';
+  document.getElementById('modal-foot').style.display       = 'none';
+  ['pass1','pass2','pass3'].forEach(p => {
+    const card = document.getElementById(p + '-card');
+    const icon = document.getElementById(p + '-icon');
+    card.className = 'pass-card idle'; card.style.display = '';
+    icon.textContent = '○'; icon.className = 'pass-icon';
+  });
+  runGeneration(corrections);
 }
 
 function tryExtractBacktestCode(raw) {
@@ -1060,6 +1123,22 @@ function showSpecOutput() {
   if (ni && !ni.value) ni.value = s.name || s.spec?.instrumentos || '';
   const dlBtn = document.getElementById('btn-dl-footer');
   if (dlBtn) dlBtn.style.display = s.backtest_code ? 'inline-block' : 'none';
+
+  // Correcciones editables
+  const allCorr = [...(s.critical || []), ...(s.warnings || [])];
+  const corrWrap = document.getElementById('corrections-wrap');
+  const corrList = document.getElementById('corrections-list');
+  const regenBtn = document.getElementById('btn-regen-footer');
+  corrList.innerHTML = '';
+  if (allCorr.length) {
+    allCorr.forEach(c => addCorrectionItem(c));
+    corrWrap.style.display = 'block';
+    if (regenBtn) regenBtn.style.display = 'inline-block';
+  } else {
+    corrWrap.style.display = 'none';
+    if (regenBtn) regenBtn.style.display = 'none';
+  }
+
   document.getElementById('modal-foot').style.display = 'flex';
 }
 

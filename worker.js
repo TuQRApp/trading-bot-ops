@@ -732,7 +732,7 @@ async function handleGenerateSpec(request, env) {
       if (!env.ANTHROPIC_API_KEY)
         return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
       const system  = buildPass1System(context);
-      const userMsg = buildPass1User(spec, context);
+      const userMsg = buildPass1User(spec, context, body.corrections || []);
       const result  = await claudeJsonCall(system, userMsg, env, 16000, 'claude-opus-4-7');
       return json(result);
     }
@@ -991,9 +991,16 @@ Responde SOLO con JSON valido sin markdown:
 }`;
 }
 
-function buildPass1User(spec, context) {
+function buildPass1User(spec, context, corrections = []) {
   const manualText = buildManualCtxText(context.manual || []);
-  return `Dimensiones definidas por el trader:\n${buildSpecText(spec)}${manualText ? '\n\nContexto adicional:\n' + manualText : ''}\n\nGenera la spec completa en JSON.`;
+  let msg = `Dimensiones definidas por el trader:\n${buildSpecText(spec)}`;
+  if (corrections.length) {
+    msg += '\n\nCORRECCIONES OBLIGATORIAS a resolver en esta generacion:\n' +
+      corrections.map((c, i) => `${i + 1}. ${c}`).join('\n');
+  }
+  if (manualText) msg += '\n\nContexto adicional:\n' + manualText;
+  msg += '\n\nGenera la spec completa en JSON.';
+  return msg;
 }
 
 function buildPass2System(context) {
