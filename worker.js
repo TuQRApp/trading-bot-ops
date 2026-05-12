@@ -347,6 +347,13 @@ async function handlePatchGroup(request, env) {
       return json({ ok: true });
     }
 
+    if (action === 'set_reprocesado') {
+      if (!body.reprocesado) return json({ error: 'reprocesado required' }, 400);
+      group.reprocesado = body.reprocesado;
+      await writeData(data, sha, env);
+      return json({ ok: true });
+    }
+
     if (action === 'save_m5_notes') {
       if (!group.m5) group.m5 = {};
       group.m5.trader_notes = body.notes || '';

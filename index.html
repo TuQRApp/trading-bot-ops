@@ -1629,23 +1629,27 @@ async function doReprocesar(file, badge) {
     var formFile  = new File([blob], fileName, { type: 'text/plain' });
     var fd = new FormData();
     fd.append('file',   formFile);
-    fd.append('folder', _reprocesarFolder);
+    fd.append('folder', _reprocesarFolderN);   // folder name (=grupo), NO el folder_id
 
     var upRes = await fetch(WORKER + '/upload', { method: 'POST', body: fd });
     if (!upRes.ok) throw new Error('Upload HTTP ' + upRes.status);
     var upData = await upRes.json();
+    if (upData && upData.error) throw new Error(upData.error);
 
     // Guardar referencia en el grupo vía PATCH
     var rawUrl = 'https://raw.githubusercontent.com/TuQRApp/trading-bot-ops/main/Archivos/'
       + encodeURIComponent(_reprocesarFolderN) + '/' + fileName;
-    await fetch(WORKER + '/group', {
+    var patchRes = await fetch(WORKER + '/group', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         badge: badge,
+        action: 'set_reprocesado',
         reprocesado: { url: rawUrl, file: fileName, date: new Date().toISOString().slice(0,10) }
       })
     });
+    var patchData = await patchRes.json();
+    if (patchData && patchData.error) throw new Error(patchData.error);
 
     loadFileList();
   } catch(e) {
