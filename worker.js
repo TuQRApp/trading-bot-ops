@@ -133,7 +133,7 @@ async function handleUpload(request, env) {
     const folder = (form.get('folder') || '').trim();
     if (!file || !folder) return json({ error: 'file and folder are required' }, 400);
 
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = new Uint8Array(await new Response(file).arrayBuffer());
     if (bytes.length > 10 * 1024 * 1024) return json({ error: 'Archivo demasiado grande (máx 10 MB). Los archivos HTML de resultados no necesitan subirse — solo sube el .py y los .csv.' }, 413);
     let base64 = '';
     const CHUNK = 8190; // must be multiple of 3 for valid base64 concatenation
