@@ -733,7 +733,7 @@ async function handleGenerateSpec(request, env) {
         return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
       const system  = buildPass1System(context);
       const userMsg = buildPass1User(spec, context);
-      const result  = await claudeJsonCall(system, userMsg, env, 8192);
+      const result  = await claudeJsonCall(system, userMsg, env, 16000, 'claude-opus-4-7');
       return json(result);
     }
 
@@ -1063,7 +1063,7 @@ function buildPass3User(generatedSpec) {
 
 // ── Claude non-streaming call — espera JSON en la respuesta ─────────────────
 
-async function claudeJsonCall(system, userMsg, env, maxTokens = 2048) {
+async function claudeJsonCall(system, userMsg, env, maxTokens = 2048, model = 'claude-sonnet-4-6') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -1072,7 +1072,7 @@ async function claudeJsonCall(system, userMsg, env, maxTokens = 2048) {
       'content-type'     : 'application/json',
     },
     body: JSON.stringify({
-      model     : 'claude-sonnet-4-6',
+      model     : model,
       max_tokens: maxTokens,
       system,
       messages  : [{ role: 'user', content: userMsg }],
@@ -1131,7 +1131,7 @@ async function handleGenerateBot(request, env) {
         return json({ error: 'ANTHROPIC_API_KEY no configurado' }, 500);
       const system  = buildBotPass1System(estrategia);
       const userMsg = buildBotPass1User(bot_config, estrategia);
-      const result  = await claudeJsonCall(system, userMsg, env, 8192);
+      const result  = await claudeJsonCall(system, userMsg, env, 16000, 'claude-opus-4-7');
       return json(result);
     }
 
