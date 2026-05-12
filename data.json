@@ -331,63 +331,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Semana de alta carga macro con CPI, PPI y votación de nominación Fed el martes y miércoles; VIX en ascenso y DXY en niveles extremos presionan a XAUUSD y BTCUSD con riesgo de whipsaws severos en M3.",
+        "resumen": "Jornada de alto riesgo para los tres instrumentos del bot: el CPI de EE.UU. ya fue publicado hoy y la votacion del nuevo presidente de la Fed genera incertidumbre adicional sobre el USD, mientras el DXY en 118 presiona a XAUUSD y XAGUSD a la baja pese a posicionamiento institucional alcista en oro.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Pausar bot antes del CPI del martes",
-            "desc": "El martes 12/05 a las 08:30 ET se publican CPI m/m, Core CPI y CPI y/y simultaneamente. El forecast de CPI y/y sube a 3.7% vs 3.3% previo, lo que implica riesgo de movimiento explosivo en XAUUSD y BTCUSD en M3. Las ordenes limite pueden ejecutarse en el lado incorrecto del spike. Pausar el bot al menos 30 minutos antes (08:00 ET) y reactivar solo cuando el rango de la vela post-dato se haya consolidado (aprox. 09:15 ET). El mismo dia a las 12:00 ET hay votacion de nominacion del presidente de la Fed, segunda ventana de pausa obligatoria.",
-            "horizonte": "24h"
+            "title": "CPI publicado hoy: pausar bot inmediatamente",
+            "desc": "El CPI m/m (0.6% previsto vs 0.9% previo) y el Core CPI m/m (0.3%) se publicaron hoy a las 08:30 ET. Si el bot sigue activo, las velas M3 post-dato presentan spreads amplios y gaps que invalidan los niveles Fibonacci del canal de 20 barras. Verifica que no haya ordenes limite abiertas residuales en XAUUSD y XAGUSD. Considera pausar al menos 30-45 minutos adicionales hasta que la volatilidad post-dato se absorba.",
+            "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "PPI del miercoles requiere segunda pausa",
-            "desc": "El miercoles 13/05 a las 08:30 ET se publica Core PPI m/m (forecast 0.3%) y PPI m/m (forecast 0.5%). Tras el impacto del CPI del dia anterior, los mercados estaran sensibles a cualquier confirmacion o sorpresa inflacionaria adicional. Aplicar la misma ventana de pausa 08:00-09:15 ET. Si el CPI del martes sorprendio al alza, la volatilidad acumulada hara que los niveles de Fibonacci del canal de 20 barras esten distorsionados; considerar reiniciar el canal tras la apertura europea del miercoles.",
-            "horizonte": "48h"
+            "title": "Votacion presidente Fed: riesgo de spike en USD",
+            "desc": "La votacion de confirmacion del nuevo presidente de la Fed estaba programada para las 11:59 ET de hoy. Un resultado inesperado o declaraciones iniciales del nominado pueden generar un spike brusco en DXY que desplaza los niveles del canal Fibonacci en XAUUSD y XAGUSD. Mantener el bot pausado o reducir el tamano de lote al minimo hasta confirmar el resultado y que el mercado digiera la noticia.",
+            "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "DXY en 118.39: presion bajista sobre XAUUSD y XAGUSD",
-            "desc": "El DXY se encuentra en 118.39, nivel extremadamente elevado historicamente. Un dolar tan fuerte suprime los precios de XAUUSD y XAGUSD en terminos mecanicos. Sin embargo, el COT de XAU muestra netos institucionales en +156,501 contratos con sesgo fuertemente alcista, lo que crea una tension entre flujo especulativo de largo plazo y presion del dolar de corto plazo. En M3 esto puede traducirse en breakouts falsos repetidos en ambas direcciones. Reducir el tamano de lote en un 30% para XAUUSD y XAGUSD hasta que el DXY muestre señal de techo o retroceda por debajo de 116.",
-            "horizonte": "semana"
+            "title": "DXY en 118: presion bajista directa sobre metales",
+            "desc": "El DXY cotiza en 118.04, nivel historicamente elevado, con curva de rendimientos plana (spread 10Y-2Y de 0.47). Este entorno fortalece al USD y penaliza a XAUUSD y XAGUSD. Los breakouts alcistas del canal Fibonacci en metales tendran menor seguimiento y mayor riesgo de fallo. Considera reducir el lote de las 3 ordenes limite simultaneas en metales o deshabilitar TP2/TP3 hasta que el DXY muestre debilidad.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-04",
             "tipo": "alerta",
-            "title": "VIX subiendo: whipsaws en breakouts M3",
-            "desc": "El VIX paso de 17.19 a 18.27 (+1.08), sigue en regimen normal pero con momentum alcista. Para una estrategia de breakout de canal en M3, un VIX en expansion genera velas largas con cierres que revierten rapidamente, activando TP1 pero dejando TP2 y TP3 sin ejecutar o peor, revertiendo al stop. Vigilar si el VIX supera 20: ese umbral es el disparador recomendado para activar el circuit breaker de racha manualmente o reducir a 1 orden limite en lugar de 3. Monitorear en tiempo real durante la semana.",
-            "horizonte": "now"
+            "title": "PPI manana: evitar operar metales 08:00-09:00 ET",
+            "desc": "Manana 13 de mayo se publican Core PPI m/m (prevision 0.3%) y PPI m/m (0.5%) a las 08:30 ET. Estos datos movera de nuevo al USD y por extension a XAUUSD y XAGUSD. Programa una pausa automatica del bot entre 08:00 y 09:15 ET manana para evitar que ordenes limite abiertas sean alcanzadas durante el spike inicial de volatilidad.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "COT XAU: institucionales fuertemente largos",
-            "desc": "Los especuladores no comerciales mantienen +156,501 contratos netos largos en XAU (203,487 largos vs 46,986 cortos), el sesgo institucional mas robusto de los activos monitoreados. Esto favorece que los breakouts alcistas en el canal de Fibonacci de XAUUSD tengan mayor follow-through que los bajistas. Configurar el bot para priorizar señales de breakout al alza en XAUUSD: si la logica del codigo permite ajustar sesgo direccional, desactivar o reducir lotes en señales short de XAUUSD durante esta semana.",
-            "horizonte": "semana"
+            "title": "COT oro muy alcista: breakouts largos favorecidos",
+            "desc": "El posicionamiento neto especulativo en XAU es de +156,501 contratos (largo 203,487 vs corto 46,986), sesgo claramente alcista segun el ultimo reporte CFTC del 5 de mayo. Cuando el DXY ceda o estabilice, los breakouts alcistas del canal Fibonacci en XAUUSD tendran respaldo institucional. Una vez superada la volatilidad del CPI y la votacion Fed, prioriza senales largas en XAUUSD y permite que TP3 corra con breakeven activo.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Crypto Fear & Greed en neutro: BTCUSD sin sesgo claro",
-            "desc": "El indice de Fear & Greed cripto marca 48 (Neutral), practicamente sin cambio respecto al dia anterior (47). No hay datos de funding rate ni open interest de Binance disponibles hoy, lo que limita la evaluacion del sesgo de crowding en BTCUSD. En ausencia de sesgo de financiamiento, la estrategia de breakout en M3 para BTCUSD opera sin ventaja direccional adicional. Mantener configuracion simetrica para BTCUSD (ordenes largas y cortas habilitadas) y depender exclusivamente de la señal del canal de Fibonacci. Revisar funding rate manualmente en Binance antes de la sesion americana.",
-            "horizonte": "now"
+            "title": "BTC Fear & Greed neutral: condiciones mixtas",
+            "desc": "El indice Fear & Greed de cripto marca 49 (Neutral, sin cambio significativo vs 48 previo). El VIX en 18.63 esta en regimen normal, lo que es moderadamente favorable para la estrategia de breakout en BTCUSD en M3. Sin datos de funding rate ni open interest de Binance disponibles hoy, no es posible evaluar riesgo de squeeze. Opera BTCUSD con tamano de lote estandar pero activa el circuit breaker de racha si se encadenan 2 operaciones perdedoras consecutivas dado el entorno macro incierto.",
+            "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-11T13:50:50Z",
+        "last_updated": "2026-05-12T13:10:04Z",
         "macro_snapshot": {
           "vix": {
-            "value": 18.27,
-            "prev": 17.19,
-            "change": 1.08,
+            "value": 18.63,
+            "prev": 18.38,
+            "change": 0.25,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 48,
+            "value": 49,
             "label": "Neutral",
-            "prev": 47
+            "prev": 48
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -418,7 +418,7 @@
             {
               "event": "Fed Chair Nomination Vote",
               "currency": "USD",
-              "date": "2026-05-12T12:00:00-04:00",
+              "date": "2026-05-12T11:59:00-04:00",
               "time": "",
               "forecast": "Pass",
               "previous": ""
@@ -444,7 +444,7 @@
               "currency": "GBP",
               "date": "2026-05-14T02:00:00-04:00",
               "time": "",
-              "forecast": "-0.2%",
+              "forecast": "-0.1%",
               "previous": "0.5%"
             },
             {
@@ -452,7 +452,7 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.7%",
               "previous": "1.9%"
             },
             {
@@ -460,26 +460,26 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.5%",
               "previous": "1.7%"
             }
           ],
           "fred": {
             "dxy": {
-              "value": 118.393,
-              "date": "2026-05-01"
+              "value": 118.039,
+              "date": "2026-05-08"
             },
             "t10y": {
-              "value": 4.41,
-              "date": "2026-05-07"
+              "value": 4.38,
+              "date": "2026-05-08"
             },
             "t2y": {
-              "value": 3.92,
-              "date": "2026-05-07"
+              "value": 3.9,
+              "date": "2026-05-08"
             },
             "yield_spread": {
-              "value": 0.48,
-              "date": "2026-05-08"
+              "value": 0.47,
+              "date": "2026-05-11"
             },
             "curve_regime": "flat"
           },
@@ -489,8 +489,8 @@
               "date": "2026-04"
             },
             "cpi_index": {
-              "value": "330.213",
-              "date": "2026-03"
+              "value": "333.020",
+              "date": "2026-04"
             }
           },
           "ecb": null,
@@ -501,13 +501,6 @@
               "short": 196403,
               "bias": "bearish",
               "date": "2026-05-05"
-            },
-            "GBP": {
-              "net": -20847,
-              "long": 31637,
-              "short": 52484,
-              "bias": "bearish",
-              "date": "2022-02-01"
             },
             "JPY": {
               "net": -65992,
@@ -525,7 +518,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-11T13:50:50Z"
+          "fetched_at": "2026-05-12T13:10:04Z"
         }
       },
       "versions": [
@@ -943,63 +936,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Semana de alta carga macroeconómica con CPI, PPI y datos de retail sales en USD que exigen pausas quirúrgicas en ventanas clave, mientras el VIX en zona normal y el oro con posicionamiento institucional alcista ofrecen condiciones favorables para el sistema de reversión a la media.",
+        "resumen": "Jornada de alta carga macro con CPI de EE.UU. ya publicado y voto de nominación de presidente de la Fed pendiente; VIX en zona normal favorece la estrategia de reversión a la media, pero los eventos del día exigen pausas quirúrgicas en instrumentos USD-sensibles.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "CPI USD mañana: pausar bot 08:15-09:00 ET",
-            "desc": "Mañana 12-may a las 08:30 ET se publican CPI m/m (forecast 0.6% vs prev 0.9%), Core CPI m/m (0.3% vs 0.2%) y CPI y/y (3.7% vs 3.3%). La aceleración esperada en términos anuales puede generar expansión brusca de spreads y slippage extremo en los 14 instrumentos, especialmente US30, NAS100 y metales. Activa el circuit breaker manual o pausa el bot entre 08:15 y 09:00 ET para evitar ejecuciones en el spike inicial. Reactiva solo cuando el spread vuelva a rangos normales.",
-            "horizonte": "24h"
+            "title": "CPI EE.UU. publicado: revisar spreads y slippage",
+            "desc": "El CPI m/m de hoy (forecast 0.6% vs previo 0.9%) y Core CPI (forecast 0.3% vs previo 0.2%) ya fueron liberados a las 08:30 ET. Los primeros 30-45 minutos post-dato generan expansión de spreads en índices (US30, NAS100) y metales (XAUUSD). Verifica que el filtro de spread del bot haya bloqueado entradas durante ese ventana y revisa en MT5 si alguna orden fue ejecutada con spread anormal. Si hay trades abiertos con pérdida flotante elevada en esos instrumentos, considera cerrarlos manualmente antes de que la volatilidad post-CPI se extienda.",
+            "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Votacion Fed Chair 12-may: riesgo intradía indices",
-            "desc": "El mismo 12-may a las 12:00 ET se vota la nominacion del presidente de la Fed. Aunque el forecast es 'Pass', cualquier sorpresa o declaracion asociada puede mover US30 y NAS100 con gaps en M3. Mantén el bot pausado o en tamaño reducido (50% del lote habitual) desde las 11:45 hasta las 12:30 ET. Si el resultado es confirmado sin novedad, reactiva normalmente.",
-            "horizonte": "24h"
+            "title": "Voto de nominación Fed Chair: pausar índices EE.UU.",
+            "desc": "A las 11:59 ET de hoy se vota la nominación del presidente de la Fed. El resultado impacta directamente la curva de tasas y los índices estadounidenses (US30, NAS100). Si el resultado es inesperado (rechazo o candidato no consensuado), la reacción puede ser violenta en M3. Se recomienda pausar manualmente las entradas en US30 y NAS100 entre 11:45 ET y 12:30 ET, o activar el circuit breaker diario preventivamente para esos símbolos durante esa ventana. Reanudar solo si el spread regresa a niveles normales y la vela M3 muestra rango inferior a la media de las ultimas 20 velas.",
+            "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "PPI y Retail Sales: ventanas de pausa 13-14 may",
-            "desc": "El 13-may a las 08:30 ET salen Core PPI (0.3%) y PPI (0.5%); el 14-may a las 08:30 ET se publican Core Retail Sales (0.6% vs 1.9%) y Retail Sales (0.6% vs 1.7%), ambos con desaceleracion marcada que puede sorprender a la baja. Programa pausas automaticas de 08:15 a 08:55 ET en ambos dias. El GDP GBP del 14-may (forecast -0.2%) puede afectar pares vinculados a GBP si el bot los opera; verifica la lista de simbolos activos.",
-            "horizonte": "48h"
+            "title": "PPI manana: ajustar exposicion índices y metales",
+            "desc": "Manana 13-may a las 08:30 ET se publican Core PPI m/m (forecast 0.3%) y PPI m/m (forecast 0.5%). Dado que el CPI de hoy ya marca presion inflacionaria, un PPI sorpresivo al alza generaria una segunda ola de volatilidad en XAUUSD, US30 y NAS100. Configura el circuit breaker semanal para que el bot no abra nuevas posiciones en esos tres instrumentos entre 08:15 ET y 09:15 ET del 13-may. Revisa tambien los limites de correlacion por clase de activo para evitar acumulacion de exposicion en metales e índices simultaneamente.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-04",
-            "tipo": "oportunidad",
-            "title": "XAU: COT institucional muy alcista, operar lados largos",
-            "desc": "El reporte CFTC del 5-may muestra net long de 156,501 contratos en oro (long 203k vs short 47k), el sesgo institucional mas fuerte del universo monitoreado. Para el bot, esto favorece priorizar señales de rebote desde el canal de Fibonacci inferior en XAU/USD sobre señales de venta corta. No bloquees las señales largas por filtros de correlacion durante esta semana; el sesgo estructural valida la direccion del sistema.",
+            "tipo": "alerta",
+            "title": "JPY muy corto segun COT: riesgo de squeeze",
+            "desc": "El posicionamiento especulativo en JPY muestra net corto de -65.992 contratos (shorts: 172.507 vs longs: 106.515), el sesgo mas extremo entre los activos monitoreados. Si el bot opera algun par JPY (p.ej. USDJPY), existe riesgo elevado de un short squeeze institucional que genere movimientos bruscos alejados de la media del canal Fibonacci. Reduce el tamano de lote a la mitad para pares JPY esta semana y asegurate de que el stop loss no sea mayor al ATR de 3 velas M3 en ese instrumento.",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en zona normal: condiciones optimas para el sistema",
-            "desc": "El VIX esta en 18.27 (subio desde 17.19 pero permanece en regimen normal). El rango 15-22 es el entorno ideal para estrategias de mean reversion en M3: suficiente volatilidad para generar oscilaciones aprovechables dentro del canal Fibonacci, sin el ruido de regimenes de panico. Fuera de las ventanas de eventos macro, el bot puede operar con parametros normales. No es necesario reducir el tamaño de lote por condiciones de volatilidad en este momento.",
-            "horizonte": "now"
+            "title": "XAUUSD: COT bullish y DXY elevado crean tension",
+            "desc": "El oro tiene net long institucional de +156.501 contratos (COT del 5-may), lo que indica soporte estructural alcista. Sin embargo, el DXY en 118.04 es extremadamente alto y actua como viento en contra para el oro en USD. Esta tension entre posicionamiento institucional alcista y dolar fuerte puede generar movimientos de ida y vuelta amplios en XAUUSD, ideales para el sistema de reversión a la media con canales Fibonacci. Prioriza senales de retorno en XAUUSD cuando el precio toque el extremo inferior del canal AlgoAlpha en M3, ya que el sesgo institucional neto favorece rebotes desde soporte.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "DXY elevado y curva plana: contexto macro para indices",
-            "desc": "El DXY esta en 118.39, nivel historicamente alto, con curva de rendimientos plana (spread 10Y-2Y de 0.48). Esto comprime margenes en indices denominados en USD como US30 y NAS100 y puede reducir la amplitud de las oscilaciones intradiarias. El posicionamiento COT en JPY es muy bajista (-65,992 netos), lo que refuerza la fortaleza del dolar. Tener en cuenta que señales de rebote en indices podrian tener menor recorrido de lo historico; el filtro de spread en ejecucion del bot es relevante en este entorno.",
-            "horizonte": "semana"
+            "title": "VIX en 18.63: regimen favorable para la estrategia",
+            "desc": "El VIX cerro en 18.63 (regimen: normal), ligeramente por encima del cierre anterior de 18.38 pero sin indicar estres de mercado. El backtest de la estrategia muestra su mejor rendimiento en entornos de VIX entre 15 y 25, donde la reversión a la media es mas predecible. El crypto Fear and Greed en 49 (Neutral) tambien es consistente con un mercado cripto sin posicionamiento extremo, lo que reduce el riesgo de movimientos unidireccionales en BTC y ETH. No se requiere accion especial; el bot puede operar con parametros estandar en los 14 instrumentos fuera de las ventanas de riesgo macro identificadas en las alertas anteriores.",
+            "horizonte": "24h"
           }
         ],
-        "last_updated": "2026-05-11T13:50:50Z",
+        "last_updated": "2026-05-12T13:10:04Z",
         "macro_snapshot": {
           "vix": {
-            "value": 18.27,
-            "prev": 17.19,
-            "change": 1.08,
+            "value": 18.63,
+            "prev": 18.38,
+            "change": 0.25,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 48,
+            "value": 49,
             "label": "Neutral",
-            "prev": 47
+            "prev": 48
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -1030,7 +1023,7 @@
             {
               "event": "Fed Chair Nomination Vote",
               "currency": "USD",
-              "date": "2026-05-12T12:00:00-04:00",
+              "date": "2026-05-12T11:59:00-04:00",
               "time": "",
               "forecast": "Pass",
               "previous": ""
@@ -1056,7 +1049,7 @@
               "currency": "GBP",
               "date": "2026-05-14T02:00:00-04:00",
               "time": "",
-              "forecast": "-0.2%",
+              "forecast": "-0.1%",
               "previous": "0.5%"
             },
             {
@@ -1064,7 +1057,7 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.7%",
               "previous": "1.9%"
             },
             {
@@ -1072,26 +1065,26 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.5%",
               "previous": "1.7%"
             }
           ],
           "fred": {
             "dxy": {
-              "value": 118.393,
-              "date": "2026-05-01"
+              "value": 118.039,
+              "date": "2026-05-08"
             },
             "t10y": {
-              "value": 4.41,
-              "date": "2026-05-07"
+              "value": 4.38,
+              "date": "2026-05-08"
             },
             "t2y": {
-              "value": 3.92,
-              "date": "2026-05-07"
+              "value": 3.9,
+              "date": "2026-05-08"
             },
             "yield_spread": {
-              "value": 0.48,
-              "date": "2026-05-08"
+              "value": 0.47,
+              "date": "2026-05-11"
             },
             "curve_regime": "flat"
           },
@@ -1101,8 +1094,8 @@
               "date": "2026-04"
             },
             "cpi_index": {
-              "value": "330.213",
-              "date": "2026-03"
+              "value": "333.020",
+              "date": "2026-04"
             }
           },
           "ecb": null,
@@ -1113,13 +1106,6 @@
               "short": 196403,
               "bias": "bearish",
               "date": "2026-05-05"
-            },
-            "GBP": {
-              "net": -20847,
-              "long": 31637,
-              "short": 52484,
-              "bias": "bearish",
-              "date": "2022-02-01"
             },
             "JPY": {
               "net": -65992,
@@ -1137,7 +1123,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-11T13:50:50Z"
+          "fetched_at": "2026-05-12T13:10:04Z"
         }
       }
     },
@@ -1567,63 +1553,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Semana de alta carga macro USD con CPI, PPI y Retail Sales; VIX en zona normal pero en alza, y XAUUSD con posicionamiento COT alcista que puede generar tendencias sostenidas adversas para la reversión a la media.",
+        "resumen": "Jornada de alto riesgo para el bot RSI+BB: el CPI de EE.UU. ya publicado hoy y la votacion del nuevo presidente de la Fed generan volatilidad direccional que invalida los setups de reversion a la media en XAUUSD y los indices europeos.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "CPI USD mañana: pausar bot antes del dato",
-            "desc": "Mañana 12 mayo a las 08:30 ET se publican CPI m/m (prev. 0.9%, fore. 0.6%), Core CPI (fore. 0.3%) y CPI y/y (fore. 3.7% vs prev. 3.3%). Estos datos generan spikes de volatilidad de 50-150 pips en XAUUSD y XAGUSD en los primeros 5 minutos. Pausar el bot desde las 08:15 ET hasta que los spreads se normalicen (aprox. 08:50 ET). El sistema M5 de reversión a la media es especialmente vulnerable a movimientos direccionales bruscos post-dato.",
-            "horizonte": "24h"
+            "title": "CPI EE.UU. publicado: pausar bot ahora",
+            "desc": "El CPI m/m (0.6% prev 0.9%) y Core CPI m/m (0.3% prev 0.2%) se publicaron a las 08:30 ET de hoy. Los datos de inflacion generan impulsos direccionales bruscos en M5 que destruyen los setups de reversion a la media. Verifica si ya hubo operaciones abiertas durante la publicacion y revisa el estado de las posiciones activas. Si el bot sigue operando, pausalo manualmente hasta que el spread y la volatilidad M5 se normalicen, estimado entre 60 y 90 minutos tras el dato.",
+            "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Nominación Fed Chair: riesgo institucional intradía",
-            "desc": "El 12 mayo a las 12:00 ET se vota la nominación del presidente de la Fed. Un resultado inesperado puede generar volatilidad aguda en DXY y en XAUUSD. Mantener el bot pausado o reducir el tamaño de lote a la mitad entre las 11:45 ET y las 12:30 ET del 12 mayo. Este evento es binario y no está bien priced en el mercado.",
-            "horizonte": "24h"
+            "title": "Votacion Fed Chair: riesgo en XAUUSD activo",
+            "desc": "La votacion del nuevo presidente de la Fed esta programada para las 11:59 ET de hoy. El posicionamiento COT en XAU es fuertemente alcista (net long 156.501 contratos), lo que significa que cualquier resultado sorpresivo puede desencadenar un squeeze violento en XAUUSD. El bot opera XAUUSD en M5 y el backtest ya mostro resultados negativos en este instrumento. Mantener el bot pausado en XAUUSD al menos hasta las 13:30 ET o hasta confirmar que el VIX no repunta por encima de 20.",
+            "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "PPI y Retail Sales: extender cautela hasta el 14",
-            "desc": "El 13 mayo (Core PPI y PPI m/m) y el 14 mayo (Retail Sales m/m y GDP GBP) forman una secuencia continua de eventos de alto impacto. Planificar una semana de operación reducida: pausar el bot 15 minutos antes y 30 minutos despues de cada publicacion. Evaluar si operar con lote reducido (50%) durante toda la semana dado el riesgo acumulado de sesgo direccional en indices europeos (NETH25, SE30, IT40) ante datos GBP debiles.",
-            "horizonte": "48h"
+            "title": "PPI manana: no reactivar bot completo",
+            "desc": "Manana 13 de mayo a las 08:30 ET se publican Core PPI m/m (forecast 0.3%) y PPI m/m (forecast 0.5%). Son datos de segundo impacto pero suficientes para generar gaps en M5. Programa una pausa automatica o manual del bot desde las 08:15 ET hasta las 09:30 ET del 13 de mayo, especialmente en XAUUSD y XAGUSD que son sensibles al dolar y a las expectativas de inflacion.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-04",
             "tipo": "alerta",
-            "title": "COT XAU alcista extremo: reversiones compradoras en riesgo",
-            "desc": "El posicionamiento especulativo en XAU es fuertemente alcista (net long 156.501 contratos, ratio long/short 4.3x). En un sistema de reversión a la media, las señales de venta en XAUUSD tienen probabilidad reducida de exito porque el mercado tiene un sesgo estructural comprador. Considerar filtrar o deshabilitar las señales SHORT en XAUUSD esta semana hasta que el posicionamiento se modere.",
+            "title": "DXY en 118: presion sobre indices europeos",
+            "desc": "El DXY se encuentra en 118.04, nivel historicamente elevado. Un dolar fuerte comprime los indices denominados en EUR como IT40 y, en menor medida, NETH25. El backtest de ambos instrumentos ya arrojó retornos negativos. Con el dolar en maximos y la curva de rendimientos plana (spread 0.47%), el sesgo macro no favorece rebotes sostenidos en estos indices. Considera reducir el tamano de lote o deshabilitar IT40 y NETH25 mientras el DXY se mantenga por encima de 116.",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
             "title": "XAGUSD: unico instrumento con backtest positivo",
-            "desc": "XAGUSD es el unico instrumento que mostro retorno levemente positivo y drawdown dentro del objetivo en el backtest. El COT de XAU alcista suele arrastrar a XAGUSD, lo que puede generar oscilaciones intradiarias explotables en M5. Si se opera selectivamente esta semana, priorizar señales LONG en XAGUSD en pullbacks dentro de tendencia H4 alcista confirmada por EMA(200), evitando las ventanas de datos macro.",
-            "horizonte": "semana"
+            "desc": "XAGUSD es el unico de los 5 instrumentos con retorno levemente positivo y drawdown dentro del objetivo en el backtest. El COT muestra posicionamiento institucional alcista en metales preciosos (XAU net long 156.501). Con VIX en 18.63 (regimen normal) y el Fear and Greed crypto en zona neutral, no hay un shock de riesgo inmediato que distorsione XAGUSD fuera de las pausas por datos macro. Cuando el bot se reactive tras el CPI y la votacion Fed, considera priorizar o habilitar solo XAGUSD si quieres limitar la exposicion a instrumentos con historial negativo.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "VIX 18.27 y DXY 118.4: contexto macro para indices europeos",
-            "desc": "El VIX sube levemente (18.27 vs 17.19 previo) pero se mantiene en regimen normal, lo que en principio no penaliza la reversión a la media. Sin embargo, el DXY en 118.4 refleja un dolar muy fuerte que presiona a los indices europeos denominados en moneda local (NETH25, SE30, IT40). La curva de rendimientos es plana (spread 10Y-2Y de 0.48), lo que no señala recesion inminente pero tampoco expansión clara. Monitorear si el VIX supera 22 como nivel de alerta para suspender operaciones en indices.",
+            "title": "VIX normal pero semana densa en datos",
+            "desc": "El VIX cotiza en 18.63, ligeramente al alza frente al cierre anterior (18.38), dentro del regimen normal. Esto en principio es compatible con estrategias de reversion a la media. Sin embargo, la agenda macro de esta semana (CPI hoy, PPI manana, GDP GBP y Retail Sales EE.UU. el jueves) mantendra la volatilidad intradiaria elevada en M5 con picos puntuales que el filtro H4 EMA(200) no puede mitigar. Usa el VIX como referencia de fondo: si supera 22 durante la semana, pausa el bot en todos los instrumentos.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-11T13:50:50Z",
+        "last_updated": "2026-05-12T13:10:04Z",
         "macro_snapshot": {
           "vix": {
-            "value": 18.27,
-            "prev": 17.19,
-            "change": 1.08,
+            "value": 18.63,
+            "prev": 18.38,
+            "change": 0.25,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 48,
+            "value": 49,
             "label": "Neutral",
-            "prev": 47
+            "prev": 48
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -1654,7 +1640,7 @@
             {
               "event": "Fed Chair Nomination Vote",
               "currency": "USD",
-              "date": "2026-05-12T12:00:00-04:00",
+              "date": "2026-05-12T11:59:00-04:00",
               "time": "",
               "forecast": "Pass",
               "previous": ""
@@ -1680,7 +1666,7 @@
               "currency": "GBP",
               "date": "2026-05-14T02:00:00-04:00",
               "time": "",
-              "forecast": "-0.2%",
+              "forecast": "-0.1%",
               "previous": "0.5%"
             },
             {
@@ -1688,7 +1674,7 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.7%",
               "previous": "1.9%"
             },
             {
@@ -1696,26 +1682,26 @@
               "currency": "USD",
               "date": "2026-05-14T08:30:00-04:00",
               "time": "",
-              "forecast": "0.6%",
+              "forecast": "0.5%",
               "previous": "1.7%"
             }
           ],
           "fred": {
             "dxy": {
-              "value": 118.393,
-              "date": "2026-05-01"
+              "value": 118.039,
+              "date": "2026-05-08"
             },
             "t10y": {
-              "value": 4.41,
-              "date": "2026-05-07"
+              "value": 4.38,
+              "date": "2026-05-08"
             },
             "t2y": {
-              "value": 3.92,
-              "date": "2026-05-07"
+              "value": 3.9,
+              "date": "2026-05-08"
             },
             "yield_spread": {
-              "value": 0.48,
-              "date": "2026-05-08"
+              "value": 0.47,
+              "date": "2026-05-11"
             },
             "curve_regime": "flat"
           },
@@ -1725,8 +1711,8 @@
               "date": "2026-04"
             },
             "cpi_index": {
-              "value": "330.213",
-              "date": "2026-03"
+              "value": "333.020",
+              "date": "2026-04"
             }
           },
           "ecb": null,
@@ -1737,13 +1723,6 @@
               "short": 196403,
               "bias": "bearish",
               "date": "2026-05-05"
-            },
-            "GBP": {
-              "net": -20847,
-              "long": 31637,
-              "short": 52484,
-              "bias": "bearish",
-              "date": "2022-02-01"
             },
             "JPY": {
               "net": -65992,
@@ -1761,7 +1740,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-11T13:50:50Z"
+          "fetched_at": "2026-05-12T13:10:04Z"
         }
       }
     },
@@ -2052,57 +2031,57 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Jornada de alto riesgo macro con CPI y nominacion de Fed Chair hoy; VIX en regimen normal favorece la estrategia pero la volatilidad intradiaria por eventos exige pausas quirurgicas.",
+        "resumen": "Jornada de alta carga macroeconómica con CPI y nominación del presidente de la Fed ya publicados hoy; el VIX en zona normal favorece la estrategia, pero los eventos de las próximas 48 horas exigen gestión activa del bot.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Pausar bot: CPI USD a las 08:30 ET",
-            "desc": "El CPI m/m (forecast 0.6% vs prev 0.9%) y Core CPI m/m (forecast 0.3%) se publican hoy 2026-05-12 a las 08:30 ET. Las velas de liquidez en M15 generadas por el dato podrian activar ordenes limite en extensiones Fibonacci con momentum falso. Pausar orto desde las 08:15 ET hasta las 09:15 ET en todos los pares USD. Reanudar solo si el spread vuelve a niveles normales y el rango de la ultima vela M15 no supera 2x ATR diario.",
+            "title": "CPI USD publicado hoy: revisar velas de liquidez",
+            "desc": "El CPI m/m (0.6% previsto vs 0.9% anterior) y el Core CPI m/m se publicaron a las 08:30 ET de hoy. Las velas M15 generadas en esa ventana pueden tener rangos atípicos que disparen falsas señales de Liquidity Candle v3. Revisa manualmente las entradas ejecutadas entre 08:15 y 09:30 ET y considera invalidar ordenes limite abiertas que provengan de esas velas si el precio ya se normalizó.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Pausar bot: Voto nominacion Fed Chair 12:00 ET",
-            "desc": "El voto de nominacion del presidente de la Fed esta programado para hoy a las 12:00 ET con expectativa de aprobacion. Un resultado sorpresa o declaraciones post-voto pueden generar spikes de 30-50 pips en pares USD en M15. Pausar orto de 11:45 ET a 13:00 ET en instrumentos con USD. Si el voto es routine pass, reanudar a las 13:00 ET; si hay declaraciones hawkish o dovish inesperadas, extender la pausa 30 minutos adicionales.",
+            "title": "Votación nominacion Fed: pausa recomendada",
+            "desc": "La votacion para la nominacion del presidente de la Fed estaba programada para las 11:59 ET de hoy. Un resultado inesperado o controversia puede generar spikes bruscos en DXY y pares USD. Si el bot aun tiene ordenes limite abiertas con expiry de 90 min que cubren esta ventana, pausalo o reduce el tamaño de lote hasta confirmar el resultado y que el mercado absorba la noticia.",
             "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Pausa preventiva: PPI USD manana 08:30 ET",
-            "desc": "Manana 2026-05-13 a las 08:30 ET se publica Core PPI m/m (forecast 0.3% vs prev 0.1%) y PPI m/m (forecast 0.5%). La secuencia CPI hoy mas PPI manana crea un entorno de repricing de tasas en dos dias consecutivos. Programar pausa automatica de orto de 08:15 ET a 09:15 ET del dia 13 en todos los pares USD para evitar entradas en velas de liquidez generadas por dato.",
+            "title": "PPI USD manana: ventana de riesgo 08:30 ET",
+            "desc": "El Core PPI m/m (0.3% previsto) y PPI m/m (0.5% previsto) se publican el 13 de mayo a las 08:30 ET. Programa el bot para no abrir nuevas entradas entre 08:00 y 09:15 ET manana. Dado que el CPI de hoy viene elevado (3.7% y/y), una sorpresa al alza en PPI amplificaria la reaccion del USD y aumentaria la probabilidad de slippage en las extensiones Fibonacci.",
             "horizonte": "24h"
           },
           {
             "id": "M5-04",
-            "tipo": "oportunidad",
-            "title": "VIX en zona optima para la estrategia",
-            "desc": "VIX en 18.38 (regimen normal, subida de 1.19 puntos) es el rango ideal para Liquidity Candle v3: suficiente volatilidad para generar velas con rango mayor o igual al 25% del ATR diario sin excesos que invaliden las extensiones Fibonacci 1.18/-0.18. Fuera de las ventanas de eventos macro de hoy, orto puede operar con configuracion estandar. Monitorear si VIX supera 22 post-CPI ya que indicaria expansion que podria reducir la tasa de completacion de TP dentro de los 90 minutos de expiry.",
-            "horizonte": "now"
+            "tipo": "alerta",
+            "title": "GDP GBP y Retail Sales USD el miercoles",
+            "desc": "El 14 de mayo llegan GDP GBP m/m (-0.1% previsto vs 0.5% anterior), Core Retail Sales USD (0.7%) y Retail Sales USD (0.5%). La desaceleracion del PIB britanico puede generar velas de liquidez validas en GBP/USD o GBP/JPY, pero con alta probabilidad de continuacion bajista que confunde el modelo de retroceso Fibonacci. Aplica filtro de direccion o pausa el bot en pares GBP entre 02:00 y 09:30 ET del miercoles.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "XAU: COT muy alcista, buscar setups largos",
-            "desc": "El posicionamiento especulativo en XAU es fuertemente alcista con net largo de 156,501 contratos (longs 203,487 vs shorts 46,986 al 05-may). Si orto opera XAU/USD, priorizar las senales de Liquidity Candle que apunten a extensiones largas (1.18 lado alcista). Evitar setups cortos contra la tendencia institucional. La mayor probabilidad de completar TP en direccion del bias COT mejora el edge del backtest en este instrumento esta semana.",
-            "horizonte": "semana"
+            "title": "VIX en zona normal: condicion optima para la estrategia",
+            "desc": "El VIX en 18.63 (regimen normal, subida leve de 0.25) indica volatilidad moderada, ideal para que las velas de liquidez generen rangos limpios >= 25% del ATR sin ruido extremo. El bot puede operar con parametros estandar en los instrumentos no afectados por noticias macro de hoy. Aprovecha especialmente las sesiones de Londres y solapamiento NY-Londres donde el ATR M15 es mas consistente.",
+            "horizonte": "now"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "EUR y JPY: COT bearish, contexto para pares",
-            "desc": "Especuladores netos son bearish en EUR (net -2,746 al 05-may) y fuertemente bearish en JPY (net -65,992 al 05-maj). Para pares como EUR/USD o USD/JPY, el flujo institucional favorece USD en el marco semanal. Esto no cambia la logica de entrada de orto (señal de vela de liquidez M15) pero sirve como filtro de contexto: setups en direccion del bias COT (EUR corto, JPY corto) tienen mayor probabilidad de alinearse con el flujo de dinero grande. El dato de CPI de hoy podra amplificar o revertir este sesgo transitoriamente.",
+            "title": "COT: sesgo bajista en EUR y JPY; alcista en XAU",
+            "desc": "Los especuladores mantienen posicion neta corta en EUR (-2,746) y fuertemente corta en JPY (-65,992), mientras XAU tiene sesgo neto largo masivo (+156,501). Para el bot: en EUR/USD y USD/JPY las extensiones Fibonacci en direccion del USD tienen respaldo institucional, lo que puede mejorar la tasa de exito de las entradas largas USD. En XAU/USD, el sesgo institucional alcista sugiere cautela en señales de venta generadas por el bot hasta nueva semana COT (publicacion 12 de mayo).",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-12T01:43:07Z",
+        "last_updated": "2026-05-12T13:10:04Z",
         "macro_snapshot": {
           "vix": {
-            "value": 18.38,
-            "prev": 17.19,
-            "change": 1.19,
+            "value": 18.63,
+            "prev": 18.38,
+            "change": 0.25,
             "regime": "normal"
           },
           "fear_greed_crypto": {
@@ -2139,7 +2118,7 @@
             {
               "event": "Fed Chair Nomination Vote",
               "currency": "USD",
-              "date": "2026-05-12T12:00:00-04:00",
+              "date": "2026-05-12T11:59:00-04:00",
               "time": "",
               "forecast": "Pass",
               "previous": ""
@@ -2185,15 +2164,33 @@
               "previous": "1.7%"
             }
           ],
-          "fred": null,
+          "fred": {
+            "dxy": {
+              "value": 118.039,
+              "date": "2026-05-08"
+            },
+            "t10y": {
+              "value": 4.38,
+              "date": "2026-05-08"
+            },
+            "t2y": {
+              "value": 3.9,
+              "date": "2026-05-08"
+            },
+            "yield_spread": {
+              "value": 0.47,
+              "date": "2026-05-11"
+            },
+            "curve_regime": "flat"
+          },
           "bls": {
             "nonfarm_payroll_k": {
               "value": "158736",
               "date": "2026-04"
             },
             "cpi_index": {
-              "value": "330.213",
-              "date": "2026-03"
+              "value": "333.020",
+              "date": "2026-04"
             }
           },
           "ecb": null,
@@ -2204,13 +2201,6 @@
               "short": 196403,
               "bias": "bearish",
               "date": "2026-05-05"
-            },
-            "GBP": {
-              "net": -20847,
-              "long": 31637,
-              "short": 52484,
-              "bias": "bearish",
-              "date": "2022-02-01"
             },
             "JPY": {
               "net": -65992,
@@ -2228,7 +2218,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-12T01:43:07Z"
+          "fetched_at": "2026-05-12T13:10:04Z"
         }
       }
     }
