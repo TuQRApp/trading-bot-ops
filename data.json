@@ -1781,21 +1781,456 @@
           "type": "py"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
       "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "orto — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "lc_backtest_v3.py"
+        "OPTION B — use when only .py files, no backtest data (type=empty)": {
+          "type": "empty",
+          "last_updated": "2026-05-12T00:00:00Z",
+          "last_updated_meta": "lc_backtest_v3.py",
+          "empty_title": "Sin resultados de backtest disponibles",
+          "empty_desc": "El archivo proporcionado es únicamente el motor de backtest (lc_backtest_v3.py). No se adjuntaron archivos CSV, JSON de trades ni reportes HTML generados por el bot. Para obtener métricas (WR, PF, Drawdown, análisis temporal), es necesario ejecutar el backtester con MT5 activo y subir el archivo trades_XXXXXXXX.json o report_XXXXXXXX.html generado en la carpeta out_lc_v3/.",
+          "empty_trigger": "lc_backtest_v3.py"
+        }
       },
-      "m2": [],
-      "m3": [],
-      "m4": [],
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Resolución de TP/SL en la misma barra: SL tiene prioridad incorrecta",
+          "desc": "En simulate_trade, cuando una barra toca tanto el SL como el TP en el mismo ciclo, el código evalúa primero el SL (if bar['high'] >= sl para SELL, if bar['low'] <= sl para BUY). Esto sobreestima las pérdidas respecto a un mercado real donde la secuencia intrabar no se conoce. La práctica estándar en backtesting conservador es asumir el peor caso (SL), pero al menos debe documentarse explícitamente, y se debería agregar una bandera configurable para comparar ambos escenarios (SL primero vs TP primero vs 50/50).",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Activación de orden límite sin slippage ni control de spread en entry",
+          "desc": "La activación de la orden límite usa bar['high'] >= entry (SELL) o bar['low'] <= entry (BUY) con actual_entry = entry exacto, sin agregar slippage ni spread al precio de entrada real. En mercados volátiles (especialmente BTCUSD, XAUUSD, indices) el fill real será peor que entry. Esto infla artificialmente el PnL esperado. Se recomienda aplicar un slippage configurable (ej. 1-2 ticks) al actual_entry en el momento de activación, de forma consistente con cómo se aplica el spread al SL en get_fibo_levels.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Gestión de trade abierto ignora el cierre real y puede saltarse barras",
+          "desc": "En run_backtest, el bloque 'if in_trade' hace continue sin avanzar la simulación del trade abierto; simplemente espera a que row['time'] >= last.close_time. Esto es correcto en concepto, pero el loop sigue iterando sobre todas las barras del instrumento hasta que llega a la barra de cierre, consumiendo tiempo de CPU innecesariamente en datasets grandes. Mas importante: si close_time cae exactamente sobre una barra con otra LC, esa barra se pierde como señal porque in_trade = False se asigna y luego el loop hace continue antes de evaluar la señal. Reestructurar el loop para saltar directamente al indice de cierre usando bisect_left.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "alta",
+          "title": "Niveles Fibonacci hardcodeados sin validacion de R:R minimo",
+          "desc": "Los niveles FIBO (short_entry=1.18, short_tp=0.618, short_sl=1.38, long_entry=-0.18, long_tp=0.382, long_sl=-0.38) producen un R:R teorico de aproximadamente 0.9:1 para SHORT (distancia entry-tp vs entry-sl: 1.18-0.618=0.562 vs 1.38-1.18=0.20, ratio ~2.8:1) y para LONG (entry-tp: -0.18 a 0.382=0.562, entry-sl: -0.18 a -0.38=0.20, ratio ~2.8:1). Aunque el R:R es favorable, no hay ninguna validacion en codigo que rechace trades donde el spread representa mas del X% del SL distance. En simbolos con spread alto relativo (XAGUSD, XNGUSD) el spread puede consumir una fraccion significativa del edge. Agregar filtro: if spread / sl_distance > 0.10: skip trade.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "ATR lookup con busqueda lineal O(n) por barra — ineficiencia critica",
+          "desc": "En run_backtest, para cada barra M15 se ejecuta: atr_dates = daily_atr_series.index.date seguido de daily_atr_series[atr_dates <= date]. Esta operacion es O(n) sobre el indice ATR y se ejecuta para cada una de las potencialmente 60.000 barras M15 por simbolo. Con 15-20 simbolos esto implica millones de comparaciones. Reemplazar con un merge o reindex de la serie ATR al indice de fechas M15 antes del loop, usando pd.merge_asof o resample/ffill.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "title": "load_cache carga el JSON mas reciente sin validar el simbolo o la fecha",
+          "desc": "load_cache ordena por nombre de archivo y carga el ultimo JSON disponible en out_lc_v3/. Si se ejecuta el backtest con una whitelist diferente o un rango de fechas distinto, el cache anterior se reutiliza silenciosamente sin advertencia. Esto puede mezclar resultados de diferentes ejecuciones. Agregar un hash o metadata (simbolos, fecha de inicio, version de parametros) en el JSON guardado y verificarlo al cargar el cache.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "media",
+          "title": "Sin separacion de periodos de entrenamiento y validacion (walk-forward)",
+          "desc": "El backtester corre sobre todos los datos disponibles (hasta 60.000 barras M15 = aprox 2.5 años) sin separar in-sample de out-of-sample. Los niveles Fibonacci y LC_MIN_PCT fueron elegidos observando datos historicos, lo que introduce riesgo de overfitting. Agregar un parametro TRAIN_END_DATE para dividir el dataset en 70% entrenamiento / 30% validacion y reportar ambas metricas por separado en temporal_analysis.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "baja",
+          "title": "RISK_PCT fijo al 2% sin ajuste por correlacion entre simbolos",
+          "desc": "Con capital fijo de $200 por trade y multiples simbolos activos simultaneamente (no hay restriccion de trades concurrentes entre simbolos distintos), la exposicion real puede superar ampliamente el 2% si varios simbolos correlacionados (ej. US500 + US30 + USTEC) abren trades al mismo tiempo. Agregar un control de exposicion maxima simultanea por clase de activo o limitar el numero de trades abiertos a nivel global.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Look-ahead bias: is_liquidity_candle puede usar datos futuros si el indice no es estricto",
+          "desc": "Si is_liquidity_candle recibe el DataFrame completo y evalua la barra en i usando atributos como el cuerpo relativo al rango de barras vecinas, existe riesgo de que el calculo incorpore informacion de barras posteriores a i. Aunque el analisis no detalla la implementacion interna de is_liquidity_candle, la presencia de 39 bloques if y 10 loops sugiere logica de ventana que podria mirar barras i+1 o i+2 para confirmar el patron. Esto constituye look-ahead bias directo. Es necesario auditar que todos los accesos al DataFrame dentro de is_liquidity_candle usen exclusivamente indices <= i en el momento de la evaluacion.",
+          "comment": ""
+        },
+        {
+          "id": "R-21",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "Numeros magicos 0.25, 0.4, 1.5 y 3 sin contexto documentado en codigo",
+          "desc": "Los magic_numbers 0.25, 0.4, 1.5 y 3 aparecen en el codigo pero no corresponden a niveles Fibonacci ni a parametros de riesgo documentados en el analisis existente. Su uso no esta cubierto por ninguna observacion actual. Si estos valores forman parte de filtros de calificacion de la vela LC (ej. ratio cuerpo/rango, umbral de volumen relativo) o de calculos de ATR, su naturaleza hardcodeada los convierte en vectores de overfitting oculto sobre el periodo de muestra. Identificar cada ocurrencia y extraerlos como constantes nombradas con justificacion.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "warn",
+          "origin": "lc_backtest_v3.py",
+          "title": "Only try/except block es demasiado amplio y silencia errores criticos",
+          "desc": "El unico bloque try en main() envuelve todo el flujo principal (connect, whitelist, run_backtest, save_trades, report). Si cualquier error interno ocurre (ej. fallo en report_lc_v3, error de red, division por cero en simulate_trade), el finally simplemente llama disconnect() y el programa termina sin mensaje claro del origen. Con 39 bloques if y 10 loops, un error interno puede quedar enmascarado. Agregar manejo de excepciones especificas con log.exception() en los puntos criticos.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "lc_backtest_v3.py",
+          "title": "expiry loop extiende 50 barras extra mas alla del expiry definido",
+          "desc": "En simulate_trade el rango del loop es range(signal_idx + 1, min(signal_idx + 1 + expiry + 50, len(df))). El +50 extra fue probablemente agregado para permitir que un trade activado antes del expiry tenga tiempo de cerrar, pero no esta documentado y puede provocar que trades activados muy cerca del limite de expiry sean simulados hasta 50 barras (12.5 horas) despues de su activacion. Reemplazar el +50 arbitrario por una variable MAX_TRADE_DURATION_BARS con valor explicito y justificado.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "info",
+          "origin": "lc_backtest_v3.py",
+          "title": "SPREAD_FALLBACK incompleto para todos los simbolos de la whitelist",
+          "desc": "SPREAD_FALLBACK cubre 15 simbolos fijos, pero la whitelist es dinamica (generada por lc_liquidity_filter.py). Si la whitelist incluye simbolos no presentes en SPREAD_FALLBACK, get_spread retorna 0.0005 como fallback generico, que puede ser completamente incorrecto para indices exoticos o materias primas. Esto introduce error sistematico en el calculo de SL para esos simbolos. Se recomienda loguear un warning explicito cuando se usa el fallback generico.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "lc_backtest_v3.py",
+          "title": "import report_lc_v3 en tiempo de ejecucion dentro de main()",
+          "desc": "El modulo report_lc_v3 se importa con 'import report_lc_v3 as report' dentro de main(), tanto en la rama de cache como en la rama normal. Si el modulo no existe o tiene errores de sintaxis, el programa falla silenciosamente solo al final del backtest (despues de potencialmente horas de ejecucion), perdiendo la oportunidad de detectar el problema al inicio. Mover el import al nivel de modulo con manejo explicito de ImportError.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "lc_backtest_v3.py",
+          "title": "Numero magico i >= 50 en run_backtest sin justificacion documentada",
+          "desc": "El loop de barras comienza en i = 50 (for i in range(50, len(df_m15) - 1)). Este offset de 50 barras no esta documentado. Probablemente se usa para garantizar suficiente historia para calcular ATR o evitar barras iniciales con datos incompletos, pero deberia derivarse de ATR_PERIOD o documentarse como constante nombrada (ej. WARMUP_BARS = 50) con comentario explicativo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "warn",
+          "origin": "lc_backtest_v3.py",
+          "title": "lot se clampea a volume_min/volume_max sin advertencia al usuario",
+          "desc": "En simulate_trade, el lot calculado se clampea silenciosamente: lot = max(sym_info.volume_min, min(lot, sym_info.volume_max)). Si el lot calculado es significativamente diferente del lot clampeado (ej. en simbolos con volume_min alto como BTCUSD), el riesgo real por trade difiere del RISK_USD_FIXED asumido, distorsionando el PnL. Agregar un log.debug o log.warning cuando el clamping modifica el lot en mas del 10%.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "info",
+          "origin": "lc_backtest_v3.py",
+          "title": "temporal_analysis no exporta datos — solo imprime al log",
+          "desc": "La funcion temporal_analysis genera el analisis por trimestre y mes pero solo lo escribe en el log, sin guardar un CSV o incluirlo en el JSON de trades. Esto hace imposible postprocesar o comparar resultados temporales entre ejecuciones sin releer el archivo de log. Agregar exportacion a CSV en OUTPUT_DIR junto al JSON de trades.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "warn",
+          "origin": "lc_backtest_v3.py",
+          "title": "Un unico bloque try para 561 lineas hace imposible la trazabilidad de errores en produccion",
+          "desc": "Con solo 1 bloque try cubriendo todo main() y una complejidad de 39 bloques if y 10 loops distribuidos en 15 funciones, cualquier excepcion no anticipada (ZeroDivisionError en simulate_trade, KeyError en temporal_analysis, etc.) sube hasta el handler de main() sin informacion del frame exacto donde ocurrio, a menos que se use log.exception(). El analisis OBS-001 menciona esto pero no cuantifica el riesgo: con 39 ramas condicionales, la probabilidad de que una combinacion de datos de mercado inesperados dispare una excepcion no testeada es alta. Se recomienda agregar bloques try/except especificos al menos en simulate_trade y run_backtest con logging de simbolo y barra afectada.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "info",
+          "origin": "lc_backtest_v3.py",
+          "title": "load_daily_atr no valida que el periodo D1 sea suficiente para ATR_PERIOD=14",
+          "desc": "load_daily_atr descarga barras D1 para calcular ATR, pero no verifica que el numero de barras descargadas sea mayor a ATR_PERIOD (14). Si MT5 retorna menos de 14 barras D1 para un simbolo (ej. instrumento recien listado o con datos historicos limitados), el ATR calculado usara una ventana incompleta y producira un valor subvalorado, haciendo que el filtro ATR sea menos restrictivo de lo esperado. Agregar validacion: if len(rates) < ATR_PERIOD + 1: return None y excluir el simbolo del backtest.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "close_time puede ser None si el trade cierra en la ultima barra del rango",
+          "desc": "En simulate_trade, close_time se inicializa en None. Si el loop termina porque j alcanza el limite del rango (min(signal_idx + 1 + expiry + 50, len(df))) sin romper explicitamente con WIN o LOSS, outcome puede quedar como 'EXPIRED' y la funcion retorna None. Sin embargo, si activated es True pero el loop termina por limite del array (no por elapsed > ORDER_EXPIRY_MIN), outcome sigue siendo 'EXPIRED' y se retorna None aunque el trade estaba vivo. Esto es correcto, pero close_time queda None en el objeto Trade si se llegara a instanciar, causando AttributeError en la serializacion.",
+          "code": "close_time = None\n# ... loop termina sin asignar close_time ...\nreturn Trade(\n    ...\n    close_time = close_time,  # None -> falla en .isoformat()\n    ...\n)",
+          "fix": "# Agregar guard antes de instanciar el Trade\nif outcome == 'EXPIRED' or not activated or close_time is None:\n    return None\n# close_time garantizado no-None a partir de aqui",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "actual_entry usado fuera de scope si activated nunca se vuelve True",
+          "desc": "La variable actual_entry se asigna dentro del bloque 'if not activated' cuando se activa la orden. Si el loop completa todas las iteraciones sin activar la orden (activated=False), actual_entry nunca se define. El codigo retorna None antes de usarla (por el check 'if outcome == EXPIRED or not activated'), pero si ese check se modifica en el futuro, se producira un NameError. Inicializar actual_entry = None antes del loop.",
+          "code": "activated = False\n# actual_entry NO inicializada\nfor j in range(...):\n    if not activated:\n        if direction == 'SELL' and bar['high'] >= entry:\n            actual_entry = entry  # solo se asigna aqui\n# si activated=False -> actual_entry no existe",
+          "fix": "activated = False\nactual_entry = None  # inicializacion explicita\nfor j in range(...):\n    ...",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "get_spread llama a mt5.symbol_info en cada barra — posible fallo silencioso",
+          "desc": "get_spread se llama una vez por simbolo antes del loop principal, lo cual es eficiente. Sin embargo, si symbol_info retorna spread=0 (lo cual ocurre fuera de horario de mercado o para simbolos no activos en la sesion actual), la condicion 'info.spread > 0' falla y se usa SPREAD_FALLBACK. El spread real del backtest historico deberia ser el spread promedio historico, no el spread en el momento de ejecutar el backtester. Esto introduce sesgo temporal: si se corre el backtest un domingo, se usan spreads de cierre de semana para todo el historico.",
+          "code": "def get_spread(symbol: str) -> float:\n    info = mt5.symbol_info(symbol)\n    if info is not None and info.spread > 0:\n        return info.spread * info.point  # spread ACTUAL, no historico\n    return SPREAD_FALLBACK.get(symbol, 0.0005)",
+          "fix": "# Opcion 1: usar siempre SPREAD_FALLBACK en backtest (mas conservador y reproducible)\ndef get_spread(symbol: str) -> float:\n    fallback = SPREAD_FALLBACK.get(symbol, 0.0005)\n    info = mt5.symbol_info(symbol)\n    if info is not None and info.spread > 0:\n        live_spread = info.spread * info.point\n        log.debug(f'{symbol}: spread live={live_spread:.5f} fallback={fallback:.5f}')\n    return fallback  # usar siempre el fallback documentado en backtest",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "riesgo",
+          "title": "PnL de LOSS no descuenta la comision correctamente en todos los casos",
+          "desc": "Para una perdida, pnl_gross = -RISK_USD_FIXED ($200 fijo). Luego pnl_net = pnl_gross - commission. La comision se descuenta siempre, lo cual es correcto. Sin embargo, commission = COMMISSION_PER_LOT * lot, y lot fue clampeado a volume_min en algunos simbolos. Si volume_min produce un lot mayor al calculado (ej. BTC con volume_min=0.01 pero el calculo da 0.001), la comision sera mayor de lo que corresponde al riesgo real, sobreestimando costos. Este efecto es asimetrico con el tratamiento del PnL que usa RISK_USD_FIXED fijo independientemente del lot real.",
+          "code": "lot = RISK_USD_FIXED / value_per_lot\nlot = max(sym_info.volume_min, min(lot, sym_info.volume_max))\n# lot puede ser != al lot que corresponde a RISK_USD_FIXED\npnl_gross = RISK_USD_FIXED * rr if outcome == 'WIN' else -RISK_USD_FIXED\ncommission = COMMISSION_PER_LOT * lot  # usa lot clampeado\npnl_net = pnl_gross - commission  # inconsistencia",
+          "fix": "# Calcular PnL basado en el lot real clampeado para consistencia\nactual_risk = lot * value_per_lot  # riesgo real segun lot clampeado\npnl_gross = actual_risk * rr if outcome == 'WIN' else -actual_risk\ncommission = COMMISSION_PER_LOT * lot\npnl_net = pnl_gross - commission",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "ausencia",
+          "title": "Sin validacion de integridad del DataFrame M15 (gaps, duplicados, NaN)",
+          "desc": "load_m15 verifica que len(rates) >= 500 pero no valida gaps temporales, filas duplicadas ni valores NaN en OHLC. En simbolos menos liquidos de la whitelist (ej. XNGUSD), los datos M15 de MT5 pueden tener gaps significativos. Un gap en el precio puede hacer que una barra tenga high/low erroneos, generando una LC falsa o un SL/TP mal calculado. Agregar validacion post-carga.",
+          "code": "df = pd.DataFrame(rates)\ndf['time'] = pd.to_datetime(df['time'], unit='s')\ndf.reset_index(drop=True, inplace=True)\nreturn df  # sin validacion de calidad",
+          "fix": "df = pd.DataFrame(rates)\ndf['time'] = pd.to_datetime(df['time'], unit='s')\ndf.reset_index(drop=True, inplace=True)\n# Validacion basica\ndf = df.drop_duplicates(subset='time')\ndf = df.dropna(subset=['open', 'high', 'low', 'close'])\ndf = df[(df['high'] >= df['low']) & (df['high'] > 0)]\ndf = df.reset_index(drop=True)\nif len(df) < 500:\n    return None\nreturn df",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "ausencia",
+          "title": "Sin calculo de drawdown maximo ni metricas de riesgo agregadas",
+          "desc": "run_backtest y temporal_analysis reportan WR, PF y PnL total pero no calculan drawdown maximo, Sharpe ratio ni racha maxima de perdidas consecutivas. Sin estas metricas es imposible evaluar si la estrategia es viable para trading real con el capital definido. El drawdown maximo es especialmente critico dado que se usa capital fijo de $200 por trade y pueden haber multiples simbolos abiertos simultaneamente.",
+          "code": "# En run_backtest solo se calcula:\npf   = round(gw / gl, 2) if gl > 0 else float('inf')\nlog.info(f'WR={wr:.1f}%  PF={pf}  PnL=${pnl:+.2f}')\n# Sin DD, Sharpe, max_consecutive_losses",
+          "fix": "# Agregar en temporal_analysis o en una funcion compute_metrics(trades):\nequity = np.cumsum([t.pnl_usd for t in sorted(trades, key=lambda x: x.open_time)])\npeak = np.maximum.accumulate(equity)\ndd = (equity - peak)\nmax_dd = dd.min()\nmax_dd_pct = max_dd / INITIAL_CAPITAL * 100\nlog.info(f'Max Drawdown: ${max_dd:.2f} ({max_dd_pct:.1f}%)')",
+          "comment": ""
+        },
+        {
+          "id": "H-07",
+          "categoria": "mejora",
+          "title": "Warmup de 50 barras deberia derivarse de ATR_PERIOD para evitar inconsistencias",
+          "desc": "El loop en run_backtest comienza en i=50 como numero magico. ATR_PERIOD es 14 dias D1, pero el warmup de 50 barras M15 equivale solo a ~12.5 horas, lo que no garantiza que haya suficiente historia D1 para el ATR. El warmup deberia ser configurable y vinculado a la logica del ATR.",
+          "code": "for i in range(50, len(df_m15) - 1):  # 50 = magic number",
+          "fix": "WARMUP_BARS_M15 = 100  # ~25 horas, cubre el primer dia completo con margen\nfor i in range(WARMUP_BARS_M15, len(df_m15) - 1):",
+          "comment": ""
+        },
+        {
+          "id": "H-08",
+          "categoria": "mejora",
+          "title": "q_map definido dentro del loop de trades — ineficiencia menor",
+          "desc": "El diccionario q_map que mapea mes a trimestre se define dentro de simulate_trade, lo que significa que se reconstruye en cada llamada al simulador. Siendo una constante, deberia definirse a nivel de modulo junto con las otras constantes de configuracion.",
+          "code": "# Dentro de simulate_trade(), reconstruido en cada llamada:\nq_map = {1: 'Q1', 2: 'Q1', 3: 'Q1',\n         4: 'Q2', 5: 'Q2', 6: 'Q2',\n         7: 'Q3', 8: 'Q3', 9: 'Q3',\n         10: 'Q4', 11: 'Q4', 12: 'Q4'}",
+          "fix": "# A nivel de modulo, junto a ATR_PERIOD y ORDER_EXPIRY_MIN:\nQUARTER_MAP = {1: 'Q1', 2: 'Q1', 3: 'Q1',\n               4: 'Q2', 5: 'Q2', 6: 'Q2',\n               7: 'Q3', 8: 'Q3', 9: 'Q3',\n               10: 'Q4', 11: 'Q4', 12: 'Q4'}",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "value_per_lot puede ser cero o None si contract_size o tick_value no estan disponibles",
+          "desc": "El calculo de lot depende de value_per_lot, que se deriva de sym_info.trade_contract_size y sym_info.trade_tick_value (o equivalentes segun el tipo de simbolo). Si MT5 retorna 0 o None para alguno de estos campos en un simbolo exotico o fuera de horario, la division RISK_USD_FIXED / value_per_lot producira ZeroDivisionError o un lot infinito que luego se clampea a volume_max sin advertencia. Este bug no esta cubierto por ningun hallazgo existente y es especialmente probable en simbolos de la whitelist no estandar.",
+          "code": "value_per_lot = sym_info.trade_contract_size * sym_info.trade_tick_value / sym_info.trade_tick_size\nlot = RISK_USD_FIXED / value_per_lot  # ZeroDivisionError si value_per_lot=0",
+          "fix": "if not value_per_lot or value_per_lot <= 0:\n    log.warning(f'{symbol}: value_per_lot invalido ({value_per_lot}), simbolo omitido')\n    return None\nlot = RISK_USD_FIXED / value_per_lot",
+          "comment": ""
+        }
+      ],
       "versions": [
         "FILE-009"
-      ]
+      ],
+      "category": "Backtester | Multi instrumento | MT5 M15 | Liquidity Candle + Fibonacci",
+      "summary": "Backtester de la estrategia Liquidity Candle v3 sobre MT5 M15: detecta velas con rango >= 25% del ATR diario, coloca órdenes límite en extensiones Fibonacci (1.18/-0.18) con TP/SL simples y expiry de 90 minutos. Usa capital fijo (sin compounding) para medir el edge puro en WR y PF. No se proporcionaron datos de backtest ni CSV de resultados, por lo que no hay métricas calculadas disponibles.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "Jornada de alto riesgo macro con CPI y nominacion de Fed Chair hoy; VIX en regimen normal favorece la estrategia pero la volatilidad intradiaria por eventos exige pausas quirurgicas.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "Pausar bot: CPI USD a las 08:30 ET",
+            "desc": "El CPI m/m (forecast 0.6% vs prev 0.9%) y Core CPI m/m (forecast 0.3%) se publican hoy 2026-05-12 a las 08:30 ET. Las velas de liquidez en M15 generadas por el dato podrian activar ordenes limite en extensiones Fibonacci con momentum falso. Pausar orto desde las 08:15 ET hasta las 09:15 ET en todos los pares USD. Reanudar solo si el spread vuelve a niveles normales y el rango de la ultima vela M15 no supera 2x ATR diario.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "Pausar bot: Voto nominacion Fed Chair 12:00 ET",
+            "desc": "El voto de nominacion del presidente de la Fed esta programado para hoy a las 12:00 ET con expectativa de aprobacion. Un resultado sorpresa o declaraciones post-voto pueden generar spikes de 30-50 pips en pares USD en M15. Pausar orto de 11:45 ET a 13:00 ET en instrumentos con USD. Si el voto es routine pass, reanudar a las 13:00 ET; si hay declaraciones hawkish o dovish inesperadas, extender la pausa 30 minutos adicionales.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "Pausa preventiva: PPI USD manana 08:30 ET",
+            "desc": "Manana 2026-05-13 a las 08:30 ET se publica Core PPI m/m (forecast 0.3% vs prev 0.1%) y PPI m/m (forecast 0.5%). La secuencia CPI hoy mas PPI manana crea un entorno de repricing de tasas en dos dias consecutivos. Programar pausa automatica de orto de 08:15 ET a 09:15 ET del dia 13 en todos los pares USD para evitar entradas en velas de liquidez generadas por dato.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "VIX en zona optima para la estrategia",
+            "desc": "VIX en 18.38 (regimen normal, subida de 1.19 puntos) es el rango ideal para Liquidity Candle v3: suficiente volatilidad para generar velas con rango mayor o igual al 25% del ATR diario sin excesos que invaliden las extensiones Fibonacci 1.18/-0.18. Fuera de las ventanas de eventos macro de hoy, orto puede operar con configuracion estandar. Monitorear si VIX supera 22 post-CPI ya que indicaria expansion que podria reducir la tasa de completacion de TP dentro de los 90 minutos de expiry.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "XAU: COT muy alcista, buscar setups largos",
+            "desc": "El posicionamiento especulativo en XAU es fuertemente alcista con net largo de 156,501 contratos (longs 203,487 vs shorts 46,986 al 05-may). Si orto opera XAU/USD, priorizar las senales de Liquidity Candle que apunten a extensiones largas (1.18 lado alcista). Evitar setups cortos contra la tendencia institucional. La mayor probabilidad de completar TP en direccion del bias COT mejora el edge del backtest en este instrumento esta semana.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "EUR y JPY: COT bearish, contexto para pares",
+            "desc": "Especuladores netos son bearish en EUR (net -2,746 al 05-may) y fuertemente bearish en JPY (net -65,992 al 05-maj). Para pares como EUR/USD o USD/JPY, el flujo institucional favorece USD en el marco semanal. Esto no cambia la logica de entrada de orto (señal de vela de liquidez M15) pero sirve como filtro de contexto: setups en direccion del bias COT (EUR corto, JPY corto) tienen mayor probabilidad de alinearse con el flujo de dinero grande. El dato de CPI de hoy podra amplificar o revertir este sesgo transitoriamente.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-12T01:43:07Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 18.38,
+            "prev": 17.19,
+            "change": 1.19,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 49,
+            "label": "Neutral",
+            "prev": 48
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Core CPI m/m",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.6%",
+              "previous": "0.9%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.7%",
+              "previous": "3.3%"
+            },
+            {
+              "event": "Fed Chair Nomination Vote",
+              "currency": "USD",
+              "date": "2026-05-12T12:00:00-04:00",
+              "time": "",
+              "forecast": "Pass",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-05-13T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.1%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-05-13T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.5%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "GDP m/m",
+              "currency": "GBP",
+              "date": "2026-05-14T02:00:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Core Retail Sales m/m",
+              "currency": "USD",
+              "date": "2026-05-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.7%",
+              "previous": "1.9%"
+            },
+            {
+              "event": "Retail Sales m/m",
+              "currency": "USD",
+              "date": "2026-05-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.5%",
+              "previous": "1.7%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158736",
+              "date": "2026-04"
+            },
+            "cpi_index": {
+              "value": "330.213",
+              "date": "2026-03"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": -2746,
+              "long": 193657,
+              "short": 196403,
+              "bias": "bearish",
+              "date": "2026-05-05"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -65992,
+              "long": 106515,
+              "short": 172507,
+              "bias": "bearish",
+              "date": "2026-05-05"
+            },
+            "XAU": {
+              "net": 156501,
+              "long": 203487,
+              "short": 46986,
+              "bias": "bullish",
+              "date": "2026-05-05"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-12T01:43:07Z"
+        }
+      }
     }
   ],
   "folders": [
