@@ -2242,21 +2242,522 @@
           "type": "py"
         }
       ],
-      "status": "pending",
+      "status": "en_revision",
       "version_of": null,
       "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "BACKTEST — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "backtest_atr_momentum_XAUUSD_20260512.html · strategy_atr_momentum_XAUUSD.py"
+        "type": "quality",
+        "last_updated": "2026-05-12T18:08:00Z",
+        "last_updated_meta": "backtest_atr_momentum_XAUUSD_20260512.html · strategy_atr_momentum_XAUUSD.py",
+        "fsh_count": "3146 trades IS · 6 instrumentos",
+        "score": {
+          "valor": 3.5,
+          "max": 10,
+          "label": "Solo XAUUSD viable — 5 de 6 instrumentos destruyen capital en OOS",
+          "bullets": [
+            {
+              "type": "ok",
+              "text": "XAUUSD: OOS PF=1.86, retorno +237%, MC prob>0=99.9% — edge estadisticamente robusto"
+            },
+            {
+              "type": "ok",
+              "text": "Metodologia IS/OOS 70/30 con 324 combinaciones de grid y 2,000 simulaciones MC correctamente aplicada"
+            },
+            {
+              "type": "ok",
+              "text": "Codigo limpio con shift(1) en Donchian H4 para evitar lookahead bias"
+            },
+            {
+              "type": "warn",
+              "text": "XTIUSD y XAGUSD tienen PF IS marginales (1.31 y 1.01) que colapsan en OOS (0.69 y 0.92)"
+            },
+            {
+              "type": "warn",
+              "text": "USDJPY: IS PF=2.01 prometedor pero OOS solo 24 trades — muestra estadistica insuficiente para validacion"
+            },
+            {
+              "type": "bad",
+              "text": "BTCUSD: destruccion total de capital en IS y OOS (PF=0.18/0.22, DD=100%) — instrumento incompatible con la logica"
+            },
+            {
+              "type": "bad",
+              "text": "XNGUSD: PF=0.01 en IS, MC mediana=-100% con prob>0=0.0% — resultado catastrofico en todas las simulaciones"
+            },
+            {
+              "type": "bad",
+              "text": "5 de 6 instrumentos con retorno OOS negativo — la estrategia no es generalizable; riesgo de data snooping al ejecutar multiples instrumentos"
+            }
+          ]
+        },
+        "metrics": [
+          {
+            "id": "QM-01",
+            "label": "Instrumentos",
+            "value": "6 instrumentos",
+            "status": "bad",
+            "note": "XAUUSD PF IS 1.56 / OOS 1.86 ok | USDJPY PF IS 2.01 / OOS 0.51 warn | XTIUSD PF IS 1.31 / OOS 0.69 bad | XAGUSD PF IS 1.01 / OOS 0.92 bad | BTCUSD PF IS 0.18 / OOS 0.22 bad | XNGUSD PF IS 0.01 / OOS 0.03 bad"
+          },
+          {
+            "id": "QM-02",
+            "label": "Total Trades IS",
+            "value": "3146 IS",
+            "status": "ok",
+            "note": "BTCUSD 1010 | XNGUSD 870 | XAUUSD 707 | XAGUSD 549 | XTIUSD 508 | USDJPY 502"
+          },
+          {
+            "id": "QM-03",
+            "label": "Total Trades OOS",
+            "value": "816 OOS",
+            "status": "warn",
+            "note": "XAGUSD 183 | XNGUSD 189 | BTCUSD 207 | XAUUSD 148 | XTIUSD 65 | USDJPY 24 (critico — muestra insuficiente)"
+          },
+          {
+            "id": "QM-04",
+            "label": "Peor Max Drawdown OOS",
+            "value": "100%",
+            "status": "bad",
+            "note": "BTCUSD DD=99.8% | XNGUSD DD=100% | XAGUSD DD=64.8% | XAUUSD DD=43.8% (unico aceptable en MC: P95 DD=28.7%)"
+          },
+          {
+            "id": "QM-05",
+            "label": "Walk-forward IS→OOS",
+            "value": "PF IS 1.56 → OOS 1.86 (XAUUSD)",
+            "status": "ok",
+            "note": "Solo XAUUSD mejora en OOS. USDJPY: 2.01 → 0.51 (high_overfit_risk). XTIUSD: 1.31 → 0.69. XAGUSD: 1.01 → 0.92. BTCUSD/XNGUSD: catastroficos en ambos periodos"
+          },
+          {
+            "id": "QM-06",
+            "label": "Monte Carlo XAUUSD",
+            "value": "Prob>0: 99.9%",
+            "status": "ok",
+            "note": "P5 retorno +69%, mediana +235.9%, P95 +566.7% | DD promedio 18% | DD P95 28.7% | Sharpe promedio 19.99"
+          },
+          {
+            "id": "QM-07",
+            "label": "MC Instrumentos Fallidos",
+            "value": "5 de 5 con prob>0 < 26%",
+            "status": "bad",
+            "note": "BTCUSD prob>0=0.0% | XNGUSD prob>0=0.0% | XTIUSD prob>0=7.5% | USDJPY prob>0=6.1% | XAGUSD prob>0=25.4%"
+          },
+          {
+            "id": "QM-08",
+            "label": "Instrumentos Viables",
+            "value": "1 / 6",
+            "status": "bad",
+            "note": "Solo XAUUSD tiene edge confirmado. Operar los restantes en produccion implica ruina garantizada segun Monte Carlo"
+          }
+        ]
       },
-      "m2": [],
-      "m3": [],
-      "m4": [],
+      "m2": [
+        {
+          "id": "R-01",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "BTCUSD y XNGUSD: ruina garantizada — eliminar del universo de produccion",
+          "desc": "BTCUSD (PF=0.18 IS, PF=0.22 OOS, DD=100%, MC prob>0=0.0%) y XNGUSD (PF=0.01 IS, PF=0.03 OOS, DD=100%, MC prob>0=0.0%, Sharpe=-121) destruyen el capital de forma deterministica en todas las simulaciones. No existe combinacion de parametros dentro del grid de 324 que produzca un resultado positivo. La logica de momentum ATR es fundamentalmente incompatible con la dinamica de precio de estos instrumentos. Accion requerida: remover ambos simbolos del diccionario OPTIMIZED_PARAMS y agregar una lista explicita de simbolos prohibidos con una guardia en el __main__ que impida su ejecucion accidental.",
+          "comment": ""
+        },
+        {
+          "id": "R-02",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "USDJPY: overfitting severo — IS PF=2.01 colapsa a OOS PF=0.51 con solo 24 trades",
+          "desc": "El deterioro de PF de 2.01 (IS) a 0.51 (OOS) clasifica como high_overfit_risk. Ademas, el periodo OOS produce unicamente 24 trades — umbral estadisticamente insuficiente para cualquier conclusion robusta (intervalo de confianza extremadamente amplio). MC confirma: prob>0=6.1%, Sharpe promedio=-36.57. La alta señal IS es probablemente un artefacto del grid search sobre 324 combinaciones (multiple comparisons problem). No operar XAUUSD con parametros de USDJPY y no incluir USDJPY hasta obtener al menos 200 trades OOS en un periodo extendido.",
+          "comment": ""
+        },
+        {
+          "id": "R-03",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "max_simultaneous=3 con instrumentos multiples amplifica el riesgo de correlacion",
+          "desc": "El motor de backtest permite hasta 3 posiciones simultaneas. Si se ejecutara XAUUSD junto con otros instrumentos de metales (XAGUSD, XTIUSD), la correlacion entre activos de materias primas puede provocar que las 3 posiciones abiertas sean en la misma direccion durante eventos macro (Fed, geopolitica), multiplicando el drawdown real por encima del modelado en las simulaciones individuales. Recomendacion: limitar max_simultaneous=1 para XAUUSD en produccion y documentar explicitamente la restriccion de no agregar otros metales al universo activo sin un analisis de correlacion previo.",
+          "comment": ""
+        },
+        {
+          "id": "R-04",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "alta",
+          "title": "Win rate extremadamente bajo (28.9% IS, 32.4% OOS en XAUUSD) — psicologia operativa critica",
+          "desc": "La estrategia tiene una tasa de acierto inferior al 33% incluso en el mejor instrumento. Esto significa que el trader experimentara entre 2 y 3 perdidas consecutivas como norma estadistica, con rachas de hasta 7-10 perdidas seguidas en periodos adversos. El sistema depende enteramente de las ganancias grandes (tp_ratio=3.0) para ser rentable. En produccion real, la presion psicologica puede llevar a cerrar prematuramente los trades ganadores (que son los que sostienen el PF=1.86), destruyendo el edge. Recomendacion: documentar explicitamente la distribucion esperada de rachas de perdidas (calcular max losing streak desde el backtest) y establecer una regla operativa de no intervenir manualmente en trades abiertos.",
+          "comment": ""
+        },
+        {
+          "id": "R-05",
+          "tipo": "param",
+          "tipo_label": "Parametro",
+          "prioridad": "media",
+          "title": "magic_numbers sin constantes nombradas dificultan mantenimiento y auditoria",
+          "desc": "El analisis estatico detecta 10 magic numbers en el codigo: 0.01, 1.2, 1.5, 3.0, 14, 20, 25, 30, 200, 9999. Algunos estan implicitamente documentados via DEFAULT_PARAMS, pero 1.5 (TP1 ratio fijo hardcodeado en generate_signals), 9999 (max_bars del trade — equivale a sin limite) y 200 (EMA periodo) no son configurables por parametro. El valor 9999 para max_bars es especialmente problematico: implica que un trade puede permanecer abierto indefinidamente, lo que no corresponde con la afirmacion del docstring 'Sin time exit — cierra por SL o TP unicamente' pero si hay un motor que los cierra por barras, 9999 deberia ser None o math.inf. Definir TP1_RATIO = 1.5, EMA_PERIOD = 200 y reemplazar 9999 por None si el motor lo soporta.",
+          "comment": ""
+        },
+        {
+          "id": "R-06",
+          "tipo": "data",
+          "tipo_label": "Datos",
+          "prioridad": "media",
+          "title": "XTIUSD y XAGUSD: resultados IS marginales con colapso OOS — posible inestabilidad de regimen",
+          "desc": "XTIUSD (IS PF=1.31 → OOS PF=0.69) y XAGUSD (IS PF=1.01 → OOS PF=0.92) muestran un patron consistente de deterioro que sugiere dependencia de regimen. El periodo IS 2023-2026 incluye condiciones especificas de volatilidad en commodities que pueden no repetirse. MC para XAGUSD muestra P5=-60.9% con prob>0=25.4% — alta dispersion. Recomendacion: segmentar el IS por regimen de volatilidad (alta/baja) usando el propio ATR como proxy y verificar si el edge es consistente o concentrado en un subperiodo especifico.",
+          "comment": ""
+        },
+        {
+          "id": "R-07",
+          "tipo": "logic",
+          "tipo_label": "Logica",
+          "prioridad": "media",
+          "title": "Señales long y short generadas simultaneamente sobre la misma barra sin filtro de conflicto",
+          "desc": "En generate_signals, long_mask y short_mask se calculan independientemente. Si por construccion una barra cumple ambas condiciones (close > don_h Y close < don_l — situacion geometricamente imposible bajo condiciones normales), ambas señales se escribirian en el array, siendo la ultima (short) la que prevaleceria al sobreescribir. Aunque la condicion es mutuamente excluyente en teoria, si don_h o don_l contienen NaN o si resample_to_tf produce artefactos de alineacion temporal, la sobreescritura silenciosa no generara error. Agregar un assert np.sum(long_mask & short_mask) == 0 despues de calcular ambas mascaras para detectar inconsistencias en datos.",
+          "comment": ""
+        },
+        {
+          "id": "R-08",
+          "tipo": "meta",
+          "tipo_label": "Meta",
+          "prioridad": "baja",
+          "title": "Periodo de backtest 2023-2026 (3 años) es corto para validar estrategia de tendencia",
+          "desc": "Tres años de datos M15 representan aproximadamente 52,560 barras. Para una estrategia de seguimiento de tendencia con 707 trades en XAUUSD (~236 trades/año), el historico cubre solo 2-3 ciclos completos de mercado. Periodos de consolidacion prolongada (como 2011-2015 en oro) podrian invalidar el edge. Recomendacion: extender el backtest a 2010-2026 si los datos estan disponibles, o al menos documentar explicitamente que el edge es valido solo en el regimen de mercado 2023-2026.",
+          "comment": ""
+        },
+        {
+          "id": "R-20",
+          "tipo": "risk",
+          "tipo_label": "Riesgo",
+          "prioridad": "alta",
+          "title": "Costos de transaccion ausentes inflan el PF real de XAUUSD: margen de seguridad puede ser inexistente",
+          "desc": "OBS-003 documenta spread=0 cuando la columna no existe, pero no cuantifica el impacto. Para XAUUSD M15 con 707 trades IS y 148 OOS, un spread tipico de 25 puntos a 0.01 USD/punto por lote implica un costo adicional por trade que, multiplicado por el volumen total, puede reducir el PF OOS de 1.86 a un valor cercano a 1.0 dependiendo del sizing promedio. Adicionalmente, el codigo no modela slippage ni comision de broker. Antes de operar en produccion, ejecutar el backtest con CostModel que incluya spread real (25-30 pips XAUUSD), slippage de 1-2 pips y comision fija. Si el PF OOS cae por debajo de 1.30 con costos reales, el edge no es suficiente para cubrir la incertidumbre estadistica.",
+          "comment": ""
+        }
+      ],
+      "m3": [
+        {
+          "id": "OBS-001",
+          "tipo": "error",
+          "origin": "backtest_atr_momentum_XAUUSD_20260512.html",
+          "title": "XNGUSD: Sharpe IS=-104.13 — calculo posiblemente corrupto o datos de precio defectuosos",
+          "desc": "Un Sharpe de -104 en IS con 870 trades y PF=0.01 indica que la estrategia no solo pierde dinero sino que lo hace con una consistencia matematicamente extraordinaria hacia abajo. Esto puede ser señal de datos de precio incorrectos para XNGUSD (el gas natural tiene caracteristicas de precio distintas — posibles ajustes de rollover de futuros mal aplicados), o de que el sizing del trade interactua de forma explosiva con la volatilidad del instrumento. Verificar la fuente y calidad de los datos OHLCV de XNGUSD antes de cualquier conclusion sobre el instrumento.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-002",
+          "tipo": "warn",
+          "origin": "backtest_atr_momentum_XAUUSD_20260512.html",
+          "title": "XAUUSD IS retorno +4957% con DD=84.6% — rentabilidad real comprometida por drawdown extremo",
+          "desc": "Aunque el retorno IS de XAUUSD es espectacular (+4957%), el DD maximo de 84.6% implica que en algun punto del periodo de 3 años el capital cayo a solo el 15.4% del valor inicial. Ningun inversor real sobreviviria psicologicamente (ni regulatoriamente si es cuenta gestionada) un drawdown de 84.6%. El retorno OOS de +237% con DD=43.8% es mas representativo de la realidad. El DD del periodo IS debe considerarse como el worst-case posible y dimensionar el capital inicial para poder absorberlo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-003",
+          "tipo": "warn",
+          "origin": "strategy_atr_momentum_XAUUSD.py",
+          "title": "spread hardcodeado a 0 cuando la columna no existe — subestima costos reales",
+          "desc": "En el bloque __main__: spreads = df['spread'].values if 'spread' in df.columns else [0] * len(df). Si el DataFrame no contiene la columna 'spread' (caso comun con datos historicos de MT5 sin tick data), todos los costos de spread se ignoran silenciosamente. Para XAUUSD en H4/M15, el spread tipico de 20-30 puntos puede representar una fraccion significativa del SL (2.0×ATR). El backtest con spread=0 sobreestima el PF real. Verificar que CostModel.recomendado(point=0.01) incluya el spread o pasarlo explicitamente.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-004",
+          "tipo": "warn",
+          "origin": "backtest_atr_momentum_XAUUSD_20260512.html",
+          "title": "USDJPY OOS: 24 trades en el periodo de validacion — resultado estadisticamente no significativo",
+          "desc": "Con solo 24 trades OOS, el intervalo de confianza del PF es extremadamente amplio. Un PF=0.51 con n=24 no permite distinguir entre mala suerte y ausencia de edge real. El ratio IS/OOS de trades (502 IS vs 24 OOS) es anormal — se esperaria aproximadamente 150 trades en OOS dado el split 70/30. Esto sugiere que el optimo de parametros encontrado en IS genera muy pocas señales en el subperiodo OOS especifico, lo que es en si mismo una señal de fragilidad del optimo.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-005",
+          "tipo": "info",
+          "origin": "strategy_atr_momentum_XAUUSD.py",
+          "title": "TP1 ratio de 1.5× fijo no fue incluido en el grid de optimizacion",
+          "desc": "El docstring menciona 'TP1 = 1.5 × riesgo → mueve SL a breakeven' y el valor 1.5 aparece hardcodeado en generate_signals sin ser parametro del grid. La tabla IS/OOS muestra Donchian H4, ADX threshold, ATR expansion, SL mult y TP ratio como parametros optimizados, pero TP1 no. El impacto del ratio TP1 en la dinamica de breakeven (y por ende en el PF final) no fue explorado. Considerar incluir TP1_ratio como parametro en la proxima iteracion del grid (valores sugeridos: 1.0, 1.5, 2.0).",
+          "comment": ""
+        },
+        {
+          "id": "OBS-006",
+          "tipo": "info",
+          "origin": "strategy_atr_momentum_XAUUSD.py",
+          "title": "try_blocks=0 — sin manejo de errores en funciones criticas de datos",
+          "desc": "El codigo no contiene ningun bloque try/except. Las funciones build_features y build_donchian dependen de resample_to_tf y align_htf de modulos compartidos. Si el DataFrame de entrada tiene gaps temporales, frecuencia incorrecta o columnas faltantes, el fallo sera un traceback no controlado en produccion. Especialmente critico en __main__ donde get_bars_cached puede retornar datos incompletos en caso de problemas de conexion. Agregar al menos un try/except en el bloque __main__ y validaciones de columnas al inicio de build_features.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-007",
+          "tipo": "info",
+          "origin": "backtest_atr_momentum_XAUUSD_20260512.html",
+          "title": "Monte Carlo bootstrap asume independencia de trades — puede subestimar riesgo en tendencia",
+          "desc": "El metodo bootstrap con 2,000 simulaciones remuestrea trades con reemplazo, asumiendo independencia. En una estrategia de trend following, los trades tienden a agruparse en periodos de tendencia (autocorrelacion positiva) y a concentrar las ganancias en pocos movimientos grandes. El bootstrap rompe esta estructura temporal, posiblemente subestimando la probabilidad de rachas de perdidas prolongadas que ocurren en periodos sin tendencia. Los resultados MC son informativos pero podrian ser optimistas en cuanto al DD esperado.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-20",
+          "tipo": "error",
+          "origin": "strategy_atr_momentum_XAUUSD.py",
+          "title": "magic_number 20 sin identificar en el analisis: posible periodo de ATR alternativo o lookback no documentado",
+          "desc": "El listado de magic_numbers detectados incluye el valor 20, que no aparece en DEFAULT_PARAMS ni en los parametros del grid (donchian_n in [20,25,30], adx_thresh in [20,25], atr_expansion, atr_mult_sl, tp_ratio). Si 20 corresponde a donchian_n o adx_thresh dentro de generate_signals como valor hardcodeado en lugar de usar el parametro recibido, existiria una discrepancia silenciosa entre el valor optimizado en el grid y el valor efectivamente utilizado en la generacion de senales. Auditar el codigo fuente para confirmar el uso del valor 20 y verificar que todos los parametros del grid se pasen correctamente a la funcion en lugar de usar literales.",
+          "comment": ""
+        },
+        {
+          "id": "OBS-21",
+          "tipo": "warn",
+          "origin": "backtest_atr_momentum_XAUUSD_20260512.html",
+          "title": "Sharpe promedio de 19.99 en Monte Carlo de XAUUSD es anomalamente alto y puede indicar error de calculo",
+          "desc": "Un Sharpe ratio promedio de 19.99 en las simulaciones MC de XAUUSD es estadisticamente extraordinario incluso para estrategias con edge real. Los mejores fondos quant del mundo operan con Sharpe de 2-4. Un valor de 19.99 sugiere que el calculo de la desviacion estandar de retornos en el MC usa retornos diarios sobre un capital que crece exponencialmente sin normalizar, o que el denominador es la desviacion de retornos de trades individuales en lugar de retornos periodicos del capital. Si el Sharpe real es significativamente menor (valor tipico de estrategias trend-following: 0.8-1.5), el score QM-06 y los bullets positivos del m1 estan sobreestimando la calidad de la estrategia.",
+          "comment": ""
+        }
+      ],
+      "m4": [
+        {
+          "id": "H-01",
+          "categoria": "bug",
+          "title": "SL/TP calculados con close de la barra de señal, no con open de la barra de entrada",
+          "desc": "La señal se genera en la barra i usando close[i], pero la entrada ocurre en open[i+1]. El SL y TP se calculan como close[long_mask] ± risk, pero deberian calcularse desde entry=open[i+1]. En mercados con gaps de apertura (comun en XAUUSD durante sesion asiatica), el SL real puede estar significativamente mas cerca o lejos del precio de entrada real, distorsionando el ratio riesgo/beneficio y el calculo de sizing de posicion.",
+          "code": "sl_arr[long_mask]  = close[long_mask] - risk[long_mask]\ntp1_arr[long_mask] = close[long_mask] + 1.5 * risk[long_mask]\ntp2_arr[long_mask] = close[long_mask] + tp_ratio * risk[long_mask]",
+          "fix": "# SL y TP deben ajustarse en el motor de backtest al momento de abrir el trade\n# usando el precio real de entrada (open de la siguiente barra)\n# En generate_signals, guardar solo el riesgo en ATR para recalcular en engine.open_trade:\ndf['risk_atr'] = risk  # ATR * atr_mult_sl\n# En BacktestEngine.open_trade:\n# sl = entry - risk_atr  (long) / entry + risk_atr (short)\n# tp1 = entry + 1.5 * risk_atr\n# tp2 = entry + tp_ratio * risk_atr",
+          "comment": ""
+        },
+        {
+          "id": "H-02",
+          "categoria": "bug",
+          "title": "engine.process_bar llamado ANTES de engine.open_trade — orden incorrecto puede afectar gestion de posiciones abiertas",
+          "desc": "En el bucle principal, engine.process_bar(df.iloc[i]) se ejecuta antes de engine.open_trade(...). Esto significa que la barra actual (i) se procesa para cerrar/gestionar posiciones existentes antes de abrir la nueva. Si BacktestEngine.process_bar verifica SL/TP usando los precios de la barra i, y luego open_trade abre un trade con entry=opens[i], puede haber una barra de solapamiento donde un trade nuevo se abre en la misma barra en que podria haberse cerrado otro. El orden correcto depende de la implementacion interna de BacktestEngine, pero debe documentarse explicitamente.",
+          "code": "for i in range(1, len(df)):\n    engine.process_bar(df.iloc[i])          # gestiona trades abiertos con barra i\n    if df['signal'].iloc[i - 1] != 0:\n        engine.open_trade(\n            time=df.index[i],\n            entry=opens[i],                 # entra en la misma barra i\n            ...\n        )",
+          "fix": "# Verificar documentacion de BacktestEngine sobre el orden de operaciones.\n# Si process_bar cierra trades usando high/low de la barra i,\n# y open_trade usa open[i] como entrada, puede ocurrir que:\n# 1. Un trade se cierra por SL en la barra i\n# 2. Un nuevo trade se abre en esa misma barra usando open[i]\n# Separar en dos pasadas o verificar que open_trade use la barra i+1.",
+          "comment": ""
+        },
+        {
+          "id": "H-03",
+          "categoria": "riesgo",
+          "title": "risk_per_trade=2.0 fijo sin ajuste dinamico por drawdown — puede acelerar la ruina",
+          "desc": "El BacktestEngine usa risk_per_trade=2.0 (probablemente 2% del capital) de forma constante. Durante una racha de 10 perdidas consecutivas (estadisticamente probable con WR=28.9%), el capital se reduce significativamente y el 2% sobre el capital reducido sigue siendo un riesgo elevado en terminos absolutos si el sizing no se recalcula correctamente. Ademas, el drawdown IS de 84.6% en XAUUSD confirma que en algun momento el sistema siguio abriendo trades con el mismo porcentaje de riesgo durante una perdida acumulada masiva.",
+          "code": "engine = BacktestEngine(risk_per_trade=2.0, max_simultaneous=3, cost_model=cost_model)",
+          "fix": "# Implementar reduccion de riesgo por drawdown:\n# if current_dd > 20%: risk_per_trade = 1.0\n# if current_dd > 40%: risk_per_trade = 0.5 (o pausar operaciones)\n# Alternativamente, usar Kelly fraccionario: kelly_f = WR - (1-WR)/RR\n# con factor de seguridad de 0.25-0.5 sobre el Kelly completo.",
+          "comment": ""
+        },
+        {
+          "id": "H-04",
+          "categoria": "ausencia",
+          "title": "Sin validacion de datos de entrada en build_features — falla silenciosa con DataFrames incompletos",
+          "desc": "build_features asume que df_m15 contiene las columnas 'high', 'low', 'close' (y opcionalmente 'volume'). Si alguna columna falta, el error ocurrira dentro de la funcion atr() o adx() con un mensaje poco informativo. En produccion con datos en tiempo real, es comun recibir DataFrames con columnas renombradas (ej. 'High' vs 'high') o con valores NaN al inicio de la sesion.",
+          "code": "def build_features(df_m15: pd.DataFrame) -> pd.DataFrame:\n    df = df_m15.copy()\n    df['atr14']    = atr(df['high'], df['low'], df['close'], 14)",
+          "fix": "def build_features(df_m15: pd.DataFrame) -> pd.DataFrame:\n    required = {'high', 'low', 'close'}\n    missing = required - set(df_m15.columns)\n    if missing:\n        raise ValueError(f'Columnas requeridas ausentes: {missing}')\n    if len(df_m15) < 200:  # minimo para EMA200\n        raise ValueError(f'Datos insuficientes: {len(df_m15)} barras (minimo 200)')\n    df = df_m15.copy()",
+          "comment": ""
+        },
+        {
+          "id": "H-05",
+          "categoria": "ausencia",
+          "title": "Sin guardia de produccion — OPTIMIZED_PARAMS no impide ejecutar instrumentos sin edge",
+          "desc": "OPTIMIZED_PARAMS solo contiene XAUUSD, pero el docstring lista todos los instrumentos testeados 'por referencia'. Si en el futuro un operador agrega USDJPY o XTIUSD a OPTIMIZED_PARAMS (basandose en los resultados IS), no hay nada en el codigo que impida ejecutarlos. La separacion entre 'parametros validos' y 'instrumentos prohibidos' no existe como concepto en el codigo.",
+          "code": "OPTIMIZED_PARAMS = {\n    'XAUUSD': dict(donchian_n=30, adx_thresh=25, atr_expansion=1.2, atr_mult_sl=2.0, tp_ratio=3.0),\n}",
+          "fix": "OPTIMIZED_PARAMS = {\n    'XAUUSD': dict(donchian_n=30, adx_thresh=25, atr_expansion=1.2, atr_mult_sl=2.0, tp_ratio=3.0),\n}\n\n# Instrumentos con edge negativo confirmado por MC — NO agregar sin re-validacion OOS extendida\nPROHIBITED_SYMBOLS = {'BTCUSD', 'XNGUSD', 'XTIUSD', 'XAGUSD', 'USDJPY'}\n\ndef validate_symbol(symbol: str) -> None:\n    if symbol in PROHIBITED_SYMBOLS:\n        raise ValueError(f'{symbol} tiene edge negativo confirmado (MC prob>0 < 26%). No operar.')\n    if symbol not in OPTIMIZED_PARAMS:\n        raise ValueError(f'{symbol} no tiene parametros validados.')",
+          "comment": ""
+        },
+        {
+          "id": "H-06",
+          "categoria": "mejora",
+          "title": "TP1 breakeven no se refleja en los arrays de salida — motor no puede implementarlo correctamente",
+          "desc": "El docstring describe 'TP1 = 1.5 × riesgo → mueve SL a breakeven', pero generate_signals solo exporta sl, tp1, tp2 calculados desde close de señal. No hay columna 'breakeven_price' ni logica que indique al BacktestEngine que tras alcanzar tp1 debe mover el SL al precio de entrada. Si BacktestEngine interpreta tp1 como un cierre parcial y no como un nivel de ajuste de SL, la logica de gestion del trade diferira del backtest documentado.",
+          "code": "df['signal'] = signal\ndf['sl']     = sl_arr\ndf['tp1']    = tp1_arr\ndf['tp2']    = tp2_arr",
+          "fix": "# Agregar columna explicita para que el motor entienda la semantica de tp1:\ndf['signal']          = signal\ndf['sl']              = sl_arr\ndf['tp1']             = tp1_arr   # nivel para mover SL a breakeven\ndf['tp2']             = tp2_arr   # cierre total de posicion\ndf['breakeven_entry'] = np.where(signal != 0,\n                                  close + 0,  # precio de entrada aproximado\n                                  np.nan)\n# Documentar en BacktestEngine que tp1 activa trail a breakeven, no cierre parcial.",
+          "comment": ""
+        },
+        {
+          "id": "H-20",
+          "categoria": "bug",
+          "title": "EMA 200 calculada sobre M15 sin shift(1) introduce lookahead bias en el filtro de tendencia",
+          "desc": "El codigo aplica shift(1) correctamente a los niveles de Donchian H4 (documentado en m1 como punto positivo), pero el filtro de tendencia EMA200 calculado sobre el DataFrame M15 en build_features no tiene shift explicito antes de usarse en generate_signals. Si la condicion de entrada incluye 'close > ema200' usando la EMA calculada con el close de la barra actual (no la barra anterior), existe un lookahead parcial: la EMA200 incorpora el valor del close que tambien se usa como precio de la senal en la misma barra. El impacto es bajo para una EMA de 200 periodos (el ultimo dato tiene peso 2/201) pero el principio es incorrecto y debe corregirse para mantener la consistencia metodologica ya establecida con Donchian.",
+          "code": "df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()\n# ... usado posteriormente en generate_signals como:\n# long_mask = (close > don_h) & (close > ema200) & ...",
+          "fix": "# Aplicar shift(1) a la EMA antes de usarla como condicion de filtro:\ndf['ema200'] = df['close'].ewm(span=200, adjust=False).mean().shift(1)\n# Esto garantiza que la decision en la barra i usa la EMA calculada hasta la barra i-1,\n# consistente con el tratamiento de Donchian H4.",
+          "comment": ""
+        }
+      ],
       "versions": [
         "FILE-010"
-      ]
+      ],
+      "category": "Backtest HTML + Python | 6 instrumentos | Custom Engine | ATR Momentum Multi-Timeframe",
+      "summary": "Estrategia de seguimiento de tendencia multi-timeframe (D1 ADX + H4 Donchian + M15 ATR expansion) probada sobre 6 instrumentos con split IS/OOS 70/30 y 2,000 simulaciones Monte Carlo. Solo XAUUSD supera el filtro de edge real (OOS PF=1.86, retorno +237%, MC prob>0=99.9%); los otros 5 instrumentos muestran destruccion total de capital o resultados negativos en OOS. El codigo Python es limpio y compacto (188 lineas, 3 funciones) pero contiene multiples magic numbers sin documentar y carece de manejo de excepciones.",
+      "trader_notes": "",
+      "revision_submitted": false,
+      "rereview_requested": false,
+      "rereview_notes": "",
+      "m5": {
+        "resumen": "XAUUSD mantiene sesgo institucional alcista y VIX en zona neutral, pero eventos macro críticos de USD (PPI, voto Fed, Retail Sales) concentrados en las próximas 48 horas exigen pausas tácticas del bot.",
+        "cards": [
+          {
+            "id": "M5-01",
+            "tipo": "alerta",
+            "title": "PPI USD y Voto Fed Chair hoy",
+            "desc": "Hoy 13-may a las 08:30 ET se publica PPI m/m (forecast 0.5%) y Core PPI (forecast 0.3%), seguido del voto de nominación del presidente de la Fed a las 12:29 ET. Ambos eventos pueden generar expansión brusca de ATR en XAUUSD. Pausa el bot desde 08:15 ET hasta 13:00 ET para evitar entradas en spreads inflados y falsas rupturas Donchian inducidas por el news spike.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-02",
+            "tipo": "alerta",
+            "title": "Retail Sales y GDP GBP el jueves",
+            "desc": "El 14-may se publican Core Retail Sales USD (forecast 0.7%, previo 1.9%) y GDP GBP (forecast -0.1%). La desaceleración esperada en ventas minoristas puede revertir movimientos de USD intradía y generar whipsaws en XAUUSD. Programa una pausa adicional del bot entre 02:00 ET y 09:30 ET del jueves 14-may para cubrir ambas ventanas de impacto.",
+            "horizonte": "48h"
+          },
+          {
+            "id": "M5-03",
+            "tipo": "alerta",
+            "title": "CPI USD ya publicado: revisar parámetros ATR",
+            "desc": "El CPI y/y de ayer (12-may, forecast 3.7% vs previo 3.3%) implica un salto inflacionario que pudo haber recalibrado el ATR de referencia en los timeframes D1 y H4. Verifica manualmente que el ATR calculado en el motor Python no esté usando un periodo de lookback que incluya la vela del news como valor anómalo, lo cual podría inflar el multiplicador de stops y reducir el tamaño de posición más de lo necesario.",
+            "horizonte": "now"
+          },
+          {
+            "id": "M5-04",
+            "tipo": "oportunidad",
+            "title": "COT XAU: posicionamiento institucional fuertemente alcista",
+            "desc": "El reporte CFTC al 05-may muestra net long de 156,501 contratos en oro (longs 203,487 vs shorts 46,986), el sesgo institucional más sólido entre todos los instrumentos monitoreados. Esto valida el edge OOS de XAUUSD (PF=1.86) y sugiere que las señales de continuación de tendencia alcista generadas por el filtro D1 ADX tienen respaldo de flujo real. No reduzcas el tamaño de posición por debajo del baseline del backtest en tendencias alcistas confirmadas.",
+            "horizonte": "semana"
+          },
+          {
+            "id": "M5-05",
+            "tipo": "oportunidad",
+            "title": "VIX en régimen normal: condiciones favorables",
+            "desc": "El VIX cotiza en 17.99 con tendencia bajista (previo 18.38), dentro del régimen normal que históricamente favorece estrategias de seguimiento de tendencia con expansión ATR. No se detecta compresión extrema de volatilidad ni spike de miedo que distorsione las rupturas Donchian en H4. El entorno actual es consistente con las condiciones en que XAUUSD generó el retorno OOS de +237% en el backtest.",
+            "horizonte": "24h"
+          },
+          {
+            "id": "M5-06",
+            "tipo": "neutral",
+            "title": "JPY COT: sesgo bajista extremo, sin impacto directo",
+            "desc": "El posicionamiento especulativo en JPY muestra net short de -65,992 contratos al 05-may, el más extremo de los pares monitoreados. Aunque el bot no opera USDJPY con edge validado (OOS negativo), este dato es relevante como proxy de apetito por activos refugio: un cierre masivo de shorts en JPY podría correlacionar con presión sobre XAUUSD. Monitorea USDJPY como indicador de flujo de riesgo auxiliar, pero no actives señales en ese par.",
+            "horizonte": "semana"
+          }
+        ],
+        "last_updated": "2026-05-13T01:07:03Z",
+        "macro_snapshot": {
+          "vix": {
+            "value": 17.99,
+            "prev": 18.38,
+            "change": -0.39,
+            "regime": "normal"
+          },
+          "fear_greed_crypto": {
+            "value": 42,
+            "label": "Fear",
+            "prev": 49
+          },
+          "fear_greed_equities": null,
+          "high_impact_events": [
+            {
+              "event": "Core CPI m/m",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.2%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.6%",
+              "previous": "0.9%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-05-12T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.7%",
+              "previous": "3.3%"
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-05-13T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.1%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-05-13T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.5%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Fed Chair Nomination Vote",
+              "currency": "USD",
+              "date": "2026-05-13T12:29:00-04:00",
+              "time": "",
+              "forecast": "Pass",
+              "previous": ""
+            },
+            {
+              "event": "GDP m/m",
+              "currency": "GBP",
+              "date": "2026-05-14T02:00:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "Core Retail Sales m/m",
+              "currency": "USD",
+              "date": "2026-05-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.7%",
+              "previous": "1.9%"
+            },
+            {
+              "event": "Retail Sales m/m",
+              "currency": "USD",
+              "date": "2026-05-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.5%",
+              "previous": "1.7%"
+            }
+          ],
+          "fred": null,
+          "bls": {
+            "nonfarm_payroll_k": {
+              "value": "158736",
+              "date": "2026-04"
+            },
+            "cpi_index": {
+              "value": "333.020",
+              "date": "2026-04"
+            }
+          },
+          "ecb": null,
+          "cot": {
+            "EUR": {
+              "net": -2746,
+              "long": 193657,
+              "short": 196403,
+              "bias": "bearish",
+              "date": "2026-05-05"
+            },
+            "GBP": {
+              "net": -20847,
+              "long": 31637,
+              "short": 52484,
+              "bias": "bearish",
+              "date": "2022-02-01"
+            },
+            "JPY": {
+              "net": -65992,
+              "long": 106515,
+              "short": 172507,
+              "bias": "bearish",
+              "date": "2026-05-05"
+            },
+            "XAU": {
+              "net": 156501,
+              "long": 203487,
+              "short": 46986,
+              "bias": "bullish",
+              "date": "2026-05-05"
+            }
+          },
+          "binance": null,
+          "fetched_at": "2026-05-13T01:07:03Z"
+        }
+      }
     }
   ],
   "folders": [
