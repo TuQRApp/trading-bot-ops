@@ -2559,7 +2559,8 @@
           "desc": "El docstring describe 'TP1 = 1.5 × riesgo → mueve SL a breakeven', pero generate_signals solo exporta sl, tp1, tp2 calculados desde close de señal. No hay columna 'breakeven_price' ni logica que indique al BacktestEngine que tras alcanzar tp1 debe mover el SL al precio de entrada. Si BacktestEngine interpreta tp1 como un cierre parcial y no como un nivel de ajuste de SL, la logica de gestion del trade diferira del backtest documentado.",
           "code": "df['signal'] = signal\ndf['sl']     = sl_arr\ndf['tp1']    = tp1_arr\ndf['tp2']    = tp2_arr",
           "fix": "# Agregar columna explicita para que el motor entienda la semantica de tp1:\ndf['signal']          = signal\ndf['sl']              = sl_arr\ndf['tp1']             = tp1_arr   # nivel para mover SL a breakeven\ndf['tp2']             = tp2_arr   # cierre total de posicion\ndf['breakeven_entry'] = np.where(signal != 0,\n                                  close + 0,  # precio de entrada aproximado\n                                  np.nan)\n# Documentar en BacktestEngine que tp1 activa trail a breakeven, no cierre parcial.",
-          "comment": ""
+          "comment": "",
+          "correction": ""
         },
         {
           "id": "H-20",
