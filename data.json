@@ -2568,7 +2568,8 @@
           "desc": "El codigo aplica shift(1) correctamente a los niveles de Donchian H4 (documentado en m1 como punto positivo), pero el filtro de tendencia EMA200 calculado sobre el DataFrame M15 en build_features no tiene shift explicito antes de usarse en generate_signals. Si la condicion de entrada incluye 'close > ema200' usando la EMA calculada con el close de la barra actual (no la barra anterior), existe un lookahead parcial: la EMA200 incorpora el valor del close que tambien se usa como precio de la senal en la misma barra. El impacto es bajo para una EMA de 200 periodos (el ultimo dato tiene peso 2/201) pero el principio es incorrecto y debe corregirse para mantener la consistencia metodologica ya establecida con Donchian.",
           "code": "df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()\n# ... usado posteriormente en generate_signals como:\n# long_mask = (close > don_h) & (close > ema200) & ...",
           "fix": "# Aplicar shift(1) a la EMA antes de usarla como condicion de filtro:\ndf['ema200'] = df['close'].ewm(span=200, adjust=False).mean().shift(1)\n# Esto garantiza que la decision en la barra i usa la EMA calculada hasta la barra i-1,\n# consistente con el tratamiento de Donchian H4.",
-          "comment": ""
+          "comment": "",
+          "correction": ""
         }
       ],
       "versions": [
