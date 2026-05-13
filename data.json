@@ -2242,7 +2242,7 @@
           "type": "py"
         }
       ],
-      "status": "pendiente_final",
+      "status": "activo",
       "version_of": null,
       "m1": {
         "type": "quality",
@@ -2252,7 +2252,7 @@
         "score": {
           "valor": 3.5,
           "max": 10,
-          "label": "Solo XAUUSD viable — 5 de 6 instrumentos destruyen capital en OOS",
+          "label": "Solo XAUUSD viable — estrategia restringida exclusivamente a oro para produccion",
           "bullets": [
             {
               "type": "ok",
@@ -2268,23 +2268,23 @@
             },
             {
               "type": "warn",
-              "text": "XTIUSD y XAGUSD tienen PF IS marginales (1.31 y 1.01) que colapsan en OOS (0.69 y 0.92)"
+              "text": "XTIUSD y XAGUSD tienen PF IS marginales (1.31 y 1.01) que colapsan en OOS (0.69 y 0.92) — descartados"
             },
             {
               "type": "warn",
-              "text": "USDJPY: IS PF=2.01 prometedor pero OOS solo 24 trades — muestra estadistica insuficiente para validacion"
+              "text": "USDJPY: IS PF=2.01 prometedor pero OOS solo 24 trades — muestra estadistica insuficiente; descartado"
             },
             {
               "type": "bad",
-              "text": "BTCUSD: destruccion total de capital en IS y OOS (PF=0.18/0.22, DD=100%) — instrumento incompatible con la logica"
+              "text": "BTCUSD: destruccion total de capital en IS y OOS (PF=0.18/0.22, DD=100%) — instrumento incompatible con la logica; descartado"
             },
             {
               "type": "bad",
-              "text": "XNGUSD: PF=0.01 en IS, MC mediana=-100% con prob>0=0.0% — resultado catastrofico en todas las simulaciones"
+              "text": "XNGUSD: PF=0.01 en IS, MC mediana=-100% con prob>0=0.0% — resultado catastrofico en todas las simulaciones; descartado"
             },
             {
               "type": "bad",
-              "text": "5 de 6 instrumentos con retorno OOS negativo — la estrategia no es generalizable; riesgo de data snooping al ejecutar multiples instrumentos"
+              "text": "5 de 6 instrumentos con retorno OOS negativo — la estrategia queda restringida unicamente a XAUUSD en produccion; no se operaran otros instrumentos"
             }
           ]
         },
@@ -2292,9 +2292,9 @@
           {
             "id": "QM-01",
             "label": "Instrumentos",
-            "value": "6 instrumentos",
+            "value": "6 instrumentos analizados — solo XAUUSD aprobado para produccion",
             "status": "bad",
-            "note": "XAUUSD PF IS 1.56 / OOS 1.86 ok | USDJPY PF IS 2.01 / OOS 0.51 warn | XTIUSD PF IS 1.31 / OOS 0.69 bad | XAGUSD PF IS 1.01 / OOS 0.92 bad | BTCUSD PF IS 0.18 / OOS 0.22 bad | XNGUSD PF IS 0.01 / OOS 0.03 bad"
+            "note": "XAUUSD PF IS 1.56 / OOS 1.86 ok — unico instrumento viable | USDJPY PF IS 2.01 / OOS 0.51 descartado | XTIUSD PF IS 1.31 / OOS 0.69 descartado | XAGUSD PF IS 1.01 / OOS 0.92 descartado | BTCUSD PF IS 0.18 / OOS 0.22 descartado | XNGUSD PF IS 0.01 / OOS 0.03 descartado"
           },
           {
             "id": "QM-02",
@@ -2315,14 +2315,14 @@
             "label": "Peor Max Drawdown OOS",
             "value": "100%",
             "status": "bad",
-            "note": "BTCUSD DD=99.8% | XNGUSD DD=100% | XAGUSD DD=64.8% | XAUUSD DD=43.8% (unico aceptable en MC: P95 DD=28.7%)"
+            "note": "BTCUSD DD=99.8% | XNGUSD DD=100% | XAGUSD DD=64.8% | XAUUSD DD=43.8% (unico aceptable en MC: P95 DD=28.7%). Todos los instrumentos no XAUUSD descartados de produccion."
           },
           {
             "id": "QM-05",
-            "label": "Walk-forward IS→OOS",
-            "value": "PF IS 1.56 → OOS 1.86 (XAUUSD)",
+            "label": "Walk-forward IS->OOS",
+            "value": "PF IS 1.56 -> OOS 1.86 (XAUUSD)",
             "status": "ok",
-            "note": "Solo XAUUSD mejora en OOS. USDJPY: 2.01 → 0.51 (high_overfit_risk). XTIUSD: 1.31 → 0.69. XAGUSD: 1.01 → 0.92. BTCUSD/XNGUSD: catastroficos en ambos periodos"
+            "note": "Solo XAUUSD mejora en OOS y es aprobado para produccion. USDJPY: 2.01 -> 0.51 descartado. XTIUSD: 1.31 -> 0.69 descartado. XAGUSD: 1.01 -> 0.92 descartado. BTCUSD/XNGUSD: catastroficos en ambos periodos, descartados."
           },
           {
             "id": "QM-06",
@@ -2336,17 +2336,17 @@
             "label": "MC Instrumentos Fallidos",
             "value": "5 de 5 con prob>0 < 26%",
             "status": "bad",
-            "note": "BTCUSD prob>0=0.0% | XNGUSD prob>0=0.0% | XTIUSD prob>0=7.5% | USDJPY prob>0=6.1% | XAGUSD prob>0=25.4%"
+            "note": "BTCUSD prob>0=0.0% | XNGUSD prob>0=0.0% | XTIUSD prob>0=7.5% | USDJPY prob>0=6.1% | XAGUSD prob>0=25.4%. Todos descartados — no se operaran en produccion."
           },
           {
             "id": "QM-08",
             "label": "Instrumentos Viables",
             "value": "1 / 6",
             "status": "bad",
-            "note": "Solo XAUUSD tiene edge confirmado. Operar los restantes en produccion implica ruina garantizada segun Monte Carlo"
+            "note": "La estrategia queda restringida exclusivamente a XAUUSD. Operar los restantes en produccion implica ruina garantizada segun Monte Carlo. Decision del trader: solo oro."
           }
         ],
-        "correction": "QUEDARÁ SOLO PARA ORO"
+        "comment": "Se incorporo la decision del trader de restringir la estrategia exclusivamente a XAUUSD. Todos los demas instrumentos marcados explicitamente como descartados en titulos, bullets y notas de metricas."
       },
       "m2": [
         {
@@ -2356,8 +2356,7 @@
           "prioridad": "alta",
           "title": "BTCUSD y XNGUSD: ruina garantizada — eliminar del universo de produccion",
           "desc": "BTCUSD (PF=0.18 IS, PF=0.22 OOS, DD=100%, MC prob>0=0.0%) y XNGUSD (PF=0.01 IS, PF=0.03 OOS, DD=100%, MC prob>0=0.0%, Sharpe=-121) destruyen el capital de forma deterministica en todas las simulaciones. No existe combinacion de parametros dentro del grid de 324 que produzca un resultado positivo. La logica de momentum ATR es fundamentalmente incompatible con la dinamica de precio de estos instrumentos. Accion requerida: remover ambos simbolos del diccionario OPTIMIZED_PARAMS y agregar una lista explicita de simbolos prohibidos con una guardia en el __main__ que impida su ejecucion accidental.",
-          "comment": "",
-          "correction": "NO OPERARÁN, SOLO PARA ORO"
+          "comment": ""
         },
         {
           "id": "R-02",
@@ -2366,8 +2365,7 @@
           "prioridad": "alta",
           "title": "USDJPY: overfitting severo — IS PF=2.01 colapsa a OOS PF=0.51 con solo 24 trades",
           "desc": "El deterioro de PF de 2.01 (IS) a 0.51 (OOS) clasifica como high_overfit_risk. Ademas, el periodo OOS produce unicamente 24 trades — umbral estadisticamente insuficiente para cualquier conclusion robusta (intervalo de confianza extremadamente amplio). MC confirma: prob>0=6.1%, Sharpe promedio=-36.57. La alta señal IS es probablemente un artefacto del grid search sobre 324 combinaciones (multiple comparisons problem). No operar XAUUSD con parametros de USDJPY y no incluir USDJPY hasta obtener al menos 200 trades OOS en un periodo extendido.",
-          "comment": "",
-          "correction": "NO OPERARÁN, SOLO PARA ORO"
+          "comment": ""
         },
         {
           "id": "R-03",
@@ -2578,7 +2576,7 @@
       "category": "Backtest HTML + Python | 6 instrumentos | Custom Engine | ATR Momentum Multi-Timeframe",
       "summary": "Estrategia de seguimiento de tendencia multi-timeframe (D1 ADX + H4 Donchian + M15 ATR expansion) probada sobre 6 instrumentos con split IS/OOS 70/30 y 2,000 simulaciones Monte Carlo. Solo XAUUSD supera el filtro de edge real (OOS PF=1.86, retorno +237%, MC prob>0=99.9%); los otros 5 instrumentos muestran destruccion total de capital o resultados negativos en OOS. El codigo Python es limpio y compacto (188 lineas, 3 funciones) pero contiene multiples magic numbers sin documentar y carece de manejo de excepciones.",
       "trader_notes": "",
-      "revision_submitted": true,
+      "revision_submitted": false,
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
@@ -2796,50 +2794,50 @@
     }
   ],
   "trader_profile": {
-    "cycles": 7,
+    "cycles": 8,
     "m2_by_tipo": {
       "risk": {
         "corrected": 3,
         "discarded": 0,
-        "total": 29
+        "total": 33
       },
       "param": {
         "corrected": 0,
         "discarded": 0,
-        "total": 8
+        "total": 9
       },
       "logic": {
         "corrected": 0,
         "discarded": 0,
-        "total": 21
+        "total": 23
       },
       "data": {
         "corrected": 0,
         "discarded": 0,
-        "total": 9
+        "total": 10
       },
       "meta": {
         "corrected": 0,
         "discarded": 0,
-        "total": 6
+        "total": 7
       }
     },
     "m4_by_categoria": {
       "bug": {
         "corrected": 3,
-        "total": 19
+        "total": 22
       },
       "riesgo": {
         "corrected": 0,
-        "total": 17
+        "total": 18
       },
       "ausencia": {
         "corrected": 0,
-        "total": 15
+        "total": 17
       },
       "mejora": {
         "corrected": 0,
-        "total": 12
+        "total": 13
       }
     },
     "correction_rates": [
@@ -2849,9 +2847,10 @@
       0,
       0.07,
       0,
+      0,
       0
     ],
-    "last_updated": "2026-05-08"
+    "last_updated": "2026-05-13"
   },
   "bot_specs": [
     {
