@@ -331,63 +331,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno de volatilidad moderada con VIX en zona normal, DXY históricamente elevado presionando metales, sentimiento cripto en miedo y posicionamiento institucional alcista en oro ofrecen señales mixtas para los tres instrumentos del bot.",
+        "resumen": "Condiciones mixtas para el bot: VIX normalizado favorece la estrategia de breakout, pero el DXY extraordinariamente elevado (119.28) presiona a XAUUSD y XAGUSD, mientras el sentimiento cripto en Miedo (28) añade cautela sobre BTCUSD.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 119.28: presión bajista sobre XAUUSD y XAGUSD",
-            "desc": "El índice del dólar se encuentra en niveles históricamente muy elevados (119.28 al 15-may). Un dólar fuerte comprime los precios de XAUUSD y XAGUSD en términos nominales, lo que puede generar breakouts falsos en el canal Fibonacci de 20 barras al romper niveles por momentum del USD y no por demanda real del activo. Revisar si el bot está filtrando dirección de ruptura: priorizar señales short en metales o reducir tamaño de lote hasta que el DXY muestre reversión.",
+            "title": "DXY en 119.28: presion extrema sobre metales",
+            "desc": "El índice del dólar se encuentra en niveles históricamente elevados (119.28 al 15-may). Un USD tan fuerte genera viento en contra estructural para XAUUSD y XAGUSD. Revisa si el bot está generando señales de venta en metales con mayor frecuencia que compras. Si el drawdown diario se acerca al límite del circuit breaker, considera pausar manualmente el instrumento XAGUSD primero, ya que es el más volátil ante movimientos del DXY.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Actas FOMC ya publicadas: vigilar secuelas en USD",
-            "desc": "Las Actas del FOMC se publicaron el 20-may a las 14:00 ET. Aunque el evento ya pasó, los mercados de deuda y divisas suelen procesar el contenido durante 24-48 horas adicionales con movimientos erráticos en USD. Con T10Y en 4.67% y spread de curva en 0.53% (normal), cualquier tono hawkish rezagado puede generar spikes en XAUUSD y XAGUSD en velas M3. Monitorizar si el circuit breaker de drawdown diario se activó en sesión del 20-may y confirmar que el bot está operativo sin posiciones rezagadas abiertas.",
-            "horizonte": "24h"
+            "title": "Eventos de la semana ya pasados: revisar secuelas",
+            "desc": "Los eventos de alto impacto de esta semana (FOMC Minutes el 20-may, CPI GBP el 20-may, BOE Bailey el 21-may) ya ocurrieron antes de la fecha actual (22-may). Verifica los movimientos residuales de volatilidad en los gráficos M3 de XAUUSD y BTCUSD post-FOMC. Los minutos de la Fed suelen dejar gaps de liquidez que pueden generar entradas falsas en estrategias de breakout de canal. Audita las últimas 50 operaciones del bot para detectar si hubo activaciones erróneas durante esas ventanas.",
+            "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Sentimiento cripto en Miedo: riesgo de tendencia bajista en BTCUSD",
-            "desc": "El índice Crypto Fear and Greed está en 29 (Miedo), subiendo levemente desde 27. Sin datos de funding rate ni open interest de Binance disponibles, no se puede confirmar si hay longs o shorts dominantes. En contexto de miedo con DXY alto, BTCUSD es propenso a rangos comprimidos y falsas rupturas del canal Fibonacci. Reducir el tamaño de lote en BTCUSD al tercio mínimo permitido por la estrategia hasta que el índice supere 40 (zona neutral) o hasta obtener datos de funding rate que confirmen dirección.",
-            "horizonte": "now"
+            "title": "Crypto Fear and Greed en 28: sesgo bajista en BTCUSD",
+            "desc": "El índice de Miedo y Codicia cripto cayó a 28 (Miedo), bajando desde 29. Sin datos de funding rate ni open interest de Binance disponibles, no es posible confirmar si hay capitulación o presion bajista sostenida. En este contexto, el bot puede encontrar breakouts bajistas mas frecuentes en BTCUSD. Ajusta tu expectativa de win-rate a la baja para este instrumento y asegurate de que el circuit breaker de rachas este activo. No incrementes el tamaño del lote en BTCUSD hasta que el índice supere 40.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "COT oro: institucionales muy alcistas en XAU",
-            "desc": "El posicionamiento no-comercial neto en XAU es de 165,174 contratos largos (longs 212,267 vs shorts 47,093 al 12-may), el sesgo institucional más fuerte de los activos reportados. Esto da respaldo fundamental a rupturas alcistas del canal Fibonacci en XAUUSD. Cuando el bot detecte un breakout al alza en M3 con niveles Fibonacci bien definidos, la confluencia COT justifica confiar en los tres TP escalonados sin cerrar anticipadamente. Asegurarse de que el breakeven automático tras TP1 esté activo para proteger la posición.",
+            "title": "COT XAU: institucionales muy largos en oro",
+            "desc": "El posicionamiento CFTC de no-comerciales en XAU muestra un neto de 165,174 contratos largos (longs 212,267 vs shorts 47,093) al 12-may. Este sesgo institucional fuertemente alcista en oro es favorable para las señales de compra del bot en XAUUSD, a pesar de la fortaleza del DXY. Los breakouts alcistas del canal de 20 barras tienen respaldo de flujo institucional. Prioriza revisar que los TP2 y TP3 no estén demasiado ajustados en operaciones largas de XAUUSD durante sesiones de alta liquidez (Londres y Nueva York).",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en 17.37: volatilidad favorable para breakouts M3",
-            "desc": "El VIX bajó a 17.37 desde 17.44, manteniéndose en régimen normal sin señales de pánico ni compresión extrema. Este rango de VIX es históricamente favorable para estrategias de breakout en timeframes cortos como M3: suficiente movimiento para alcanzar TP2 y TP3, sin el ruido caótico de VIX mayor a 25. El bot puede operar con parámetros estándar en XAUUSD y XAGUSD. Si el VIX supera 22, activar revisión manual del circuit breaker de racha.",
-            "horizonte": "now"
+            "title": "VIX en 16.71: regimen normal favorece breakouts",
+            "desc": "El VIX bajó ligeramente a 16.71 desde 16.76, manteniendose en regimen normal. Este nivel es ideal para estrategias de breakout de canal como la del bot: suficiente volatilidad para activar los niveles de Fibonacci, pero sin el ruido extremo que genera señales falsas en VIX superior a 25. Las condiciones actuales sugieren que el bot puede operar con parametros estandar sin necesidad de filtros adicionales. Aprovecha esta ventana de estabilidad para no interferir manualmente con la logica del bot.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos normal: contexto macro estable",
-            "desc": "El spread T10Y-T2Y es de 0.53% con curva en régimen normal (no invertida). Esto indica que el mercado no está descontando recesión inminente, lo cual reduce el riesgo de movimientos de aversión al riesgo abrupta que desestabilicen BTCUSD y metales simultáneamente. CPI de abril en 333.02 y NFP en 158,736 (abril 2026) sugieren economía en desaceleración moderada. Este contexto no requiere acción inmediata pero confirma que el entorno macro no genera sesgo direccional fuerte adicional al ya capturado por DXY y COT.",
+            "title": "Curva de rendimientos plana: contexto macro estable",
+            "desc": "El spread T10Y-T2Y es de 0.49 puntos con regimen de curva plana. El T10Y en 4.57% y T2Y en 4.04% indican que el mercado no anticipa recesion inminente ni aceleracion de crecimiento. Este entorno macro neutral reduce la probabilidad de movimientos tendenciales fuertes impulsados por datos macro en XAUUSD en el corto plazo. El bot operara principalmente en rangos de breakout tecnico sin catalizadores macro dominantes. Informativo solamente, sin accion requerida.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-21T14:16:28Z",
+        "last_updated": "2026-05-22T13:34:48Z",
         "macro_snapshot": {
           "vix": {
-            "value": 17.37,
-            "prev": 17.44,
-            "change": -0.07,
+            "value": 16.71,
+            "prev": 16.76,
+            "change": -0.05,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 29,
+            "value": 28,
             "label": "Fear",
-            "prev": 27
+            "prev": 29
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -454,18 +454,18 @@
               "date": "2026-05-15"
             },
             "t10y": {
-              "value": 4.67,
-              "date": "2026-05-19"
-            },
-            "t2y": {
-              "value": 4.13,
-              "date": "2026-05-19"
-            },
-            "yield_spread": {
-              "value": 0.53,
+              "value": 4.57,
               "date": "2026-05-20"
             },
-            "curve_regime": "normal"
+            "t2y": {
+              "value": 4.04,
+              "date": "2026-05-20"
+            },
+            "yield_spread": {
+              "value": 0.49,
+              "date": "2026-05-21"
+            },
+            "curve_regime": "flat"
           },
           "bls": {
             "nonfarm_payroll_k": {
@@ -509,7 +509,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-21T14:16:28Z"
+          "fetched_at": "2026-05-22T13:34:48Z"
         }
       },
       "versions": [
@@ -927,63 +927,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Volatilidad moderada favorece la estrategia de reversión a la media, pero el DXY en máximos históricos, el sentimiento cripto en miedo y eventos macro ya publicados esta semana exigen ajustes puntuales en exposición.",
+        "resumen": "Entorno de volatilidad controlada (VIX 16.71) favorece la reversión a la media, pero el DXY en niveles históricamente elevados (119.28), el sentimiento cripto en Fear y eventos macro ya ejecutados esta semana exigen monitoreo activo de correlaciones y spreads en los 14 instrumentos.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 119.28: riesgo extremo en pares forex",
-            "desc": "El índice del dólar se encuentra en niveles históricamente elevados (119.28 al 15-may). Si el bot opera pares con USD implícito o índices denominados en USD (US30, NAS100), los movimientos de divisa pueden distorsionar las señales del canal Fibonacci. Revisar manualmente si algún símbolo forex está activo y considerar reducir el tamaño de posición un 30-50% hasta que el DXY muestre estabilización o retroceso claro.",
+            "title": "DXY en 119.28: presión extrema sobre metales e índices",
+            "desc": "El índice del dólar cotiza en 119.28, nivel históricamente elevado que comprime los rangos de reversión en XAU/USD y puede distorsionar los canales Fibonacci en índices denominados en USD (US30, NAS100, SPX). Revisar manualmente los niveles de canal activos en estos instrumentos. Si el spread de ejecución en XAU supera el filtro configurado, el bot lo bloqueará, pero confirma que el parámetro está calibrado para volatilidad de USD alta. Acción: auditar parámetros de canal en XAU, US30 y NAS100 antes de la próxima sesión de Nueva York.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "BOE Bailey habla hoy: pausar GBP e índices UK",
-            "desc": "El gobernador Bailey del BOE tiene intervención programada hoy 21-may a las 11:00 ET (15:00 UTC). Los comentarios sobre tasas pueden generar spikes de spread y volatilidad puntual en GBP y en índices relacionados. Activar el filtro de spread manual o pausar cualquier símbolo GBP durante 30 minutos antes y 60 minutos después del evento para evitar ejecuciones en spread ampliado.",
-            "horizonte": "now"
+            "title": "Sentimiento cripto en Fear (28): riesgo de gaps en M3",
+            "desc": "El índice Fear and Greed de cripto marcó 28 (Fear), bajando desde 29. En mercados cripto con sentimiento deprimido, los movimientos de precio en M3 tienden a ser impulsivos y poco conducentes a la reversión limpia a la media, especialmente en períodos de baja liquidez. El bot no dispone de datos de funding rate ni open interest de BTC (Binance no disponible), lo que elimina una capa de filtro clave. Acción: reducir el tamaño de posición en pares cripto al mínimo permitido por la configuración hasta que el índice supere 40 (Neutral) o se restablezca el feed de Binance.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Cripto Fear & Greed en 29: sesgo bajista BTC",
-            "desc": "El índice de miedo cripto bajó a 29 (Miedo) desde 27 la sesion anterior. En regímenes de miedo, los activos cripto del bot (si incluye BTC, ETH u otros) tienen mayor riesgo de ruptura de canal y menor tasa de reversión exitosa. Sin datos de funding rate disponibles, no se puede confirmar capitulación. Reducir tamaño de lote en cripto un 25% y elevar el umbral de confirmación Smart Money hasta que el índice supere 40.",
-            "horizonte": "24h"
+            "title": "Curva de rendimientos plana: compresión de rangos en forex",
+            "desc": "El spread T10Y-T2Y es de solo 0.49 pb con régimen 'flat'. Una curva plana indica incertidumbre sobre el ciclo, lo que históricamente reduce la direccionalidad intradiaria en pares forex y puede generar falsos retornos a la media en M3. El JPY muestra posicionamiento especulativo muy negativo (neto -78,657 contratos, bearish) según COT del 12-may, señalando que el carry trade sigue activo y que rebotes del JPY pueden ser trampas. Acción: si el bot opera USD/JPY, vigilar que las señales Smart Money confirmen antes de ejecutar longs en JPY, ya que el COT sugiere sesgo vendedor institucional persistente.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-04",
-            "tipo": "alerta",
-            "title": "FOMC Minutes publicadas ayer: vigilar reacción tardía",
-            "desc": "Las minutas del FOMC se publicaron el 20-may a las 14:00 ET. Los mercados de renta fija y equities pueden continuar digiriendo el tono hawkish o dovish durante las próximas 24-48 horas, especialmente con T10Y en 4.67% y spread de curva solo en 0.53 puntos. Monitorear si US30 o NAS100 presentan rangos inusualmente amplios en M3 que invaliden la premisa de reversión a la media; activar circuit breaker diario si el drawdown intradiario supera el 2%.",
-            "horizonte": "24h"
+            "tipo": "oportunidad",
+            "title": "VIX en 16.71: régimen ideal para reversión a la media",
+            "desc": "El VIX cerró en 16.71 con mínima variación (-0.05), firmemente en régimen Normal. Este nivel es históricamente óptimo para estrategias de reversión a la media en M3: volatilidad suficiente para generar oscilaciones rentables dentro del canal Fibonacci, sin picos que invaliden las bandas. El backtest del bot mostró mejor desempeño en rangos VIX 14-20. Acción: mantener el bot con parámetros estándar en índices (US30, NAS100) y metales, aprovechando que el circuit breaker diario tiene baja probabilidad de activarse en este entorno.",
+            "horizonte": "now"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en 17.37: condición ideal para la estrategia",
-            "desc": "El VIX se mantiene en regimen normal (17.37, ligeramente bajando desde 17.44). Este nivel es históricamente óptimo para estrategias de reversión a la media: suficiente volatilidad para generar oscilaciones dentro del canal Fibonacci, pero sin el ruido extremo de VIX superior a 25. Mantener el bot operando a capacidad normal en índices (US30, NAS100, GER40) y metales, aprovechando el entorno controlado.",
-            "horizonte": "semana"
+            "title": "COT XAU bullish: sesgo institucional favorece longs en rebotes",
+            "desc": "El posicionamiento especulativo neto en oro es de +165,174 contratos (long 212,267 vs short 47,093) según datos COT del 12-may, el sesgo institucional más fuerte de los activos monitoreados. Esto refuerza la validez de señales de compra en XAU/USD cuando el precio toca la banda inferior del canal Fibonacci, ya que el flujo institucional actúa como soporte estructural. Acción: no ignorar señales long en XAU aunque el DXY esté elevado; el COT sugiere que las correcciones son absorbidas. Confirmar que el filtro de correlación no bloquea XAU junto con otros metales simultáneamente.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-06",
-            "tipo": "oportunidad",
-            "title": "COT: oro con posicionamiento institucional alcista",
-            "desc": "El posicionamiento neto no-comercial en XAU es de +165,174 contratos (largo 212,267 vs corto 47,093) al 12-may, el sesgo institucional mas fuerte del conjunto de activos monitoreados. Para el bot, esto implica que los rebotes dentro del canal Fibonacci en metales preciosos tienen respaldo institucional. Priorizar señales largas en XAU/USD cuando el precio toque la banda inferior del canal, manteniendo el filtro Smart Money activo para confirmación.",
-            "horizonte": "semana"
+            "tipo": "neutral",
+            "title": "Eventos macro de la semana ya publicados",
+            "desc": "Los eventos de alto impacto de esta semana (CPI GBP del 20-may, FOMC Minutes del 20-may, empleo AUD del 20-may y discurso de Bailey del 21-may) ya fueron publicados antes de este briefing (22-may). No hay eventos de alto impacto pendientes en el calendario visible para hoy. El CPI GBP salió en 3.0% vs 3.3% previo (desinflación moderada) y el COT de GBP muestra sesgo bearish, consistente con menor presión del BOE. Acción: el bot puede operar sin restricciones de pausa por evento macro hoy, pero mantener alertas para cualquier comunicación no programada de la Fed o BOE.",
+            "horizonte": "24h"
           }
         ],
-        "last_updated": "2026-05-21T14:16:28Z",
+        "last_updated": "2026-05-22T13:34:48Z",
         "macro_snapshot": {
           "vix": {
-            "value": 17.37,
-            "prev": 17.44,
-            "change": -0.07,
+            "value": 16.71,
+            "prev": 16.76,
+            "change": -0.05,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 29,
+            "value": 28,
             "label": "Fear",
-            "prev": 27
+            "prev": 29
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -1050,18 +1050,18 @@
               "date": "2026-05-15"
             },
             "t10y": {
-              "value": 4.67,
-              "date": "2026-05-19"
-            },
-            "t2y": {
-              "value": 4.13,
-              "date": "2026-05-19"
-            },
-            "yield_spread": {
-              "value": 0.53,
+              "value": 4.57,
               "date": "2026-05-20"
             },
-            "curve_regime": "normal"
+            "t2y": {
+              "value": 4.04,
+              "date": "2026-05-20"
+            },
+            "yield_spread": {
+              "value": 0.49,
+              "date": "2026-05-21"
+            },
+            "curve_regime": "flat"
           },
           "bls": {
             "nonfarm_payroll_k": {
@@ -1105,7 +1105,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-21T14:16:28Z"
+          "fetched_at": "2026-05-22T13:34:48Z"
         }
       }
     },
@@ -1535,63 +1535,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno mixto para el bot RSI+BB: VIX en zona normal favorece la reversión a la media, pero el DXY en máximos históricos cerca de 119 y eventos de alto impacto ya ocurridos esta semana generan ruido residual; XAGUSD sigue siendo el único instrumento con historial positivo en backtest.",
+        "resumen": "Entorno de volatilidad moderada con VIX en zona normal, DXY en niveles históricamente elevados y posicionamiento institucional fuertemente alcista en XAU; los eventos de alto impacto de la semana ya pasaron en su mayoría, pero el bot opera instrumentos sensibles a USD y metales con backtests mayoritariamente negativos que exigen cautela operativa.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 119: impacto directo en XAUUSD y XAGUSD",
-            "desc": "El índice del dólar cotiza en 119.28, nivel históricamente elevado que presiona los metales preciosos a la baja y distorsiona los rangos estadísticos de las Bandas de Bollinger en XAUUSD y XAGUSD. En tendencias de USD tan pronunciadas, el filtro H4 EMA(200) puede quedar rezagado y generar entradas en contra del impulso real. Reducir el tamaño de posición al 50% en ambos metales o pausar el bot en XAUUSD hasta que el DXY muestre consolidación por debajo de 118.",
+            "title": "DXY extremadamente alto: impacto en XAUUSD y XAGUSD",
+            "desc": "El DXY cotiza en 119.28, nivel históricamente muy elevado que presiona a la baja los metales preciosos y distorsiona las señales de reversión a la media del bot. XAUUSD y XAGUSD pueden exhibir tendencias bajistas persistentes en H4 que invaliden el filtro EMA(200), generando señales falsas en M5. Revisar manualmente que la EMA(200) en H4 de ambos metales siga orientada correctamente antes de permitir operaciones largas. Si el DXY no cede, considerar suspender lados largos en metales.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "BOE Bailey habla hoy: pausar SE30 e IT40",
-            "desc": "El gobernador del BOE Bailey tiene intervención programada hoy 21-may a las 15:00 UTC. Declaraciones inesperadas sobre tasas o inflación pueden generar picos de volatilidad en índices europeos (SE30, IT40) que invalidan la lógica de reversión a la media en M5. Pausar el bot en SE30 e IT40 durante la ventana 14:45-15:30 UTC y reactivar solo si el spread vuelve a niveles normales y las velas M5 no superan 2x el rango promedio.",
-            "horizonte": "now"
+            "title": "Curva de rendimientos plana: riesgo en indices europeos",
+            "desc": "El spread 10Y-2Y de EE.UU. esta en 0.49 con regimen 'flat', lo que indica incertidumbre macro persistente y puede generar movimientos erraticos en NETH25, SE30 e IT40. Los indices europeos son sensibles a expectativas de tipos y a la fortaleza del USD. El backtest de estos tres instrumentos muestra retornos negativos; con curva plana el entorno de reversión a la media es menos favorable. Reducir el tamaño de posicion a la mitad en los tres indices europeos hasta que la curva muestre mayor pendiente.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "FOMC Minutes publicados ayer: volatilidad residual en USD",
-            "desc": "Las Actas del FOMC se publicaron el 20-may a las 18:00 UTC. El mercado puede continuar reposicionando flujos en las primeras horas del 21-may, especialmente si el contenido fue hawkish dado el CPI de abril en 333.02 y los yields a 10 años en 4.67%. Esto afecta directamente los rangos de XAUUSD y XAGUSD. Verificar que el ATR M5 de ambos metales haya vuelto a su media de las ultimas 20 velas antes de permitir nuevas entradas; si ATR > 1.5x media, mantener bot pausado.",
-            "horizonte": "24h"
+            "title": "Resultados de backtest negativos: operar con tamano minimo",
+            "desc": "4 de 5 instrumentos del bot presentan retorno total negativo y drawdowns superiores al objetivo del 10% en backtest sin costos reales. En condiciones de mercado live con spread, slippage y comision, los resultados esperados son sustancialmente peores. Accion inmediata: operar exclusivamente con el lote minimo permitido en todos los instrumentos excepto XAGUSD, que fue el unico con resultado levemente positivo. Documentar cada operacion para validar si el edge existe en condiciones reales antes de escalar el tamano.",
+            "horizonte": "now"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "XAGUSD: COT y backtest favorables alineados",
-            "desc": "El posicionamiento especulativo en XAU (COT) muestra sesgo marcadamente alcista con net long de 165,174 contratos al 12-may, lo que por correlacion beneficia también a XAGUSD. XAGUSD es el unico instrumento con retorno positivo y drawdown dentro del objetivo en el backtest. Con VIX en 17.37 (zona normal) y un spread USD-yields de solo 0.53 puntos, el entorno de baja volatilidad favorece la reversión a la media. Concentrar el riesgo permitido del bot preferentemente en XAGUSD mientras persista esta alineacion.",
+            "title": "COT XAU: institucionales fuertemente largos en oro",
+            "desc": "El posicionamiento neto especulativo en XAU es de +165.174 contratos con sesgo claramente alcista (212K largos vs 47K cortos segun datos al 12-may). Esto brinda soporte estructural a XAUUSD para operaciones de reversión al alza. El bot puede priorizar setups de compra en XAUUSD cuando el RSI marque sobreventa en M5 y el precio este por encima de la EMA(200) en H4, aprovechando el sesgo institucional. Evitar cortos contra esta tendencia institucional.",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
-            "tipo": "neutral",
-            "title": "VIX en 17.37: regimen normal para mean-reversion",
-            "desc": "El VIX bajó levemente de 17.44 a 17.37, manteniéndose en regimen normal. Historicamente, estrategias de reversión a la media como RSI+BB funcionan mejor con VIX entre 15-25 ya que los rangos son predecibles y los extremos del RSI tienen mayor fiabilidad como señal de agotamiento. No se requiere accion, pero si el VIX supera 25 en las proximas sesiones, el bot deberia pausarse en todos los instrumentos de indices (NETH25, SE30, IT40) porque los breakouts reemplazan las reversiones.",
-            "horizonte": "semana"
+            "tipo": "oportunidad",
+            "title": "VIX normal: condiciones favorables para mean reversion",
+            "desc": "El VIX en 16.71 (ligeramente a la baja desde 16.76) se encuentra en regimen 'normal', que historicamente es el entorno mas favorable para estrategias de reversión a la media. La ausencia de picos de volatilidad extrema reduce la probabilidad de gaps y movimientos unidireccionales que destruyen este tipo de sistemas. Mantener el bot activo en XAGUSD con tamano estandar y monitorear que el VIX no supere 20, nivel que requeriria reducir exposicion.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos normal: contexto macro estable",
-            "desc": "El spread T10Y-T2Y es de 0.53 puntos en regimen normal, lo que indica ausencia de señales de recesion inminente desde la curva de yields. Esto es contexto favorable para indices europeos (NETH25, SE30, IT40) en el medio plazo. Sin embargo, recordar que los 4 de 5 instrumentos del backtest mostraron resultados negativos incluso sin costos de transaccion: el riesgo operativo del bot sigue siendo alto independientemente del contexto macro. Mantener gestion de riesgo estricta con stops ajustados al objetivo de drawdown maximo del 10%.",
-            "horizonte": "semana"
+            "title": "Eventos de alto impacto: semana ya mayormente consumida",
+            "desc": "Los principales eventos de la semana (FOMC Minutes del 20-may, CPI GBP, BOE Bailey) ya ocurrieron. No hay eventos de alto impacto programados identificados para hoy 22-may ni manana. Esto reduce el riesgo de gaps por noticias en el corto plazo. Sin embargo, vigilar cualquier comunicacion inesperada de la Fed o BCE dado el entorno macro de USD fuerte y curva plana. El bot puede operar con normalidad en la sesion de hoy sin necesidad de pausas preventivas por calendario economico.",
+            "horizonte": "24h"
           }
         ],
-        "last_updated": "2026-05-21T14:16:28Z",
+        "last_updated": "2026-05-22T13:34:48Z",
         "macro_snapshot": {
           "vix": {
-            "value": 17.37,
-            "prev": 17.44,
-            "change": -0.07,
+            "value": 16.71,
+            "prev": 16.76,
+            "change": -0.05,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 29,
+            "value": 28,
             "label": "Fear",
-            "prev": 27
+            "prev": 29
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -1658,18 +1658,18 @@
               "date": "2026-05-15"
             },
             "t10y": {
-              "value": 4.67,
-              "date": "2026-05-19"
-            },
-            "t2y": {
-              "value": 4.13,
-              "date": "2026-05-19"
-            },
-            "yield_spread": {
-              "value": 0.53,
+              "value": 4.57,
               "date": "2026-05-20"
             },
-            "curve_regime": "normal"
+            "t2y": {
+              "value": 4.04,
+              "date": "2026-05-20"
+            },
+            "yield_spread": {
+              "value": 0.49,
+              "date": "2026-05-21"
+            },
+            "curve_regime": "flat"
           },
           "bls": {
             "nonfarm_payroll_k": {
@@ -1713,7 +1713,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-21T14:16:28Z"
+          "fetched_at": "2026-05-22T13:34:48Z"
         }
       }
     },
@@ -2004,63 +2004,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Volatilidad contenida con VIX en zona normal favorece la estrategia, pero el DXY en niveles elevados y eventos GBP ya ejecutados esta semana exigen cautela en pares USD y libra esterlina.",
+        "resumen": "Volatilidad moderada con VIX en zona normal favorece la estrategia, pero el DXY en niveles históricamente elevados y eventos macro ya ejecutados esta semana generan contexto mixto para pares forex en M15.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Bailey habla hoy: pausa en pares GBP",
-            "desc": "El gobernador del BOE Bailey está hablando ahora (11:00 ET / 15:00 UTC). Detén el bot en todos los pares GBP (GBPUSD, GBPJPY, EURGBP) de inmediato. Las declaraciones de un banco central pueden generar velas de rango extremo que activan senales falsas en Liquidity Candle v3 y provocan entradas en extensiones Fibonacci en direccion equivocada. Reactiva el bot 30 minutos despues de que finalice el discurso y solo si el spread vuelve a niveles normales.",
+            "title": "DXY en 119.28: riesgo de spreads amplios",
+            "desc": "El índice DXY está en 119.28, nivel históricamente muy elevado. En pares como EURUSD, GBPUSD y USDJPY los spreads pueden estar distorsionados y los rangos de velas pueden superar el umbral del 25% ATR con mayor frecuencia generando señales falsas. Revisar manualmente si el filtro de rango ATR sigue siendo válido con los ATR actuales recalibrados. Considerar subir el umbral de detección de Liquidity Candle al 30-35% del ATR diario hasta que el DXY se estabilice.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "DXY en 119.28: USD sobreextendido",
-            "desc": "El DXY cotiza en 119.28, nivel historicamente elevado. Pares USD pueden estar en zonas de agotamiento de tendencia, lo que aumenta el riesgo de reversiones bruscas que invalidan las extensiones Fibonacci 1.18/-0.18. Reduce el tamano de lote en pares EURUSD y USDJPY al 50% del capital fijo habitual hasta que el DXY confirme direccion con cierre semanal. El yield spread de 0.53 pb en curva normal no indica riesgo sistemico inmediato, pero el nivel absoluto del dolar exige prudencia.",
-            "horizonte": "24h"
+            "title": "JPY: posicionamiento especulativo muy bajista",
+            "desc": "El COT muestra net -78,657 contratos en JPY (bearish institucional masivo). En USDJPY esto implica riesgo de squeeze violento si hay noticias de intervención del BOJ o datos japoneses sorpresa. Las extensiones Fibonacci en M15 pueden ser invalidadas por movimientos bruscos de reversión institucional. Reducir el tamano de posicion en USDJPY al 50% del capital asignado hasta nueva lectura COT o confirmacion de tendencia.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "COT: JPY corto masivo, riesgo de squeeze",
-            "desc": "Los especuladores no comerciales tienen una posicion neta de -78,657 contratos en JPY (bearish JPY / bullish USD/JPY). Posiciones tan extremas historicamente preceden squeezes violentos si aparece un catalizador macro. En M15, una vela de liquidez bajista en USDJPY que active una orden limite en extension 1.18 al alza podria ser una trampa. Evita entradas largas en USDJPY mientras el COT no muestre reduccion de shorts. Prioriza setups cortos si el precio los genera.",
-            "horizonte": "semana"
+            "title": "Curva de rendimientos plana: sesgo USD incierto",
+            "desc": "El spread T10Y-T2Y esta en solo 0.49 pb con regimen 'flat'. Historicamente una curva plana precede incertidumbre en el flujo de capitales hacia USD. Combinado con CPI de abril en 333.02 y NFP de 158,736, el mercado no tiene un catalizador direccional claro para USD. Los pares USD pueden tener rangos comprimidos en M15, lo que reduce la probabilidad de activacion de Liquidity Candles genuinas. Monitorear que las senales cumplan el umbral ATR estrictamente y no operar en la primera hora de la sesion de NY.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "VIX en 17.37: condiciones ideales para estrategia",
-            "desc": "El VIX en 17.37 (regimen normal, ligera baja desde 17.44) indica volatilidad moderada y consistente, condicion optima para la estrategia Liquidity Candle v3. Las velas de rango mayor o igual al 25% del ATR diario se forman con regularidad sin ruido excesivo, y los niveles Fibonacci 1.18/-0.18 tienen mayor probabilidad de alcanzarse antes del expiry de 90 minutos. Mantén el bot activo en indices y pares no GBP durante sesion de Londres-Nueva York solapada (12:00-16:00 UTC) para maximizar edge.",
+            "title": "VIX 16.71: condicion optima para la estrategia",
+            "desc": "El VIX en 16.71 con variacion minima (-0.05) indica regimen de volatilidad normal, ideal para la estrategia Liquidity Candle v3. Los rangos de velas M15 seran suficientemente amplios para activar senales sin exceso de ruido. Las extensiones Fibonacci 1.18/-0.18 tendran mejor probabilidad de ser alcanzadas dentro del expiry de 90 minutos. Mantener el bot activo en todos los instrumentos configurados durante las sesiones de Londres y NY solapadas (13:00-17:00 UTC).",
             "horizonte": "now"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "COT EUR bullish: EURUSD con sesgo largo",
-            "desc": "El COT muestra posicion neta EUR de +12,624 contratos con sesgo institucional bullish al 12 de mayo. Combinado con el DXY sobreextendido, los setups de Liquidity Candle v3 en direccion larga sobre EURUSD tienen respaldo institucional. Si el bot detecta una vela de liquidez con cierre alcista en M15 y el precio esta por encima de la media de 20 periodos, prioriza la orden limite en -0.18 (retroceso) sobre la extension 1.18 para capturar el impulso con el flujo especulativo dominante.",
-            "horizonte": "48h"
+            "title": "XAU: COT bullish fuerte, buscar longs en Fibo",
+            "desc": "El posicionamiento especulativo en XAU muestra net +165,174 contratos (long 212,267 vs short 47,093), sesgo institucional fuertemente alcista. Si el bot opera XAUUSD, priorizar senales de Liquidity Candle en direccion alcista (extensiones en zona 1.18 al alza). El contexto de DXY alto puede generar pullbacks que activen ordenes limite en soporte Fibonacci con mejor R:R. Activar filtro direccional si esta disponible para solo tomar longs en XAUUSD esta semana.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "FOMC Minutes ya publicadas: impacto residual",
-            "desc": "Las actas del FOMC se publicaron ayer 20 de mayo a las 14:00 ET. El mercado ya digirio el contenido; cualquier reaccion brusca en USD se ha normalizado. El yield spread en 0.53 pb y la curva normal confirman que no hubo sorpresas hawkish extremas. No se requiere accion especifica, pero monitorea si el DXY retoma movimiento direccional hoy durante la sesion americana, ya que podria generar nuevas velas de liquidez operables en EURUSD o USDCAD.",
-            "horizonte": "24h"
+            "title": "Crypto Fear en 28: no opera cripto actualmente",
+            "desc": "El indice Fear and Greed de cripto esta en 28 (Fear), ligeramente mejor que el dia anterior (29). El funding rate de BTC no esta disponible. Dado que la estrategia es multi-instrumento en MT5 y no hay confirmacion de que opere pares cripto, este dato es solo referencial. Si en el futuro se agrega BTCUSD al backtester, un nivel de Fear de 28 históricamente favorece compras en extensiones Fibonacci bajistas como posibles reversiones. No se requiere accion inmediata.",
+            "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-21T14:16:28Z",
+        "last_updated": "2026-05-22T13:34:48Z",
         "macro_snapshot": {
           "vix": {
-            "value": 17.37,
-            "prev": 17.44,
-            "change": -0.07,
+            "value": 16.71,
+            "prev": 16.76,
+            "change": -0.05,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 29,
+            "value": 28,
             "label": "Fear",
-            "prev": 27
+            "prev": 29
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -2127,18 +2127,18 @@
               "date": "2026-05-15"
             },
             "t10y": {
-              "value": 4.67,
-              "date": "2026-05-19"
-            },
-            "t2y": {
-              "value": 4.13,
-              "date": "2026-05-19"
-            },
-            "yield_spread": {
-              "value": 0.53,
+              "value": 4.57,
               "date": "2026-05-20"
             },
-            "curve_regime": "normal"
+            "t2y": {
+              "value": 4.04,
+              "date": "2026-05-20"
+            },
+            "yield_spread": {
+              "value": 0.49,
+              "date": "2026-05-21"
+            },
+            "curve_regime": "flat"
           },
           "bls": {
             "nonfarm_payroll_k": {
@@ -2182,7 +2182,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-21T14:16:28Z"
+          "fetched_at": "2026-05-22T13:34:48Z"
         }
       }
     },
@@ -2545,63 +2545,63 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "XAUUSD mantiene condiciones favorables con posicionamiento institucional alcista y VIX en zona normal, pero el DXY en niveles historicamente elevados (119.28) y eventos macro ya publicados esta semana exigen monitoreo activo del bot.",
+        "resumen": "XAUUSD mantiene condiciones favorables con posicionamiento institucional alcista y VIX normalizado, pero el DXY en niveles historicamente elevados (119.28) y eventos macro ya publicados esta semana exigen vigilancia activa antes de nuevas entradas.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 119.28: presion sobre XAUUSD",
-            "desc": "El indice del dolar se ubica en 119.28, nivel historicamente alto que genera presion bajista estructural sobre el oro. El bot puede recibir senales largas en XAUUSD que choquen con este viento en contra macro. Revisa que el filtro ADX D1 este activo y exija tendencia confirmada antes de abrir posiciones. Considera reducir el tamano de lote un 20% hasta que el DXY muestre retroceso sostenido por debajo de 118.",
+            "title": "DXY en maximos extremos: presion sobre XAUUSD",
+            "desc": "El DXY cotiza en 119.28, nivel historicamente alto que puede suprimir rallies en XAUUSD a pesar del sesgo alcista COT. Verifica que el filtro ADX D1 siga activo y que el ATR en M15 no este comprimido por apreciacion del dolar. Si el DXY supera 120.00 esta semana, considera reducir el tamano de posicion en XAUUSD un 30% hasta que el par confirme expansion de ATR al alza.",
             "horizonte": "now"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "FOMC Minutes ya publicados: revisar impacto residual",
-            "desc": "Las Actas del FOMC se publicaron el 20 de mayo a las 14:00 ET. Si el bot estuvo activo durante esa ventana, verifica que no haya posiciones abiertas con spreads distorsionados o slippage anormal. Revisa el log de ejecucion y cierra cualquier trade abierto en H4 cuyo ATR de entrada haya sido calculado durante la vela de alto impacto. El bot no tiene manejo de excepciones, por lo que un spike de volatilidad pudo generar entradas con magic numbers fuera de rango.",
+            "title": "FOMC Minutes ya publicadas: revisar reaccion de mercado",
+            "desc": "Las Actas del FOMC se publicaron el 20-May a las 14:00 ET. Aunque el evento ya paso, la volatilidad diferida puede continuar afectando XAUUSD en sesiones siguientes. Revisa si el precio rompio o rechazo niveles Donchian en H4 tras la publicacion. Si hubo un spike de ATR mayor a 1.5x el promedio de 14 periodos, espera consolidacion de al menos 2 velas H4 antes de validar la siguiente entrada del bot.",
             "horizonte": "now"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "BOE Bailey habla hoy: riesgo GBP residual",
-            "desc": "El gobernador del BOE Bailey habla hoy 21 de mayo a las 11:00 ET. Aunque el bot solo tiene edge real en XAUUSD, verifica que los otros 5 instrumentos esten completamente desactivados en el motor. Si algun par GBP esta habilitado por error de configuracion, desactivalo inmediatamente dado que el OOS de esos instrumentos muestra destruccion de capital.",
-            "horizonte": "now"
+            "title": "Curva de rendimientos plana: riesgo de regimen cambiante",
+            "desc": "El spread T10Y-T2Y es solo 0.49 puntos en regimen 'flat'. Una curva plana históricamente precede periodos de reduccion de apetito de riesgo que pueden impactar momentum en metales. El bot usa ADX D1 como filtro de tendencia: si el ADX cae por debajo de su umbral configurado en los proximos dias como respuesta a incertidumbre macro, el sistema deberia dejar de generar senales automaticamente. Confirma que ese filtro este operativo en el codigo.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "COT XAU: institucionales muy alcistas",
-            "desc": "El reporte COT al 12 de mayo muestra net largo de 165,174 contratos en XAU (long 212,267 vs short 47,093), sesgo institucional fuertemente alcista. Esto es coherente con la estrategia de seguimiento de tendencia del bot. Mientras el ADX D1 confirme tendencia y el Donchian H4 marque expansion, prioriza senales largas en XAUUSD. El edge OOS (PF=1.86, retorno +237%) esta alineado con el flujo institucional actual.",
+            "title": "COT XAU: institucionales fuertemente largos",
+            "desc": "El posicionamiento neto especulativo en oro es +165,174 contratos (longs 212,267 vs shorts 47,093) segun datos al 12-May. Este sesgo confirma alineacion con la direccion long del bot en XAUUSD. El edge OOS del sistema (PF=1.86) se genera principalmente en entornos donde el COT respalda la tendencia. Mientras el neto COT permanezca por encima de +140,000, prioriza operar solo senales largas y omite cualquier logica de short si el bot la tiene configurada para este instrumento.",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en 17.37: regimen normal favorece la estrategia",
-            "desc": "El VIX en 17.37 (ligeramente a la baja desde 17.44) indica un regimen de volatilidad normal, optimo para estrategias de momentum y seguimiento de tendencia como la de este bot. La expansion ATR en M15 deberia generar senales de calidad sin los falsos breakouts tipicos de VIX por encima de 25. Mantiene el bot activo en XAUUSD con parametros estandar de las 2,000 simulaciones Monte Carlo.",
-            "horizonte": "48h"
+            "title": "VIX normalizado favorece momentum en XAUUSD",
+            "desc": "VIX en 16.71 (regimen normal, variacion -0.05) indica un entorno de baja volatilidad implicita en equities que historicamente favorece estrategias de seguimiento de tendencia en activos alternativos como el oro. El motor ATR del bot funciona mejor cuando el VIX no genera gaps disruptivos. Condicion actual es verde para dejar el bot operando sin restricciones adicionales de filtro de volatilidad. Reevalua si el VIX supera 20.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos normal: contexto macro estable",
-            "desc": "El spread 10Y-2Y se ubica en 0.53 puntos con curva en regimen normal (T10Y 4.67%, T2Y 4.13%). Esto reduce el riesgo de dislocaciones macroeconomicas abruptas en el corto plazo. El CPI de abril (indice 333.02) no genero sorpresas mayores. Este contexto macro es neutral para XAUUSD: no actua como catalizador adicional pero tampoco contradice el sesgo alcista del COT. Sin cambios requeridos en la configuracion del bot.",
+            "title": "Los otros 5 instrumentos siguen deshabilitados",
+            "desc": "Los resultados OOS del backtest confirman destruccion de capital o PF negativo para los 5 instrumentos distintos a XAUUSD. Con el DXY elevado presionando pares forex y el Fear & Greed cripto en 28 (Miedo), no hay condicion de mercado actual que justifique reactivar esos instrumentos. Mantener el bot configurado exclusivamente para XAUUSD hasta que un nuevo ciclo de validacion OOS con datos actualizados demuestre edge estadistico en algun otro par.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-05-21T14:16:28Z",
+        "last_updated": "2026-05-22T13:34:48Z",
         "macro_snapshot": {
           "vix": {
-            "value": 17.37,
-            "prev": 17.44,
-            "change": -0.07,
+            "value": 16.71,
+            "prev": 16.76,
+            "change": -0.05,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 29,
+            "value": 28,
             "label": "Fear",
-            "prev": 27
+            "prev": 29
           },
           "fear_greed_equities": null,
           "high_impact_events": [
@@ -2668,18 +2668,18 @@
               "date": "2026-05-15"
             },
             "t10y": {
-              "value": 4.67,
-              "date": "2026-05-19"
-            },
-            "t2y": {
-              "value": 4.13,
-              "date": "2026-05-19"
-            },
-            "yield_spread": {
-              "value": 0.53,
+              "value": 4.57,
               "date": "2026-05-20"
             },
-            "curve_regime": "normal"
+            "t2y": {
+              "value": 4.04,
+              "date": "2026-05-20"
+            },
+            "yield_spread": {
+              "value": 0.49,
+              "date": "2026-05-21"
+            },
+            "curve_regime": "flat"
           },
           "bls": {
             "nonfarm_payroll_k": {
@@ -2723,7 +2723,7 @@
             }
           },
           "binance": null,
-          "fetched_at": "2026-05-21T14:16:28Z"
+          "fetched_at": "2026-05-22T13:34:48Z"
         }
       }
     }
