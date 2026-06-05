@@ -310,6 +310,46 @@ def fetch_ecb():
         return None
 
 
+_GROK_INSTRUMENTS = [
+    "BTC", "ETH", "EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "NAS100", "GER40"
+]
+
+def fetch_grok_sentiment():
+    api_key = os.environ.get("XAI_API_KEY", "")
+    if not api_key:
+        print("  [warn] XAI_API_KEY not set — skipping Grok sentiment")
+        return None
+    prompt = (
+        "You have real-time access to X (Twitter). Analyze current sentiment for these trading instruments "
+        "based on posts from the last 24 hours: " + ", ".join(_GROK_INSTRUMENTS) + ".\n\n"
+        "For each instrument return:\n"
+        "- sentiment: bullish | bearish | neutral | mixed\n"
+        "- intensity: high | medium | low\n"
+        "- key_themes: list of 2-3 short phrases driving sentiment\n"
+        "- confidence: high | medium | low (based on volume of relevant posts)\n\n"
+        "OUTPUT ONLY valid JSON, no markdown, no explanation. Example:\n"
+        '{"BTC": {"sentiment": "bullish", "intensity": "high", '
+        '"key_themes": ["ETF inflows", "halving narrative"], "confidence": "high"}, ...}'
+    )
+    try:
+        r = requests.post(
+            "https://api.x.ai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": "grok-3", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1024},
+            timeout=30,
+        )
+        r.raise_for_status()
+        text = r.json()["choices"][0]["message"]["content"].strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1]
+            if text.endswith("```"):
+                text = text.rsplit("```", 1)[0]
+        return json.loads(text)
+    except Exception as e:
+        print(f"  [warn] Grok sentiment fetch failed: {e}")
+        return None
+
+
 def build_macro_snapshot():
     print("  Fetching VIX...")
     vix = fetch_vix()
@@ -329,6 +369,8 @@ def build_macro_snapshot():
     cot = fetch_cot()
     print("  Fetching Binance (BTC funding / OI)...")
     binance = fetch_binance()
+    print("  Fetching Grok X/Twitter sentiment...")
+    grok_sentiment = fetch_grok_sentiment()
     return {
         "vix": vix,
         "fear_greed_crypto": fg,
@@ -339,6 +381,7 @@ def build_macro_snapshot():
         "ecb": ecb,
         "cot": cot,
         "binance": binance,
+        "grok_sentiment": grok_sentiment,
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
@@ -377,6 +420,7 @@ BLS - latest NFP and CPI: {json.dumps(macro.get("bls"), ensure_ascii=True) if ma
 ECB - deposit and main refinancing rates: {json.dumps(macro.get("ecb"), ensure_ascii=True) if macro.get("ecb") else "unavailable"}
 CFTC COT - non-commercial (speculative) net positioning: {json.dumps(macro.get("cot"), ensure_ascii=True) if macro.get("cot") else "unavailable"}
 Binance - BTC funding rate and open interest: {json.dumps(macro.get("binance"), ensure_ascii=True) if macro.get("binance") else "unavailable"}
+X/Twitter sentiment (Grok, last 24h): {json.dumps(macro.get("grok_sentiment"), ensure_ascii=True) if macro.get("grok_sentiment") else "unavailable"}
 
 Generate 4-6 specific, actionable cards for the trader. Focus on:
 - Upcoming high-impact events that require pausing or adjusting this bot
@@ -387,6 +431,7 @@ Generate 4-6 specific, actionable cards for the trader. Focus on:
 - ECB deposit/refi rates and spread vs Fed Funds for EUR/GBP pairs if relevant
 - CFTC COT institutional positioning bias for EUR, GBP, JPY, or Gold if relevant to this bot
 - BTC funding rate bias (longs_paying = crowded long = mean-reversion risk; shorts_paying = capitulation signal)
+- X/Twitter sentiment from Grok: if sentiment is bullish or bearish with high intensity and high confidence, treat it as a short-term momentum signal; if mixed or low confidence, flag as noise
 - Concrete timing and action items
 
 Rules:
@@ -439,6 +484,7 @@ def main():
     print(f"  BLS:            {macro['bls']}")
     print(f"  ECB:            {macro['ecb']}")
     print(f"  Binance:        {macro['binance']}")
+    print(f"  Grok sentiment: {macro['grok_sentiment']}")
 
     data = get_data()
     groups = data.get("groups", [])
