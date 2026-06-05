@@ -1187,22 +1187,25 @@ function _renderM5(group) {
 function triggerM5Refresh(btn) {
   btn.disabled = true;
   btn.textContent = 'Actualizando…';
-  fetch(WORKER_URL + '/dispatch-m5', { method: 'POST' })
-    .then(function(r) { return r.json(); })
+  var ctrl = new AbortController();
+  var tid = setTimeout(function() { ctrl.abort(); }, 15000);
+  fetch(WORKER_URL + '/dispatch-m5', { method: 'POST', signal: ctrl.signal })
+    .then(function(r) { clearTimeout(tid); return r.json(); })
     .then(function(res) {
       if (res.ok) {
         btn.textContent = '✓ En proceso (~3 min)';
         setTimeout(function() { btn.disabled = false; btn.textContent = '↻ Actualizar ahora'; }, 180000);
       } else {
-        alert('Error: ' + (res.error || 'desconocido'));
         btn.disabled = false;
-        btn.textContent = '↻ Actualizar ahora';
+        btn.textContent = '↻ Actualizar ahora — Error: ' + (res.error || 'desconocido').slice(0, 60);
+        setTimeout(function() { btn.textContent = '↻ Actualizar ahora'; }, 5000);
       }
     })
     .catch(function(e) {
-      alert('Error: ' + e.message);
+      clearTimeout(tid);
       btn.disabled = false;
-      btn.textContent = '↻ Actualizar ahora';
+      btn.textContent = e.name === 'AbortError' ? '↻ Timeout — reintentar' : '↻ Sin conexión — reintentar';
+      setTimeout(function() { btn.textContent = '↻ Actualizar ahora'; }, 5000);
     });
 }
 

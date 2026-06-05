@@ -563,6 +563,7 @@ async function handleDispatchM5(request, env) {
         method: 'POST',
         headers: { ...ghHeaders(env), 'Content-Type': 'application/json' },
         body: JSON.stringify({ ref: BRANCH }),
+        signal: AbortSignal.timeout(10000),
       }
     );
     if (r.ok || r.status === 204) return json({ ok: true });
