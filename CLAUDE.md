@@ -171,14 +171,18 @@ Body: { ...data completo con el grupo actualizado }
 
 ---
 
-## Grupos existentes
+## Grupos existentes (estado al 2026-06-25)
 
-| Badge | Nombre | fsh_class | folder | Status |
-|---|---|---|---|---|
-| FILE-001 | obv_macd_adx_bot_final_v2.py | fsh-py | null (local) | activo |
-| FILE-002 | backtest_canal_fib.py + CSVs | fsh-fib | null (local) | activo |
-| FILE-003 | bot_canal_fib_v3.py | fsh-v3 | null (local) | activo |
+| Badge | Nombre | Status | Fecha |
+|---|---|---|---|
+| FILE-002 | bot_canal_fib_v3 - copiaV2 | activo | 2026-05-03 |
+| FILE-003 | Canal Fibo test 4-may | en_revision | 2026-05-05 |
+| FILE-008 | RSI + BB | activo | 2026-05-08 |
+| FILE-009 | orto | en_revision | 2026-05-12 |
+| FILE-010 | BACKTEST | activo | 2026-05-13 |
+| FILE-011 | Test12Jun | en_revision | 2026-06-12 |
 
+Eliminados: FILE-001, FILE-004 a FILE-007.
 Nuevos grupos subidos via Worker reciben `fsh-a` … `fsh-h` (paleta cíclica).
 
 ---
