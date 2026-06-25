@@ -3345,38 +3345,6 @@
           "fetched_at": "2026-06-25T13:23:40Z"
         }
       }
-    },
-    {
-      "id": "fsh-g",
-      "fsh_class": "fsh-g",
-      "name": "26-jun",
-      "badge": "FILE-012",
-      "icon": "🐍",
-      "ftype": "py",
-      "folder": "26-jun",
-      "folder_id": "f1782403119974",
-      "date": "2026-06-25T15:59:24.576Z",
-      "files": [
-        {
-          "name": "backtest_canal_fib.py",
-          "type": "py"
-        }
-      ],
-      "status": "pending",
-      "version_of": null,
-      "m1": {
-        "type": "empty",
-        "last_updated": null,
-        "empty_title": "26-jun — análisis pendiente",
-        "empty_desc": "Archivos subidos correctamente. El análisis comenzará en la próxima sesión de trabajo con el bot.",
-        "empty_trigger": "backtest_canal_fib.py"
-      },
-      "m2": [],
-      "m3": [],
-      "m4": [],
-      "versions": [
-        "FILE-012"
-      ]
     }
   ],
   "folders": [
@@ -3413,11 +3381,6 @@
     {
       "id": "f1781290164402",
       "name": "12Jun",
-      "parent_id": null
-    },
-    {
-      "id": "f1782403119974",
-      "name": "26-jun",
       "parent_id": null
     }
   ],
@@ -4102,6 +4065,77 @@
         "filtros": "ADX(14) < 28",
         "params-fijos": "RSI 14, ATR 14",
         "params-opt": "RSI threshold (25â35), SL multiplier (1.0â2.0)"
+      }
+    },
+    {
+      "name": "RSI Divergence Reversal FX M30",
+      "summary": "Estrategia de reversión a la media en pares FX mayores: detecta extremos de RSI(14) con divergencia precio-RSI en M30, filtrada por baja tendencia (ADX<28) en H1. Opera Londres+NY con SL/TP basados en ATR. Diferencial: no hay bots activos, ocupa nicho de mean-reversion multi-FX.",
+      "spec": {
+        "instrumentos": "EURUSD, GBPUSD, USDJPY, AUDUSD",
+        "hipotesis": "En sesiones líquidas sin tendencia fuerte, los extremos de RSI(14) acompañados de divergencia precio-RSI anticipan reversiones de corto plazo de 2-3x ATR.",
+        "direccion": "ambas",
+        "tf_entrada": "M30",
+        "tf_apoyo": "H1 (ADX para filtro de régimen)",
+        "sesion": "06:00–17:00 UTC (Londres + NY activas)",
+        "senal": "LONG: RSI(14) cruza por debajo de threshold_low (default 30) y se detecta divergencia alcista (precio hace lower low en últimas 20 barras, RSI hace higher low). SHORT: RSI(14) cruza por encima de threshold_high (default 70) y divergencia bajista (precio higher high, RSI lower high).",
+        "ejecucion": "Entrada al Open de la barra siguiente al cierre de la barra de señal (orden market en live, simulación a Open siguiente en backtest).",
+        "sl": "1.5 × ATR(14) desde precio de entrada (mínimo 3× spread típico del instrumento)",
+        "tp": "2.5 × ATR(14) desde precio de entrada (RR ~1:1.67)",
+        "timeout": "48 barras M30 (~24 horas), cierre al Open de la barra donde vence",
+        "filtros": "ADX(14) en H1 < 28; sesión 06:00–17:00 UTC; tick_volume > 0; no duplicar señal en misma barra; cooldown 4 barras tras cierre",
+        "params_fijos": "RSI_period=14, ATR_period=14, ADX_period=14, divergence_lookback=20, TP_mult=2.5, timeout_bars=48",
+        "params_opt": "rsi_threshold_low ∈ [25,35] (paso 1), rsi_threshold_high = 100 - low, sl_mult ∈ [1.0, 2.0] (paso 0.25)"
+      },
+      "backtest_code": "import MetaTrader5 as mt5\nimport pandas as pd\nimport numpy as np\nimport json\nimport os\nfrom datetime import datetime\nimport plotly.graph_objects as go\nfrom plotly.subplots import make_subplots\n\n# ============ CONFIG ============\nSYMBOLS = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD']\nTF_ENTRY = mt5.TIMEFRAME_M30\nTF_SUPPORT = mt5.TIMEFRAME_H1\nN_BARS = 30000\nINITIAL_EQUITY = 10000.0\nRISK_PER_TRADE = 0.01\n\n# Parametros estrategia\nRSI_PERIOD = 14\nATR_PERIOD = 14\nADX_PERIOD = 14\nRSI_LOW = 30\nRSI_HIGH = 70\nSL_MULT = 1.5\nTP_MULT = 2.5\nTIMEOUT_BARS = 48\nDIV_LOOKBACK = 20\nADX_MAX = 28\nSWING_CONFIRM_BARS = 2  # margen anti-lookahead\nCOOLDOWN_BARS = 4\n\n# Costos IC Markets Raw (aprox)\nSPREAD_P75_PIPS = {'EURUSD': 0.3, 'GBPUSD': 0.5, 'USDJPY': 0.4, 'AUDUSD': 0.5}\nCOMMISSION_PER_LOT_USD = 7.0  # round-trip\n\nCHECKPOINT_FILE = 'rsi_div_checkpoint.json'\nTRADES_CSV = 'rsi_div_trades.csv'\nREPORT_HTML = 'rsi_div_report.html'\n\n# ============ INDICADORES ============\ndef rsi(series, period=14):\n    delta = series.diff()\n    gain = delta.clip(lower=0).ewm(alpha=1/period, adjust=False).mean()\n    loss = (-delta.clip(upper=0)).ewm(alpha=1/period, adjust=False).mean()\n    rs = gain / loss.replace(0, np.nan)\n    return 100 - (100 / (1 + rs))\n\ndef atr(df, period=14):\n    h, l, c = df['high'], df['low'], df['close']\n    tr = pd.concat([h-l, (h-c.shift()).abs(), (l-c.shift()).abs()], axis=1).max(axis=1)\n    return tr.ewm(alpha=1/period, adjust=False).mean()\n\ndef adx(df, period=14):\n    h, l, c = df['high'], df['low'], df['close']\n    up = h.diff()\n    dn = -l.diff()\n    plus_dm = np.where((up > dn) & (up > 0), up, 0.0)\n    minus_dm = np.where((dn > up) & (dn > 0), dn, 0.0)\n    tr = pd.concat([h-l, (h-c.shift()).abs(), (l-c.shift()).abs()], axis=1).max(axis=1)\n    atr_v = tr.ewm(alpha=1/period, adjust=False).mean()\n    plus_di = 100 * pd.Series(plus_dm, index=df.index).ewm(alpha=1/period, adjust=False).mean() / atr_v\n    minus_di = 100 * pd.Series(minus_dm, index=df.index).ewm(alpha=1/period, adjust=False).mean() / atr_v\n    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)\n    return dx.ewm(alpha=1/period, adjust=False).mean()\n\ndef detect_divergence(price, rsi_vals, i, lookback, direction):\n    # i = barra actual confirmada (sin lookahead)\n    if i - lookback < 0:\n        return False\n    window_price = price[i-lookback:i+1]\n    window_rsi = rsi_vals[i-lookback:i+1]\n    if direction == 'bull':\n        # precio: lower low; rsi: higher low\n        idx_p = np.argmin(window_price)\n        # buscar low previo\n        prev = window_price[:max(1, idx_p-2)]\n        if len(prev) < 3:\n            return False\n        idx_prev = np.argmin(prev)\n        if window_price[idx_p] < window_price[idx_prev] and window_rsi[idx_p] > window_rsi[idx_prev]:\n            return True\n    else:\n        idx_p = np.argmax(window_price)\n        prev = window_price[:max(1, idx_p-2)]\n        if len(prev) < 3:\n            return False\n        idx_prev = np.argmax(prev)\n        if window_price[idx_p] > window_price[idx_prev] and window_rsi[idx_p] < window_rsi[idx_prev]:\n            return True\n    return False\n\n# ============ DATA ============\ndef get_data(symbol, tf, n):\n    rates = mt5.copy_rates_from_pos(symbol, tf, 0, n)\n    if rates is None or len(rates) == 0:\n        return None\n    df = pd.DataFrame(rates)\n    df['time'] = pd.to_datetime(df['time'], unit='s')\n    return df\n\ndef pip_size(symbol):\n    return 0.01 if 'JPY' in symbol else 0.0001\n\ndef pip_value_per_lot(symbol, price):\n    # aprox USD para cuenta USD\n    if 'JPY' in symbol:\n        return 1000.0 / price  # 100000 * 0.01 / price\n    if symbol.startswith('USD'):\n        return 10.0 / price * 1  # contrato 100k * 0.0001 / price... usar 10 USD aprox\n    return 10.0  # XXXUSD\n\n# ============ BACKTEST POR SIMBOLO ============\ndef backtest_symbol(symbol):\n    print(f'\\n=== {symbol} ===')\n    df = get_data(symbol, TF_ENTRY, N_BARS)\n    if df is None:\n        print(f'No data {symbol}')\n        return None\n    df_h1 = get_data(symbol, TF_SUPPORT, N_BARS // 2)\n    if df_h1 is None:\n        return None\n\n    df['rsi'] = rsi(df['close'], RSI_PERIOD)\n    df['atr'] = atr(df, ATR_PERIOD)\n    df_h1['adx'] = adx(df_h1, ADX_PERIOD)\n\n    # Merge ADX H1 al M30 (forward fill)\n    df_h1_small = df_h1[['time', 'adx']].rename(columns={'time': 'time_h1'})\n    df = pd.merge_asof(df.sort_values('time'), df_h1_small.sort_values('time_h1'),\n                       left_on='time', right_on='time_h1', direction='backward')\n\n    pip = pip_size(symbol)\n    spread_cost_price = SPREAD_P75_PIPS[symbol] * pip\n\n    equity = INITIAL_EQUITY\n    equity_curve = []\n    trades = []\n    last_signal_bar = -1\n    cooldown_until = -1\n\n    price_arr = df['close'].values\n    rsi_arr = df['rsi'].values\n    atr_arr = df['atr'].values\n    adx_arr = df['adx'].values\n    vol_arr = df['tick_volume'].values\n    time_arr = df['time'].values\n    open_arr = df['open'].values\n    high_arr = df['high'].values\n    low_arr = df['low'].values\n\n    # iterar; senial confirmada en i, entrada en i+1 open\n    for i in range(max(RSI_PERIOD, ATR_PERIOD, DIV_LOOKBACK) + SWING_CONFIRM_BARS, len(df) - TIMEOUT_BARS - 2):\n        if i <= cooldown_until:\n            continue\n        if i == last_signal_bar:\n            continue\n        # G) liquidez\n        if vol_arr[i] <= 0:\n            continue\n        # filtro sesion\n        hour = pd.Timestamp(time_arr[i]).hour\n        if not (6 <= hour <= 17):\n            continue\n        # filtro ADX\n        if np.isnan(adx_arr[i]) or adx_arr[i] >= ADX_MAX:\n            continue\n        if np.isnan(atr_arr[i]) or atr_arr[i] <= 0:\n            continue\n\n        direction = None\n        # A) confirmacion con margen\n        i_conf = i - SWING_CONFIRM_BARS\n        if rsi_arr[i_conf] < RSI_LOW:\n            if detect_divergence(price_arr, rsi_arr, i_conf, DIV_LOOKBACK, 'bull'):\n                direction = 'long'\n        elif rsi_arr[i_conf] > RSI_HIGH:\n            if detect_divergence(price_arr, rsi_arr, i_conf, DIV_LOOKBACK, 'bear'):\n                direction = 'short'\n        if direction is None:\n            continue\n\n        # B) Entrada al Open de la barra siguiente\n        entry_idx = i + 1\n        if entry_idx >= len(df):\n            break\n        entry_price = open_arr[entry_idx]\n        atr_val = atr_arr[i]\n        sl_dist = max(SL_MULT * atr_val, 3 * spread_cost_price)\n        tp_dist = TP_MULT * atr_val\n\n        if direction == 'long':\n            sl = entry_price - sl_dist\n            tp = entry_price + tp_dist\n        else:\n            sl = entry_price + sl_dist\n            tp = entry_price - tp_dist\n\n        # Sizing por riesgo\n        pv = pip_value_per_lot(symbol, entry_price)\n        sl_pips = sl_dist / pip\n        risk_usd = equity * RISK_PER_TRADE\n        lots = max(0.01, round(risk_usd / (sl_pips * pv), 2))\n        lots = min(lots, 5.0)\n\n        # E) Costos al abrir\n        cost_spread = spread_cost_price / pip * pv * lots\n        cost_comm = COMMISSION_PER_LOT_USD * lots\n        open_cost = cost_spread + cost_comm\n\n        # Simular salida\n        exit_price = None\n        exit_idx = None\n        exit_reason = None\n        for j in range(entry_idx, min(entry_idx + TIMEOUT_BARS, len(df))):\n            hi, lo = high_arr[j], low_arr[j]\n            if direction == 'long':\n                if lo <= sl:\n                    exit_price = sl; exit_idx = j; exit_reason = 'SL'; break\n                if hi >= tp:\n                    exit_price = tp; exit_idx = j; exit_reason = 'TP'; break\n            else:\n                if hi >= sl:\n                    exit_price = sl; exit_idx = j; exit_reason = 'SL'; break\n                if lo <= tp:\n                    exit_price = tp; exit_idx = j; exit_reason = 'TP'; break\n        if exit_price is None:\n            # F) Timeout cierra al Open de la barra siguiente\n            exit_idx = min(entry_idx + TIMEOUT_BARS, len(df) - 1)\n            exit_price = open_arr[exit_idx]\n            exit_reason = 'TIMEOUT'\n\n        # PnL\n        if direction == 'long':\n            pnl_price = exit_price - entry_price\n        else:\n            pnl_price = entry_price - exit_price\n        pnl_pips = pnl_price / pip\n        pnl_usd = pnl_pips * pv * lots - open_cost\n        pnl_pct = pnl_usd / equity * 100\n        equity += pnl_usd\n\n        trades.append({\n            'symbol': symbol,\n            'direction': direction,\n            'entry_time': pd.Timestamp(time_arr[entry_idx]),\n            'entry_price': entry_price,\n            'exit_time': pd.Timestamp(time_arr[exit_idx]),\n            'exit_price': exit_price,\n            'sl': sl,\n            'tp': tp,\n            'lots': lots,\n            'pnl': pnl_usd,\n            'pnl_pct': pnl_pct,\n            'obv_div': '',\n            'macd_div': '',\n            'rsi_at_signal': rsi_arr[i_conf],\n            'adx_at_signal': adx_arr[i],\n            'exit_reason': exit_reason,\n            'equity_after': equity\n        })\n        equity_curve.append((pd.Timestamp(time_arr[exit_idx]), equity))\n        last_signal_bar = i\n        cooldown_until = exit_idx + COOLDOWN_BARS\n\n    print(f'{symbol}: {len(trades)} trades, equity final {equity:.2f}')\n    return {'symbol': symbol, 'trades': trades, 'equity_curve': equity_curve, 'final_equity': equity}\n\n# ============ CHECKPOINT ============\ndef save_checkpoint(results):\n    safe = {}\n    for s, r in results.items():\n        if r is None:\n            safe[s] = None\n            continue\n        safe[s] = {\n            'symbol': s,\n            'final_equity': r['final_equity'],\n            'n_trades': len(r['trades'])\n        }\n    with open(CHECKPOINT_FILE, 'w') as f:\n        json.dump(safe, f, indent=2, default=str)\n\n# ============ REPORTE ============\ndef build_report(results):\n    all_trades = []\n    for r in results.values():\n        if r:\n            all_trades.extend(r['trades'])\n    if not all_trades:\n        print('Sin trades.')\n        return\n    df_t = pd.DataFrame(all_trades)\n    df_t.to_csv(TRADES_CSV, index=False)\n    print(f'CSV: {TRADES_CSV}')\n\n    fig = make_subplots(rows=2, cols=1, subplot_titles=('Equity por simbolo', 'Heatmap PnL por hora UTC'))\n    for s, r in results.items():\n        if r and r['equity_curve']:\n            xs = [t for t, _ in r['equity_curve']]\n            ys = [e for _, e in r['equity_curve']]\n            fig.add_trace(go.Scatter(x=xs, y=ys, name=s, mode='lines'), row=1, col=1)\n\n    df_t['hour'] = pd.to_datetime(df_t['entry_time']).dt.hour\n    heat = df_t.groupby(['symbol', 'hour'])['pnl'].sum().unstack(fill_value=0)\n    fig.add_trace(go.Heatmap(z=heat.values, x=heat.columns, y=heat.index, colorscale='RdYlGn', zmid=0), row=2, col=1)\n\n    fig.update_layout(height=900, title='RSI Divergence Reversal FX - Backtest')\n    fig.write_html(REPORT_HTML)\n    print(f'HTML: {REPORT_HTML}')\n\n# ============ MAIN ============\ndef main():\n    if not mt5.initialize():\n        print('MT5 init fail'); return\n    results = {}\n    if os.path.exists(CHECKPOINT_FILE):\n        print('Checkpoint encontrado, re-corriendo igual...')\n    for s in SYMBOLS:\n        results[s] = backtest_symbol(s)\n        save_checkpoint(results)\n    build_report(results)\n    mt5.shutdown()\n\nif __name__ == '__main__':\n    main()\n",
+      "warnings": [
+        "Sizing simplificado: pip_value_per_lot es aproximacion para cuenta USD",
+        "Divergencia detectada con argmin/argmax en ventana fija; en live conviene confirmar con swings fractales",
+        "ADX H1 mergeado con forward fill: puede usar valor levemente desfasado en la primera barra M30 de cada hora",
+        "pip_value_per_lot usa aproximaciones fijas (10.0 USD para XXXUSD) que pueden sobreestimar o subestimar el sizing real hasta un 15-20% según precio de mercado; en live debe usarse mt5.symbol_info() para obtener contract_size y trade_tick_value dinámicamente",
+        "El merge_asof del ADX H1 hacia M30 con direction='backward' es correcto en concepto, pero si df_h1 tiene menos barras que df (N_BARS//2 vs N_BARS), las primeras barras M30 del historial pueden quedar con ADX NaN y silenciosamente saltarse señales válidas sin log de advertencia",
+        "El filtro de sesión evalúa la hora de la barra de señal (i) pero la entrada ocurre en i+1; si la barra de señal es la 16:30-17:00 UTC, la entrada puede ejecutarse a las 17:00-17:30 UTC, fuera de ventana definida",
+        "SWING_CONFIRM_BARS=2 introduce un retardo de 1 hora real en M30 para confirmar la señal; esto reduce el lookahead correctamente pero también puede hacer que la divergencia detectada en i_conf ya no sea el extremo más reciente al momento de entrada, reduciendo la relevancia de la señal",
+        "detect_divergence compara argmin del extremo actual contra argmin de la subventana previa; si hay múltiples mínimos similares en la ventana, argmin retorna el primero y puede crear falsos positivos de divergencia",
+        "El cooldown se activa desde exit_idx (barra de salida), no desde entry_idx; en trades con TIMEOUT de 48 barras, el cooldown efectivo es ~26 horas, lo que puede suprimir señales válidas post-timeout excesivamente",
+        "No hay límite de trades simultáneos entre símbolos; con 4 pares y señales correlacionadas en sesión Londres+NY, el riesgo agregado puede superar el 4% del equity si los 4 pares generan señal en la misma ventana",
+        "El backtest no descuenta slippage en entradas market; en M30 con open de barra siguiente el slippage promedio en FX majors es 0.3-1 pip adicional en condiciones normales, que sumado al spread ya modelado puede reducir el EV real",
+        "last_signal_bar se sobreescribe con cada señal sin chequear si ya hay una operación abierta en el mismo símbolo; el código no tiene flag de posición abierta por símbolo, por lo que teóricamente podría acumular señales si cooldown_until < i en el mismo símbolo antes del cierre",
+        "La optimización de parámetros (rsi_threshold_low ∈ [25,35], sl_mult ∈ [1.0,2.0]) sobre el mismo dataset de backtest sin walk-forward o out-of-sample introduce riesgo alto de overfitting; se recomienda reservar al menos 20% del historial como OOS antes de optimizar",
+        "Divergence detection requires careful implementation to avoid hindsight bias.",
+        "Entry might activate post-session if the signal closes at session's end.",
+        "Cool down implementation and simultaneous trade management need refinement."
+      ],
+      "critical": [
+        "LOOKAHEAD BIAS en detect_divergence: la función recibe i_conf = i - SWING_CONFIRM_BARS, pero dentro usa window_price[i_conf-lookback:i_conf+1] con índices sobre el array completo price_arr. Si price_arr no está correctamente sliced, el slice i_conf+1 puede incluir hasta el índice i_conf inclusive, lo cual es correcto, PERO el argmin de la ventana completa identifica el mínimo absoluto del período que puede ser una barra futura relativa al punto de referencia si el lookback cruza el índice de señal real. Requiere validación explícita de que ningún índice en window_price/window_rsi supere i_conf.",
+        "LOOKAHEAD BIAS en simulación de salida: el loop de salida itera desde entry_idx=i+1 y evalúa high_arr[j] y low_arr[j] de la barra completa, incluyendo la barra de entrada misma. Esto asume conocimiento del máximo y mínimo de la barra de entrada al momento del open, lo que es lookahead. En live, si el open de entry_idx ya dispara SL o TP dentro de esa barra, el código registra exit_price=sl o tp correctamente, pero no modela el caso donde el open ya cruza el SL (gap), debiendo registrar exit_price=open_arr[entry_idx] con peor precio.",
+        "SL mínimo de 3× spread insuficiente para GBPUSD y AUDUSD: con SL_MULT=1.5 y ATR en rangos de baja volatilidad (ATR puede llegar a 5-8 pips en M30 quieto), SL_dist ≈ 7.5-12 pips. El spread p75 de 0.5 pips implica que el mínimo de 3×spread = 1.5 pips no es el binding constraint. Sin embargo, con comisión RT de $7/lote y riesgo de $100 (1% de $10,000), el costo total (spread + comisión) puede representar hasta el 7-10% del riesgo por trade en lotes pequeños (0.01-0.05), haciendo que el break-even real requiera win rate significativamente más alto que el teórico del RR 1:1.67 (implica ~38% teórico, pero real puede requerir >45% según sizing).",
+        "AUSENCIA DE CIRCUIT BREAKER: la spec y el código no implementan ningún mecanismo de pausa ante drawdown acumulado (ej. parar si equity cae >10% desde peak, o si hay N pérdidas consecutivas). Con 4 símbolos operando simultáneamente en mean-reversion durante un evento de tendencia fuerte que escape al filtro ADX<28 (posible en noticias FOMC, NFP), el sistema puede acumular pérdidas en los 4 pares antes de que el ADX H1 se actualice lo suficiente para filtrar. Esto es un riesgo operativo no mitigado que debe resolverse antes de codificar el bot en producción.",
+        "RIESGO AGREGADO NO CONTROLADO: RISK_PER_TRADE=1% se aplica independientemente por símbolo sin correlación de cartera. EURUSD, GBPUSD y AUDUSD tienen correlación positiva alta (0.6-0.85 típica). Una señal simultánea en los 3 pares durante un shock de USD genera exposición efectiva de ~3% en la misma dirección, equivalente a 3× el riesgo declarado. La spec no define un límite de riesgo agregado ni correlación máxima entre posiciones abiertas, lo cual es un defecto de diseño crítico para un bot multi-instrumento."
+      ],
+      "mt5_notes": [
+        "Indicators such as RSI, ATR, and ADX can be computed using pandas/numpy/ta-lib, which is feasible within the polling loop.",
+        "Polling every 20-30 seconds should reliably detect the entry signal using past OHLCV data.",
+        "Limit orders might be preferable for latency, but market orders are acceptable given latency specs and market sessions.",
+        "Order placement (market) is appropriate given the described latency and execution requirements."
+      ],
+      "id": "SPEC-1782406145230",
+      "created": "2026-06-25",
+      "status": "draft",
+      "spec_fields": {
+        "instrumentos": "EURUSD, GBPUSD, USDJPY, AUDUSD",
+        "hipotesis": "Reversión en extremos de RSI con divergencia de precio",
+        "direccion": "ambas",
+        "tf-entrada": "M30",
+        "tf-apoyo": "H1",
+        "sesion": "Londres + NY activas (06:00–17:00 UTC)",
+        "senal": "LONG: RSI(14) < 30 + divergencia alcista. SHORT: RSI(14) > 70 + divergencia bajista",
+        "ejecucion": "limite — entrada al cierre de la barra de señal",
+        "sl": "1.5× ATR(14)",
+        "tp": "2.5× ATR(14)",
+        "timeout": "48 barras M15",
+        "filtros": "ADX(14) < 28",
+        "params-fijos": "RSI 14, ATR 14",
+        "params-opt": "RSI threshold (25–35), SL multiplier (1.0–2.0)"
       }
     }
   ]
