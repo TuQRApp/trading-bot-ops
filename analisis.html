@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis Estadístico de Estrategias</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #1a2233;
+    --border: #2a3548;
+    --text: #e8edf5;
+    --text-dim: #93a1b8;
+    --accent: #4f8cff;
+    --ok: #34c77b;
+    --warn: #e0a92c;
+    --bad: #e25c5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    max-width: 900px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    margin: 0 0 14px;
+    color: var(--text);
+  }
+  .upload-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  input[type="file"] {
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  .file-info {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th {
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-ok { color: var(--ok); font-weight: 600; }
+  .status-missing { color: var(--bad); font-weight: 600; }
+  .status-optional { color: var(--text-dim); }
+  .preview-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  .error-box {
+    background: rgba(226, 92, 92, 0.12);
+    border: 1px solid var(--bad);
+    color: var(--bad);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    max-width: 900px;
+  }
+  .hidden { display: none; }
+  code {
+    background: rgba(255,255,255,0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .panel-wide { max-width: 1200px; }
+  .summary-row {
+    display: flex;
+    gap: 28px;
+    margin-bottom: 18px;
+  }
+  .summary-item {
+    font-size: 13px;
+  }
+  .summary-item .num {
+    font-size: 20px;
+    font-weight: 700;
+    display: block;
+  }
+  .summary-item .label {
+    color: var(--text-dim);
+  }
+  .group-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 26px;
+  }
+  .group-table-wrap h3 {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 8px;
+  }
+  .badge-veredicto {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-verde  { background: rgba(52, 199, 123, 0.16); color: var(--ok); }
+  .badge-ambar  { background: rgba(224, 169, 44, 0.16); color: var(--warn); }
+  .badge-azul   { background: rgba(79, 140, 255, 0.16); color: var(--accent); }
+  .badge-rojo   { background: rgba(226, 92, 92, 0.16);  color: var(--bad); }
+  .badge-gris   { background: rgba(147, 161, 184, 0.16); color: var(--text-dim); }
+  .sig-yes { color: var(--ok); font-weight: 600; }
+  .sig-no  { color: var(--text-dim); }
+  .val-match { color: var(--ok); font-weight: 600; }
+  .val-mismatch { color: var(--bad); font-weight: 700; }
+  .val-na { color: var(--text-dim); }
+  .legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .dist-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .dist-chip {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+  }
+  .anova-resumen {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .anova-resumen li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .anova-resumen li:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<h1>Análisis Estadístico de Estrategias</h1>
+<div class="subtitle">Subí un Excel/CSV con tus estrategias — agrupamiento, corrección por tamaño de muestra, significancia estadística (ANOVA/Kruskal-Wallis) y Score/Veredicto, todo calculado en el navegador.</div>
+
+<div class="panel">
+  <h2>1. Subir archivo</h2>
+  <div class="upload-row">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt,.tsv">
+    <span class="file-info" id="fileInfo"></span>
+  </div>
+</div>
+
+<div id="errorBox" class="error-box hidden"></div>
+
+<div id="resultsPanel" class="panel hidden">
+  <h2>2. Columnas detectadas</h2>
+  <table>
+    <thead>
+      <tr><th>Campo lógico</th><th>Columna encontrada</th><th>Estado</th></tr>
+    </thead>
+    <tbody id="columnMapBody"></tbody>
+  </table>
+</div>
+
+<div id="previewPanel" class="panel hidden">
+  <h2>3. Vista previa (primeras 5 filas crudas)</h2>
+  <div class="preview-wrap">
+    <table id="previewTable"></table>
+  </div>
+</div>
+
+<div id="groupPanel" class="panel panel-wide hidden">
+  <h2>4. Resultados por grupo</h2>
+  <div class="summary-row" id="summaryRow"></div>
+
+  <div class="legend-row">
+    <span class="legend-item"><span class="badge-veredicto badge-verde">Recomendada</span></span>
+    <span class="legend-item"><span class="badge-veredicto badge-ambar">Prometedora, verificar con más datos</span></span>
+    <span class="legend-item"><span class="badge-veredicto badge-azul">Confiable, pero números débiles</span></span>
+    <span class="legend-item"><span class="badge-veredicto badge-rojo">Por debajo del promedio</span></span>
+    <span class="legend-item"><span class="badge-veredicto badge-gris">Muestra insuficiente</span></span>
+  </div>
+
+  <div class="dist-row" id="distRow"></div>
+
+  <div class="group-table-wrap">
+    <h3>Por familia</h3>
+    <table id="tablaFamilia"></table>
+  </div>
+
+  <div class="group-table-wrap">
+    <h3>Por tipo</h3>
+    <table id="tablaTipo"></table>
+  </div>
+
+  <div class="group-table-wrap">
+    <h3>Familia × Tipo</h3>
+    <table id="tablaFamiliaTipo"></table>
+  </div>
+</div>
+
+<div id="anovaPanel" class="panel panel-wide hidden">
+  <h2>5. ANOVA de un factor + Kruskal-Wallis (Familia vs. Tipo)</h2>
+  <ul class="anova-resumen" id="anovaResumen"></ul>
+  <div class="group-table-wrap">
+    <table id="tablaAnova"></table>
+  </div>
+</div>
+
+<div id="validacionPanel" class="panel panel-wide hidden">
+  <h2>6. Validación obligatoria contra números de referencia (dataset Trading2.xlsx)</h2>
+  <div class="group-table-wrap">
+    <table id="tablaValidacion"></table>
+  </div>
+  <div id="validacionResumen" style="margin-top:12px; font-size:13px;"></div>
+</div>
+
+<script>
+// -----------------------------------------------------------------------
+// Candidatos de nombre de columna, por campo lógico (idéntico a analysis.py)
+// -----------------------------------------------------------------------
+const CANDIDATOS = {
+  familia: ["familia", "family", "estrategia_familia"],
+  simbolo: ["símbolo", "simbolo", "symbol", "ticker"],
+  tipo:    ["tipo de símbolo", "tipo_simbolo", "tipo", "asset_type", "category"],
+  pf:      ["pfneto", "pf neto", "pf_neto", "profit factor", "pf"],
+  dd:      ["dd max", "ddmax", "dd_max", "drawdown", "max drawdown"],
+  mar:     ["mar"],
+  sharpe:  ["sharpe"],
+  status:  ["status", "estado"],
+};
+
+const REQUERIDOS = ["familia", "simbolo", "pf", "dd", "mar", "sharpe"];
+
+// -----------------------------------------------------------------------
+// Clasificación de símbolo -> tipo (idéntico a analysis.py)
+// -----------------------------------------------------------------------
+const CLASIFICACION_SIMBOLO = {
+  "Forex": new Set(["AUDUSD","CHFJPY","EURAUD","EURCAD","EURCHF","EURJPY","EURNZD","EURUSD",
+                     "GBPJPY","GBPNZD","GBPUSD","NZDCAD","NZDUSD","USDCHF","USDJPY"]),
+  "Crypto": new Set(["BTCUSD","ETHUSD"]),
+  "Commodities": new Set(["XAUUSD","XAUJPY","XAUEUR","XAUAUD","XAGUSD","XNGUSD"]),
+  "Índices": new Set(["CA60","DE40","ES35","HK50","IT40","MidDE50","NETH25","STOXX50",
+                       "TecDE30","US2000","USTEC","QQQ.NAS"]),
+};
+const SUFIJOS_ACCIONES = [".NYSE", ".NAS", ".ETR", ".PAR", ".AMS", ".LSE"];
+
+function clasificarSimbolo(simbolo) {
+  const s = String(simbolo).trim();
+  for (const tipo of Object.keys(CLASIFICACION_SIMBOLO)) {
+    if (CLASIFICACION_SIMBOLO[tipo].has(s)) return tipo;
+  }
+  if (SUFIJOS_ACCIONES.some(suf => s.endsWith(suf))) return "Acciones";
+  return "Otro";
+}
+
+// -----------------------------------------------------------------------
+// Parseo numérico tolerante (coma decimal, texto embebido) — idéntico a
+// parse_numeric_series de analysis.py
+// -----------------------------------------------------------------------
+function parseNumeric(v) {
+  if (v === null || v === undefined) return NaN;
+  const s = String(v).replace(/,/g, ".");
+  const m = s.match(/-?\d+\.?\d*/);
+  if (!m) return NaN;
+  const n = parseFloat(m[0]);
+  return Number.isNaN(n) ? NaN : n;
+}
+
+// -----------------------------------------------------------------------
+// prepare(): arma el dataset limpio a partir de las filas crudas + columnas
+// resueltas
+// -----------------------------------------------------------------------
+function prepareData(rows, resolved) {
+  return rows.map(row => {
+    const familia = String(row[resolved.familia]);
+    const simbolo = resolved.simbolo ? String(row[resolved.simbolo]) : "";
+    let tipo;
+    if (resolved.tipo) {
+      const raw = String(row[resolved.tipo]);
+      tipo = (raw === "" || raw.toLowerCase() === "nan" || raw === "None")
+        ? clasificarSimbolo(simbolo)
+        : raw;
+    } else {
+      tipo = clasificarSimbolo(simbolo);
+    }
+    return {
+      familia, simbolo, tipo,
+      pf: parseNumeric(row[resolved.pf]),
+      dd: parseNumeric(row[resolved.dd]),
+      mar: parseNumeric(row[resolved.mar]),
+      sharpe: parseNumeric(row[resolved.sharpe]),
+      status: resolved.status ? String(row[resolved.status]) : "",
+    };
+  });
+}
+
+// -----------------------------------------------------------------------
+// Estadística básica (ignora NaN, ddof=1 para desvío/varianza — igual que
+// numpy/pandas)
+// -----------------------------------------------------------------------
+function nanMean(arr) {
+  const valid = arr.filter(x => !Number.isNaN(x));
+  if (valid.length === 0) return NaN;
+  return valid.reduce((a, b) => a + b, 0) / valid.length;
+}
+
+function nanStd(arr, ddof) {
+  const valid = arr.filter(x => !Number.isNaN(x));
+  const n = valid.length;
+  if (n - ddof <= 0) return NaN;
+  const m = nanMean(valid);
+  const ss = valid.reduce((a, b) => a + (b - m) * (b - m), 0);
+  return Math.sqrt(ss / (n - ddof));
+}
+
+function zscore(arr, invert = false) {
+  const m = nanMean(arr);
+  const sd = nanStd(arr, 1);
+  let z;
+  if (sd === 0 || Number.isNaN(sd)) {
+    z = arr.map(() => 0);
+  } else {
+    z = arr.map(x => (x - m) / sd);
+  }
+  return invert ? z.map(v => -v) : z;
+}
+
+// -----------------------------------------------------------------------
+// empirical_bayes_shrink() — corrección de sesgo por tamaño de muestra
+// (shrinkage / Empirical Bayes), puerto fiel de analysis.py
+// -----------------------------------------------------------------------
+function empiricalBayesShrink(allRows, groupKeyFn, metricFn) {
+  const byGroup = new Map();
+  for (const row of allRows) {
+    const v = metricFn(row);
+    if (Number.isNaN(v)) continue;
+    const k = groupKeyFn(row);
+    if (!byGroup.has(k)) byGroup.set(k, []);
+    byGroup.get(k).push(v);
+  }
+
+  const g = new Map();
+  for (const [k, vals] of byGroup.entries()) {
+    const count = vals.length;
+    const mean = vals.reduce((a, b) => a + b, 0) / count;
+    let variance = 0;
+    if (count >= 2) {
+      const ss = vals.reduce((a, b) => a + (b - mean) * (b - mean), 0);
+      variance = ss / (count - 1);
+    }
+    g.set(k, { count, mean, variance });
+  }
+
+  const calcEntries = [...g.entries()].filter(([, v]) => v.count >= 2);
+
+  const allValid = allRows.map(metricFn).filter(v => !Number.isNaN(v));
+  const globalMean = allValid.length ? allValid.reduce((a, b) => a + b, 0) / allValid.length : NaN;
+
+  if (calcEntries.length < 2) {
+    const result = {};
+    for (const k of g.keys()) result[k] = { shrunk: globalMean, w: 0.0 };
+    return { result, mu: globalMean, tau2: 0.0 };
+  }
+
+  const n = calcEntries.map(([, v]) => v.count);
+  const ybar = calcEntries.map(([, v]) => v.mean);
+  const s2 = calcEntries.map(([, v]) => v.variance);
+  const k = calcEntries.length;
+
+  let sumWeighted = 0, sumWeights = 0;
+  for (const [, v] of g.entries()) {
+    sumWeighted += v.mean * v.count;
+    sumWeights += v.count;
+  }
+  const mu = sumWeighted / sumWeights;
+
+  const sumNm1 = n.reduce((a, b) => a + (b - 1), 0);
+  const msw = n.reduce((acc, ni, i) => acc + (ni - 1) * s2[i], 0) / Math.max(sumNm1, 1);
+  const msb = n.reduce((acc, ni, i) => acc + ni * Math.pow(ybar[i] - mu, 2), 0) / (k - 1);
+
+  const sumN = n.reduce((a, b) => a + b, 0);
+  const sumN2 = n.reduce((a, b) => a + b * b, 0);
+  const n0 = k > 1 ? (sumN - sumN2 / sumN) / (k - 1) : 1;
+  const tau2 = n0 ? Math.max(0, (msb - msw) / n0) : 0.0;
+
+  const result = {};
+  for (const [key, row] of g.entries()) {
+    const nG = row.count;
+    if (nG === 0) {
+      result[key] = { shrunk: mu, w: 0.0 };
+      continue;
+    }
+    const sigma2 = msw / nG;
+    const w = tau2 > 0 ? tau2 / (tau2 + sigma2) : 0.0;
+    result[key] = { shrunk: mu + w * (row.mean - mu), w };
+  }
+
+  return { result, mu, tau2 };
+}
+
+// -----------------------------------------------------------------------
+// Veredicto por grupo — idéntico a analysis.py
+// -----------------------------------------------------------------------
+const MIN_N = 3;
+const CONFIABLE_MIN_N = 5;
+const CONFIABLE_MIN_COBERTURA_DD = 70;
+
+function veredicto(row) {
+  if (row.n < MIN_N) return { label: "Muestra insuficiente", color: "gris" };
+  const confiable = row.n >= CONFIABLE_MIN_N && (row.dd_cobertura || 0) >= CONFIABLE_MIN_COBERTURA_DD;
+  const scoreOk = row.score > 0;
+  if (scoreOk && confiable) return { label: "Recomendada", color: "verde" };
+  if (scoreOk && !confiable) return { label: "Prometedora, verificar con más datos", color: "ambar" };
+  if (!scoreOk && confiable) return { label: "Confiable, pero números débiles", color: "azul" };
+  return { label: "Por debajo del promedio", color: "rojo" };
+}
+
+// -----------------------------------------------------------------------
+// build_group_table() — agrupamiento + shrinkage + CV ponderado + cobertura
+// + Score/Veredicto, puerto fiel de analysis.py
+// -----------------------------------------------------------------------
+function buildGroupTable(rows, groupCols) {
+  const keyOf = (row) => groupCols.map(c => row[c]).join(" | ");
+  const withKey = rows.map(r => Object.assign({}, r, { _key: keyOf(r) }));
+
+  const groupsMap = new Map();
+  for (const r of withKey) {
+    if (!groupsMap.has(r._key)) groupsMap.set(r._key, []);
+    groupsMap.get(r._key).push(r);
+  }
+
+  let tablaRows = [];
+  for (const [key, g] of groupsMap.entries()) {
+    const n = g.length;
+    const pf = nanMean(g.map(r => r.pf));
+    const dd = nanMean(g.map(r => r.dd));
+    const mar = nanMean(g.map(r => r.mar));
+    const sharpe = nanMean(g.map(r => r.sharpe));
+    const ddValidos = g.filter(r => !Number.isNaN(r.dd)).length;
+    const ddCobertura = n ? Math.round(ddValidos / n * 100) : 0;
+
+    const cvs = [];
+    for (const [colName, m] of [["pf", pf], ["mar", mar], ["sharpe", sharpe]]) {
+      const sd = nanStd(g.map(r => r[colName]), 1);
+      if (m && !Number.isNaN(m) && m !== 0 && !Number.isNaN(sd)) {
+        cvs.push(sd / Math.abs(m));
+      }
+    }
+    const cvPond = cvs.length ? cvs.reduce((a, b) => a + b, 0) / cvs.length : null;
+
+    tablaRows.push({ key, n, pf, dd, mar, sharpe, dd_cobertura: ddCobertura, cv_pond: cvPond });
+  }
+
+  tablaRows = tablaRows.filter(r => r.n >= MIN_N);
+  if (tablaRows.length === 0) return [];
+
+  for (const metric of ["pf", "dd", "mar", "sharpe"]) {
+    const { result, mu } = empiricalBayesShrink(withKey, r => r._key, r => r[metric]);
+    for (const row of tablaRows) {
+      const entry = result[row.key];
+      row[metric + "_shrunk"] = entry ? entry.shrunk : mu;
+      row[metric + "_w"] = entry ? entry.w : 0.0;
+    }
+  }
+
+  for (const row of tablaRows) {
+    row.peso_propio = (row.pf_w + row.dd_w + row.mar_w + row.sharpe_w) / 4;
+  }
+
+  const zPf = zscore(tablaRows.map(r => r.pf_shrunk));
+  const zMar = zscore(tablaRows.map(r => r.mar_shrunk));
+  const zSharpe = zscore(tablaRows.map(r => r.sharpe_shrunk));
+  const zDd = zscore(tablaRows.map(r => r.dd_shrunk), true);
+
+  tablaRows.forEach((row, i) => {
+    row.score = (zPf[i] + zMar[i] + zSharpe[i] + zDd[i]) / 4;
+  });
+
+  tablaRows.forEach(row => { row.veredicto = veredicto(row); });
+  tablaRows.sort((a, b) => b.score - a.score);
+
+  tablaRows.forEach(row => {
+    if (groupCols.length > 1) {
+      const parts = row.key.split(" | ");
+      groupCols.forEach((c, i) => { row[c] = parts[i]; });
+    } else {
+      row[groupCols[0]] = row.key;
+    }
+  });
+
+  return tablaRows;
+}
+
+// -----------------------------------------------------------------------
+// Kruskal-Wallis: el estadístico H se calcula acá (fórmula estándar con
+// corrección por empates). El paso H -> p-value se delega a jStat
+// (distribución chi-cuadrado), como pide la spec.
+// -----------------------------------------------------------------------
+function kruskalWallis(groups) {
+  const k = groups.length;
+  const pooled = [];
+  groups.forEach((g, gi) => { g.forEach(v => pooled.push({ v, gi })); });
+  const N = pooled.length;
+  pooled.sort((a, b) => a.v - b.v);
+
+  const ranks = new Array(N);
+  let i = 0;
+  while (i < N) {
+    let j = i;
+    while (j + 1 < N && pooled[j + 1].v === pooled[i].v) j++;
+    const avgRank = (i + j) / 2 + 1;
+    for (let m = i; m <= j; m++) ranks[m] = avgRank;
+    i = j + 1;
+  }
+
+  const R = new Array(k).fill(0);
+  const n = groups.map(g => g.length);
+  pooled.forEach((p, idx) => { R[p.gi] += ranks[idx]; });
+
+  let H = 0;
+  for (let gi = 0; gi < k; gi++) H += (R[gi] * R[gi]) / n[gi];
+  H = (12 / (N * (N + 1))) * H - 3 * (N + 1);
+
+  let i2 = 0, tieSum = 0;
+  while (i2 < N) {
+    let j2 = i2;
+    while (j2 + 1 < N && pooled[j2 + 1].v === pooled[i2].v) j2++;
+    const t = j2 - i2 + 1;
+    if (t > 1) tieSum += (t * t * t - t);
+    i2 = j2 + 1;
+  }
+  const denom = 1 - (tieSum / (N * N * N - N));
+  if (denom > 0) H = H / denom;
+
+  return { H, df: k - 1 };
+}
+
+function round4(x) { return Math.round(x * 10000) / 10000; }
+
+// -----------------------------------------------------------------------
+// anova_kruskal() — eta² (ANOVA de un factor) + p-value de Kruskal-Wallis.
+// Puerto fiel de analysis.py, incluyendo la asimetría confirmada: ss_total
+// y grand_mean usan TODAS las filas válidas (incluso grupos con n=1), pero
+// ss_between y Kruskal-Wallis solo usan grupos con n>=2.
+// -----------------------------------------------------------------------
+function anovaKruskal(rows, groupKeyFn, metricFn) {
+  const sub = rows.filter(r => !Number.isNaN(metricFn(r)));
+  if (sub.length === 0) return { eta2: null, p: null };
+
+  const byGroup = new Map();
+  sub.forEach(r => {
+    const k = groupKeyFn(r);
+    if (!byGroup.has(k)) byGroup.set(k, []);
+    byGroup.get(k).push(metricFn(r));
+  });
+
+  const groupsForTest = [...byGroup.values()].filter(g => g.length >= 2);
+  if (groupsForTest.length < 2) return { eta2: null, p: null };
+
+  const allVals = sub.map(metricFn);
+  const grandMean = allVals.reduce((a, b) => a + b, 0) / allVals.length;
+  const ssTotal = allVals.reduce((acc, v) => acc + (v - grandMean) * (v - grandMean), 0);
+  const ssBetween = groupsForTest.reduce((acc, g) => {
+    const gm = g.reduce((a, b) => a + b, 0) / g.length;
+    return acc + g.length * (gm - grandMean) * (gm - grandMean);
+  }, 0);
+  const eta2 = ssTotal > 0 ? ssBetween / ssTotal : 0.0;
+
+  const { H, df } = kruskalWallis(groupsForTest);
+  const p = 1 - jStat.chisquare.cdf(H, df);
+
+  return { eta2: round4(eta2), p: round4(p) };
+}
+
+function anovaSummary(rows) {
+  const metrics = [["pf", "PF Neto"], ["dd", "DD Max"], ["mar", "MAR"], ["sharpe", "Sharpe"]];
+  const resultado = {};
+  metrics.forEach(([metric, label]) => {
+    const famRes = anovaKruskal(rows, r => r.familia, r => r[metric]);
+    const tipoRes = anovaKruskal(rows, r => r.tipo, r => r[metric]);
+    resultado[label] = {
+      familia: {
+        eta2_pct: famRes.eta2 !== null ? Math.round(famRes.eta2 * 1000) / 10 : null,
+        kruskal_p: famRes.p,
+        significativo: famRes.p !== null && famRes.p < 0.05,
+      },
+      tipo: {
+        eta2_pct: tipoRes.eta2 !== null ? Math.round(tipoRes.eta2 * 1000) / 10 : null,
+        kruskal_p: tipoRes.p,
+        significativo: tipoRes.p !== null && tipoRes.p < 0.05,
+      },
+    };
+  });
+  return resultado;
+}
+
+// -----------------------------------------------------------------------
+// run_full_analysis()
+// -----------------------------------------------------------------------
+function runAnalysis(rows) {
+  return {
+    n_estrategias: rows.length,
+    n_familias: new Set(rows.map(r => r.familia)).size,
+    n_tipos: new Set(rows.map(r => r.tipo)).size,
+    por_familia: buildGroupTable(rows, ["familia"]),
+    por_tipo: buildGroupTable(rows, ["tipo"]),
+    familia_x_tipo: buildGroupTable(rows, ["familia", "tipo"]),
+    anova: anovaSummary(rows),
+  };
+}
+
+// -----------------------------------------------------------------------
+// Números de referencia validados en Python/scipy sobre Trading2.xlsx
+// (margen de error aceptado: 0.5 puntos porcentuales en eta²)
+// -----------------------------------------------------------------------
+const REFERENCIA_ANOVA = {
+  "PF Neto": { familia: { eta2_pct: 24.1, kruskal_p: 0.0000 }, tipo: { eta2_pct: 1.3, kruskal_p: 0.7298 } },
+  "DD Max":  { familia: { eta2_pct: 30.2, kruskal_p: 0.0000 }, tipo: { eta2_pct: 9.9, kruskal_p: 0.0000 } },
+};
+
+function normalizarNombre(s) {
+  return String(s).trim().toLowerCase();
+}
+
+function resolveColumns(headers) {
+  const normed = {};
+  headers.forEach(h => { normed[normalizarNombre(h)] = h; });
+
+  const resolved = {};
+  const missing = [];
+  for (const [campo, candidatos] of Object.entries(CANDIDATOS)) {
+    let found = null;
+    for (const cand of candidatos) {
+      if (normed.hasOwnProperty(cand)) {
+        found = normed[cand];
+        break;
+      }
+    }
+    resolved[campo] = found;
+    if (found === null && REQUERIDOS.includes(campo)) {
+      missing.push(campo);
+    }
+  }
+  return { resolved, missing };
+}
+
+// -----------------------------------------------------------------------
+// Carga de archivo
+// -----------------------------------------------------------------------
+const fileInput = document.getElementById("fileInput");
+const fileInfo = document.getElementById("fileInfo");
+const errorBox = document.getElementById("errorBox");
+const resultsPanel = document.getElementById("resultsPanel");
+const previewPanel = document.getElementById("previewPanel");
+const columnMapBody = document.getElementById("columnMapBody");
+const previewTable = document.getElementById("previewTable");
+const groupPanel = document.getElementById("groupPanel");
+const summaryRow = document.getElementById("summaryRow");
+const distRow = document.getElementById("distRow");
+const anovaPanel = document.getElementById("anovaPanel");
+const anovaResumen = document.getElementById("anovaResumen");
+const validacionPanel = document.getElementById("validacionPanel");
+
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  errorBox.classList.add("hidden");
+  resultsPanel.classList.add("hidden");
+  previewPanel.classList.add("hidden");
+  groupPanel.classList.add("hidden");
+  anovaPanel.classList.add("hidden");
+  validacionPanel.classList.add("hidden");
+  fileInfo.textContent = "Leyendo " + file.name + " ...";
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      if (rows.length === 0) {
+        throw new Error("El archivo no tiene filas de datos.");
+      }
+
+      const headers = Object.keys(rows[0]);
+      const { resolved, missing } = resolveColumns(headers);
+
+      fileInfo.textContent = file.name + " — " + rows.length + " filas, " + headers.length + " columnas (hoja: " + firstSheetName + ")";
+
+      if (missing.length > 0) {
+        errorBox.textContent = "No encuentro columnas para: " + missing.join(", ") +
+          ". Columnas disponibles: " + headers.join(", ");
+        errorBox.classList.remove("hidden");
+      }
+
+      renderColumnMap(resolved, missing);
+      renderPreview(headers, rows.slice(0, 5));
+
+      resultsPanel.classList.remove("hidden");
+      previewPanel.classList.remove("hidden");
+
+      if (missing.length === 0) {
+        const prepared = prepareData(rows, resolved);
+        const analisis = runAnalysis(prepared);
+        renderAnalysis(analisis);
+        groupPanel.classList.remove("hidden");
+
+        renderAnova(analisis.anova);
+        anovaPanel.classList.remove("hidden");
+
+        renderValidacion(analisis.anova);
+        validacionPanel.classList.remove("hidden");
+      }
+    } catch (err) {
+      fileInfo.textContent = "";
+      errorBox.textContent = "Error al leer el archivo: " + err.message;
+      errorBox.classList.remove("hidden");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function renderColumnMap(resolved, missing) {
+  columnMapBody.innerHTML = "";
+  for (const campo of Object.keys(CANDIDATOS)) {
+    const tr = document.createElement("tr");
+    const esRequerido = REQUERIDOS.includes(campo);
+    const encontrada = resolved[campo];
+
+    const tdCampo = document.createElement("td");
+    tdCampo.textContent = campo;
+    tr.appendChild(tdCampo);
+
+    const tdCol = document.createElement("td");
+    tdCol.innerHTML = encontrada ? "<code>" + encontrada + "</code>" : "<em>—</em>";
+    tr.appendChild(tdCol);
+
+    const tdStatus = document.createElement("td");
+    if (encontrada) {
+      tdStatus.textContent = "✓ encontrada";
+      tdStatus.className = "status-ok";
+    } else if (esRequerido) {
+      tdStatus.textContent = "✗ faltante (requerida)";
+      tdStatus.className = "status-missing";
+    } else {
+      tdStatus.textContent = "opcional, no encontrada";
+      tdStatus.className = "status-optional";
+    }
+    tr.appendChild(tdStatus);
+
+    columnMapBody.appendChild(tr);
+  }
+}
+
+function renderPreview(headers, sampleRows) {
+  let html = "<thead><tr>";
+  headers.forEach(h => { html += "<th>" + h + "</th>"; });
+  html += "</tr></thead><tbody>";
+  sampleRows.forEach(row => {
+    html += "<tr>";
+    headers.forEach(h => { html += "<td>" + (row[h] !== undefined ? row[h] : "") + "</td>"; });
+    html += "</tr>";
+  });
+  html += "</tbody>";
+  previewTable.innerHTML = html;
+}
+
+// -----------------------------------------------------------------------
+// Render de resultados por grupo (Etapa 3)
+// -----------------------------------------------------------------------
+function fmt(v, dec) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return Number(v).toFixed(dec);
+}
+
+function renderAnalysis(analisis) {
+  summaryRow.innerHTML =
+    "<div class='summary-item'><span class='num'>" + analisis.n_estrategias + "</span><span class='label'>Estrategias</span></div>" +
+    "<div class='summary-item'><span class='num'>" + analisis.n_familias + "</span><span class='label'>Familias</span></div>" +
+    "<div class='summary-item'><span class='num'>" + analisis.n_tipos + "</span><span class='label'>Tipos de símbolo</span></div>";
+
+  renderDistribucionVeredictos(analisis.por_familia);
+  renderGroupTable(document.getElementById("tablaFamilia"), analisis.por_familia, ["familia"]);
+  renderGroupTable(document.getElementById("tablaTipo"), analisis.por_tipo, ["tipo"]);
+  renderGroupTable(document.getElementById("tablaFamiliaTipo"), analisis.familia_x_tipo, ["familia", "tipo"]);
+}
+
+function renderDistribucionVeredictos(porFamiliaRows) {
+  const counts = {};
+  porFamiliaRows.forEach(r => { counts[r.veredicto.label] = (counts[r.veredicto.label] || 0) + 1; });
+  let html = "";
+  for (const [label, count] of Object.entries(counts)) {
+    html += "<span class='dist-chip'>" + count + " × " + label + "</span>";
+  }
+  distRow.innerHTML = html || "<span class='dist-chip'>Sin grupos con N ≥ " + MIN_N + " por familia</span>";
+}
+
+function renderGroupTable(tableEl, tablaRows, groupCols) {
+  const headerLabels = groupCols.map(c => c === "familia" ? "Familia" : "Tipo")
+    .concat(["N", "PF", "DD Max", "MAR", "Sharpe", "Cobertura DD", "CV Ponderado", "Peso Propio", "Score", "Veredicto"]);
+
+  let html = "<thead><tr>";
+  headerLabels.forEach(h => { html += "<th>" + h + "</th>"; });
+  html += "</tr></thead><tbody>";
+
+  if (tablaRows.length === 0) {
+    html += "<tr><td colspan='" + headerLabels.length + "'><em>Sin grupos con N ≥ " + MIN_N + "</em></td></tr>";
+  }
+
+  tablaRows.forEach(row => {
+    html += "<tr>";
+    groupCols.forEach(c => { html += "<td>" + row[c] + "</td>"; });
+    html += "<td>" + row.n + "</td>";
+    html += "<td>" + fmt(row.pf, 2) + "</td>";
+    html += "<td>" + fmt(row.dd, 2) + "</td>";
+    html += "<td>" + fmt(row.mar, 2) + "</td>";
+    html += "<td>" + fmt(row.sharpe, 2) + "</td>";
+    html += "<td>" + row.dd_cobertura + "%</td>";
+    html += "<td>" + fmt(row.cv_pond, 3) + "</td>";
+    html += "<td>" + fmt(row.peso_propio, 3) + "</td>";
+    html += "<td>" + fmt(row.score, 3) + "</td>";
+    html += "<td><span class='badge-veredicto badge-" + row.veredicto.color + "'>" + row.veredicto.label + "</span></td>";
+    html += "</tr>";
+  });
+
+  html += "</tbody>";
+  tableEl.innerHTML = html;
+}
+
+// -----------------------------------------------------------------------
+// Render de ANOVA / Kruskal-Wallis (Etapa 4)
+// -----------------------------------------------------------------------
+function generarResumenAnova(anova) {
+  const bullets = [];
+  for (const [label, r] of Object.entries(anova)) {
+    const fam = r.familia, tipo = r.tipo;
+    if (fam.eta2_pct === null && tipo.eta2_pct === null) {
+      bullets.push(label + ": no hay grupos suficientes para calcular ANOVA/Kruskal-Wallis.");
+      continue;
+    }
+    const famSig = fam.significativo;
+    const tipoSig = tipo.significativo;
+    let conclusion;
+    if (famSig && !tipoSig) conclusion = "la <strong>Familia</strong> es el factor que explica la variación de forma significativa";
+    else if (!famSig && tipoSig) conclusion = "el <strong>Tipo de símbolo</strong> es el factor que explica la variación de forma significativa";
+    else if (famSig && tipoSig) conclusion = "ambos factores son significativos, con " + (fam.eta2_pct >= tipo.eta2_pct ? "<strong>Familia</strong>" : "<strong>Tipo</strong>") + " explicando más varianza";
+    else conclusion = "ninguno de los dos factores resulta estadísticamente significativo";
+
+    bullets.push(
+      "<strong>" + label + "</strong> — Familia: " + fam.eta2_pct.toFixed(1) + "% de varianza (p=" + fam.kruskal_p.toFixed(4) +
+      (famSig ? ", significativo" : ", no significativo") + ") · Tipo: " + tipo.eta2_pct.toFixed(1) + "% (p=" + tipo.kruskal_p.toFixed(4) +
+      (tipoSig ? ", significativo" : ", no significativo") + ") → " + conclusion + "."
+    );
+  }
+  return bullets;
+}
+
+function renderAnova(anova) {
+  anovaResumen.innerHTML = generarResumenAnova(anova).map(b => "<li>" + b + "</li>").join("");
+
+  const tableEl = document.getElementById("tablaAnova");
+  let html = "<thead><tr><th>Métrica</th><th>Factor</th><th>Eta² (% varianza)</th>" +
+    "<th>Kruskal-Wallis p</th><th>Significativo (p&lt;0.05)</th></tr></thead><tbody>";
+
+  for (const [label, r] of Object.entries(anova)) {
+    for (const factor of ["familia", "tipo"]) {
+      const d = r[factor];
+      html += "<tr>";
+      html += "<td>" + label + "</td>";
+      html += "<td>" + (factor === "familia" ? "Familia" : "Tipo") + "</td>";
+      html += "<td>" + (d.eta2_pct !== null ? d.eta2_pct.toFixed(1) + "%" : "—") + "</td>";
+      html += "<td>" + (d.kruskal_p !== null ? d.kruskal_p.toFixed(4) : "—") + "</td>";
+      html += "<td class='" + (d.significativo ? "sig-yes" : "sig-no") + "'>" +
+        (d.kruskal_p === null ? "—" : (d.significativo ? "Sí" : "No")) + "</td>";
+      html += "</tr>";
+    }
+  }
+  html += "</tbody>";
+  tableEl.innerHTML = html;
+}
+
+// -----------------------------------------------------------------------
+// Render de la validación obligatoria: comparación explícita mío vs.
+// referencia, con margen de error de 0.5 puntos porcentuales en eta².
+// -----------------------------------------------------------------------
+function renderValidacion(anova) {
+  const tableEl = document.getElementById("tablaValidacion");
+  const resumenEl = document.getElementById("validacionResumen");
+  const MARGEN = 0.5;
+
+  let html = "<thead><tr><th>Métrica</th><th>Factor</th>" +
+    "<th>Eta² calculado</th><th>Eta² referencia</th><th>Diferencia (pp)</th>" +
+    "<th>Kruskal p calculado</th><th>Kruskal p referencia</th><th>Resultado</th></tr></thead><tbody>";
+
+  let todosOk = true;
+  let filasComparadas = 0;
+
+  for (const [label, ref] of Object.entries(REFERENCIA_ANOVA)) {
+    const r = anova[label];
+    for (const factor of ["familia", "tipo"]) {
+      const calc = r[factor];
+      const refFactor = ref[factor];
+      const diff = calc.eta2_pct !== null ? Math.abs(calc.eta2_pct - refFactor.eta2_pct) : null;
+      const ok = diff !== null && diff <= MARGEN;
+      if (!ok) todosOk = false;
+      filasComparadas++;
+
+      html += "<tr>";
+      html += "<td>" + label + "</td>";
+      html += "<td>" + (factor === "familia" ? "Familia" : "Tipo") + "</td>";
+      html += "<td>" + (calc.eta2_pct !== null ? calc.eta2_pct.toFixed(1) + "%" : "—") + "</td>";
+      html += "<td>" + refFactor.eta2_pct.toFixed(1) + "%</td>";
+      html += "<td class='" + (ok ? "val-match" : "val-mismatch") + "'>" + (diff !== null ? diff.toFixed(3) + " pp" : "—") + "</td>";
+      html += "<td>" + (calc.kruskal_p !== null ? calc.kruskal_p.toFixed(4) : "—") + "</td>";
+      html += "<td>" + refFactor.kruskal_p.toFixed(4) + "</td>";
+      html += "<td class='" + (ok ? "val-match" : "val-mismatch") + "'>" + (ok ? "✓ OK" : "✗ NO CALZA") + "</td>";
+      html += "</tr>";
+    }
+  }
+  html += "</tbody>";
+  tableEl.innerHTML = html;
+
+  resumenEl.innerHTML = todosOk
+    ? "<span class='val-match'>✓ Las " + filasComparadas + " comparaciones calzan dentro del margen de " + MARGEN + " puntos porcentuales.</span>"
+    : "<span class='val-mismatch'>✗ Hay diferencias fuera del margen de " + MARGEN + " puntos porcentuales — revisar implementación antes de seguir.</span>";
+}
+</script>
+
+</body>
+</html>
