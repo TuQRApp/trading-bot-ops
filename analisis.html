@@ -237,7 +237,7 @@
 <body>
 
 <h1>Análisis Estadístico de Estrategias</h1>
-<div class="subtitle">Subí un Excel/CSV con tus estrategias — agrupamiento, corrección por tamaño de muestra, significancia estadística (ANOVA/Kruskal-Wallis) y Score/Veredicto, todo calculado en el navegador.</div>
+<div class="subtitle">Sube un Excel/CSV con tus estrategias — agrupamiento, corrección por tamaño de muestra, significancia estadística (ANOVA/Kruskal-Wallis) y Score/Veredicto, todo calculado en el navegador.</div>
 
 <div class="panel">
   <h2>1. Subir archivo</h2>
@@ -299,23 +299,23 @@
   <div class="dist-row" id="distRow"></div>
 
   <div class="group-table-wrap">
+    <h3>Familia × Clase</h3>
+    <table id="tablaFamiliaClase"></table>
+  </div>
+
+  <div class="group-table-wrap">
     <h3>Por familia</h3>
     <table id="tablaFamilia"></table>
   </div>
 
   <div class="group-table-wrap">
-    <h3>Por tipo</h3>
-    <table id="tablaTipo"></table>
-  </div>
-
-  <div class="group-table-wrap">
-    <h3>Familia × Tipo</h3>
-    <table id="tablaFamiliaTipo"></table>
+    <h3>Por clase</h3>
+    <table id="tablaClase"></table>
   </div>
 </div>
 
 <div id="anovaPanel" class="panel panel-wide hidden">
-  <h2>6. ANOVA de un factor + Kruskal-Wallis (Familia vs. Tipo)</h2>
+  <h2>6. ANOVA de un factor + Kruskal-Wallis (Familia vs. Clase)</h2>
   <ul class="anova-resumen" id="anovaResumen"></ul>
   <div class="group-table-wrap">
     <table id="tablaAnova"></table>
@@ -333,12 +333,14 @@
 <script>
 // -----------------------------------------------------------------------
 // Candidatos de nombre de columna, por campo lógico (idéntico a analysis.py,
-// + wr agregado)
+// + wr y clase agregados). "clase" reemplaza a "tipo" como nombre preferido
+// de la clasificación de símbolo, pero se mantienen los candidatos viejos
+// ("tipo", "tipo de símbolo") para no romper archivos existentes.
 // -----------------------------------------------------------------------
 const CANDIDATOS = {
   familia: ["familia", "family", "estrategia_familia"],
   simbolo: ["símbolo", "simbolo", "symbol", "ticker"],
-  tipo:    ["tipo de símbolo", "tipo_simbolo", "tipo", "asset_type", "category"],
+  clase:   ["clase de símbolo", "clase_simbolo", "clase", "tipo de símbolo", "tipo_simbolo", "tipo", "asset_type", "category"],
   pf:      ["pfneto", "pf neto", "pf_neto", "profit factor", "pf"],
   dd:      ["dd max", "ddmax", "dd_max", "drawdown", "max drawdown"],
   mar:     ["mar"],
@@ -365,7 +367,7 @@ const METRICAS = [
 ];
 
 // -----------------------------------------------------------------------
-// Clasificación de símbolo -> tipo (idéntico a analysis.py)
+// Clasificación de símbolo -> clase (idéntico a analysis.py)
 // -----------------------------------------------------------------------
 const CLASIFICACION_SIMBOLO = {
   "Forex": new Set(["AUDUSD","CHFJPY","EURAUD","EURCAD","EURCHF","EURJPY","EURNZD","EURUSD",
@@ -379,8 +381,8 @@ const SUFIJOS_ACCIONES = [".NYSE", ".NAS", ".ETR", ".PAR", ".AMS", ".LSE"];
 
 function clasificarSimbolo(simbolo) {
   const s = String(simbolo).trim();
-  for (const tipo of Object.keys(CLASIFICACION_SIMBOLO)) {
-    if (CLASIFICACION_SIMBOLO[tipo].has(s)) return tipo;
+  for (const categoria of Object.keys(CLASIFICACION_SIMBOLO)) {
+    if (CLASIFICACION_SIMBOLO[categoria].has(s)) return categoria;
   }
   if (SUFIJOS_ACCIONES.some(suf => s.endsWith(suf))) return "Acciones";
   return "Otro";
@@ -408,17 +410,17 @@ function prepareData(rows, resolved) {
   return rows.map(row => {
     const familia = String(row[resolved.familia]);
     const simbolo = resolved.simbolo ? String(row[resolved.simbolo]) : "";
-    let tipo;
-    if (resolved.tipo) {
-      const raw = String(row[resolved.tipo]);
-      tipo = (raw === "" || raw.toLowerCase() === "nan" || raw === "None")
+    let clase;
+    if (resolved.clase) {
+      const raw = String(row[resolved.clase]);
+      clase = (raw === "" || raw.toLowerCase() === "nan" || raw === "None")
         ? clasificarSimbolo(simbolo)
         : raw;
     } else {
-      tipo = clasificarSimbolo(simbolo);
+      clase = clasificarSimbolo(simbolo);
     }
     return {
-      familia, simbolo, tipo,
+      familia, simbolo, clase,
       pf: parseNumeric(row[resolved.pf]),
       dd: parseNumeric(row[resolved.dd]),
       mar: parseNumeric(row[resolved.mar]),
@@ -734,17 +736,17 @@ function anovaSummary(rows, metricsPresentes) {
   const resultado = {};
   METRICAS.filter(m => metricsPresentes.includes(m.key)).forEach(m => {
     const famRes = anovaKruskal(rows, r => r.familia, r => r[m.key]);
-    const tipoRes = anovaKruskal(rows, r => r.tipo, r => r[m.key]);
+    const claseRes = anovaKruskal(rows, r => r.clase, r => r[m.key]);
     resultado[m.anovaLabel] = {
       familia: {
         eta2_pct: famRes.eta2 !== null ? Math.round(famRes.eta2 * 1000) / 10 : null,
         kruskal_p: famRes.p,
         significativo: famRes.p !== null && famRes.p < 0.05,
       },
-      tipo: {
-        eta2_pct: tipoRes.eta2 !== null ? Math.round(tipoRes.eta2 * 1000) / 10 : null,
-        kruskal_p: tipoRes.p,
-        significativo: tipoRes.p !== null && tipoRes.p < 0.05,
+      clase: {
+        eta2_pct: claseRes.eta2 !== null ? Math.round(claseRes.eta2 * 1000) / 10 : null,
+        kruskal_p: claseRes.p,
+        significativo: claseRes.p !== null && claseRes.p < 0.05,
       },
     };
   });
@@ -759,11 +761,11 @@ function runAnalysis(rows, resolved) {
   return {
     n_estrategias: rows.length,
     n_familias: new Set(rows.map(r => r.familia)).size,
-    n_tipos: new Set(rows.map(r => r.tipo)).size,
+    n_clases: new Set(rows.map(r => r.clase)).size,
     metricsPresentes,
     por_familia: buildGroupTable(rows, ["familia"], metricsPresentes),
-    por_tipo: buildGroupTable(rows, ["tipo"], metricsPresentes),
-    familia_x_tipo: buildGroupTable(rows, ["familia", "tipo"], metricsPresentes),
+    por_clase: buildGroupTable(rows, ["clase"], metricsPresentes),
+    familia_x_clase: buildGroupTable(rows, ["familia", "clase"], metricsPresentes),
     anova: anovaSummary(rows, metricsPresentes),
   };
 }
@@ -772,11 +774,12 @@ function runAnalysis(rows, resolved) {
 // Números de referencia validados en Python/scipy sobre Trading2.xlsx, SIN
 // filtros y con las métricas originales (margen de error aceptado: 0.5
 // puntos porcentuales en eta²). Solo tiene sentido comparar contra esto
-// cuando no hay filtros activos.
+// cuando no hay filtros activos. El factor "clase" acá corresponde a lo que
+// en el análisis original en Python se llamaba "tipo de símbolo".
 // -----------------------------------------------------------------------
 const REFERENCIA_ANOVA = {
-  "PF Neto": { familia: { eta2_pct: 24.1, kruskal_p: 0.0000 }, tipo: { eta2_pct: 1.3, kruskal_p: 0.7298 } },
-  "DD Max":  { familia: { eta2_pct: 30.2, kruskal_p: 0.0000 }, tipo: { eta2_pct: 9.9, kruskal_p: 0.0000 } },
+  "PF Neto": { familia: { eta2_pct: 24.1, kruskal_p: 0.0000 }, clase: { eta2_pct: 1.3, kruskal_p: 0.7298 } },
+  "DD Max":  { familia: { eta2_pct: 30.2, kruskal_p: 0.0000 }, clase: { eta2_pct: 9.9, kruskal_p: 0.0000 } },
 };
 
 function normalizarNombre(s) {
@@ -1053,7 +1056,7 @@ function renderAnalysis(analisis) {
   summaryRow.innerHTML =
     "<div class='summary-item'><span class='num'>" + analisis.n_estrategias + "</span><span class='label'>Estrategias</span></div>" +
     "<div class='summary-item'><span class='num'>" + analisis.n_familias + "</span><span class='label'>Familias</span></div>" +
-    "<div class='summary-item'><span class='num'>" + analisis.n_tipos + "</span><span class='label'>Tipos de símbolo</span></div>";
+    "<div class='summary-item'><span class='num'>" + analisis.n_clases + "</span><span class='label'>Clases</span></div>";
 
   const metricLabels = METRICAS.filter(m => analisis.metricsPresentes.includes(m.key)).map(m => m.label);
   metricasInfo.textContent = metricLabels.length
@@ -1061,9 +1064,9 @@ function renderAnalysis(analisis) {
     : "No hay métricas numéricas disponibles — solo agrupamiento y clasificación.";
 
   renderDistribucionVeredictos(analisis.por_familia);
+  renderGroupTable(document.getElementById("tablaFamiliaClase"), analisis.familia_x_clase, ["familia", "clase"], analisis.metricsPresentes);
   renderGroupTable(document.getElementById("tablaFamilia"), analisis.por_familia, ["familia"], analisis.metricsPresentes);
-  renderGroupTable(document.getElementById("tablaTipo"), analisis.por_tipo, ["tipo"], analisis.metricsPresentes);
-  renderGroupTable(document.getElementById("tablaFamiliaTipo"), analisis.familia_x_tipo, ["familia", "tipo"], analisis.metricsPresentes);
+  renderGroupTable(document.getElementById("tablaClase"), analisis.por_clase, ["clase"], analisis.metricsPresentes);
 }
 
 function renderDistribucionVeredictos(porFamiliaRows) {
@@ -1080,7 +1083,7 @@ function renderGroupTable(tableEl, tablaRows, groupCols, metricsPresentes) {
   const ddPresente = metricsPresentes.includes("dd");
   const metricCols = METRICAS.filter(m => metricsPresentes.includes(m.key));
 
-  const headerLabels = groupCols.map(c => c === "familia" ? "Familia" : "Tipo")
+  const headerLabels = groupCols.map(c => c === "familia" ? "Familia" : "Clase")
     .concat(["N"])
     .concat(metricCols.map(m => m.label))
     .concat(ddPresente ? ["Cobertura DD"] : [])
@@ -1120,23 +1123,23 @@ function generarResumenAnova(anova) {
     return ["No hay métricas numéricas disponibles para calcular ANOVA/Kruskal-Wallis."];
   }
   for (const [label, r] of Object.entries(anova)) {
-    const fam = r.familia, tipo = r.tipo;
-    if (fam.eta2_pct === null && tipo.eta2_pct === null) {
+    const fam = r.familia, clase = r.clase;
+    if (fam.eta2_pct === null && clase.eta2_pct === null) {
       bullets.push(label + ": no hay grupos suficientes para calcular ANOVA/Kruskal-Wallis.");
       continue;
     }
     const famSig = fam.significativo;
-    const tipoSig = tipo.significativo;
+    const claseSig = clase.significativo;
     let conclusion;
-    if (famSig && !tipoSig) conclusion = "la <strong>Familia</strong> es el factor que explica la variación de forma significativa";
-    else if (!famSig && tipoSig) conclusion = "el <strong>Tipo de símbolo</strong> es el factor que explica la variación de forma significativa";
-    else if (famSig && tipoSig) conclusion = "ambos factores son significativos, con " + (fam.eta2_pct >= tipo.eta2_pct ? "<strong>Familia</strong>" : "<strong>Tipo</strong>") + " explicando más varianza";
+    if (famSig && !claseSig) conclusion = "la <strong>Familia</strong> es el factor que explica la variación de forma significativa";
+    else if (!famSig && claseSig) conclusion = "la <strong>Clase</strong> es el factor que explica la variación de forma significativa";
+    else if (famSig && claseSig) conclusion = "ambos factores son significativos, con " + (fam.eta2_pct >= clase.eta2_pct ? "<strong>Familia</strong>" : "<strong>Clase</strong>") + " explicando más varianza";
     else conclusion = "ninguno de los dos factores resulta estadísticamente significativo";
 
     bullets.push(
       "<strong>" + label + "</strong> — Familia: " + fam.eta2_pct.toFixed(1) + "% de varianza (p=" + fam.kruskal_p.toFixed(4) +
-      (famSig ? ", significativo" : ", no significativo") + ") · Tipo: " + tipo.eta2_pct.toFixed(1) + "% (p=" + tipo.kruskal_p.toFixed(4) +
-      (tipoSig ? ", significativo" : ", no significativo") + ") → " + conclusion + "."
+      (famSig ? ", significativo" : ", no significativo") + ") · Clase: " + clase.eta2_pct.toFixed(1) + "% (p=" + clase.kruskal_p.toFixed(4) +
+      (claseSig ? ", significativo" : ", no significativo") + ") → " + conclusion + "."
     );
   }
   return bullets;
@@ -1150,11 +1153,11 @@ function renderAnova(anova) {
     "<th>Kruskal-Wallis p</th><th>Significativo (p&lt;0.05)</th></tr></thead><tbody>";
 
   for (const [label, r] of Object.entries(anova)) {
-    for (const factor of ["familia", "tipo"]) {
+    for (const factor of ["familia", "clase"]) {
       const d = r[factor];
       html += "<tr>";
       html += "<td>" + label + "</td>";
-      html += "<td>" + (factor === "familia" ? "Familia" : "Tipo") + "</td>";
+      html += "<td>" + (factor === "familia" ? "Familia" : "Clase") + "</td>";
       html += "<td>" + (d.eta2_pct !== null ? d.eta2_pct.toFixed(1) + "%" : "—") + "</td>";
       html += "<td>" + (d.kruskal_p !== null ? d.kruskal_p.toFixed(4) : "—") + "</td>";
       html += "<td class='" + (d.significativo ? "sig-yes" : "sig-no") + "'>" +
@@ -1204,7 +1207,7 @@ function renderValidacion(anova, filtrosActivos) {
   for (const label of metricasDisponibles) {
     const ref = REFERENCIA_ANOVA[label];
     const r = anova[label];
-    for (const factor of ["familia", "tipo"]) {
+    for (const factor of ["familia", "clase"]) {
       const calc = r[factor];
       const refFactor = ref[factor];
       const diff = calc.eta2_pct !== null ? Math.abs(calc.eta2_pct - refFactor.eta2_pct) : null;
@@ -1214,7 +1217,7 @@ function renderValidacion(anova, filtrosActivos) {
 
       html += "<tr>";
       html += "<td>" + label + "</td>";
-      html += "<td>" + (factor === "familia" ? "Familia" : "Tipo") + "</td>";
+      html += "<td>" + (factor === "familia" ? "Familia" : "Clase") + "</td>";
       html += "<td>" + (calc.eta2_pct !== null ? calc.eta2_pct.toFixed(1) + "%" : "—") + "</td>";
       html += "<td>" + refFactor.eta2_pct.toFixed(1) + "%</td>";
       html += "<td class='" + (ok ? "val-match" : "val-mismatch") + "'>" + (diff !== null ? diff.toFixed(3) + " pp" : "—") + "</td>";
@@ -1236,7 +1239,7 @@ function renderValidacion(anova, filtrosActivos) {
 // Descargar template de columnas
 // -----------------------------------------------------------------------
 function descargarTemplate() {
-  const headers = ["Familia", "Símbolo", "Tipo de Símbolo", "PF Neto", "DD Max", "MAR", "Sharpe", "WR", "Status"];
+  const headers = ["Familia", "Símbolo", "Clase de Símbolo", "PF Neto", "DD Max", "MAR", "Sharpe", "WR", "Status"];
   const ejemplo = ["macd", "EURUSD", "", 1.85, 12.4, 1.9, 1.1, 62.5, "Live"];
   const nota = [
     "texto", "texto", "opcional (se clasifica automático por símbolo si se deja vacío)",
@@ -1256,7 +1259,7 @@ document.getElementById("btnTemplate").addEventListener("click", descargarTempla
 function tablaRowsToAOA(tablaRows, groupCols, metricsPresentes) {
   const ddPresente = metricsPresentes.includes("dd");
   const metricCols = METRICAS.filter(m => metricsPresentes.includes(m.key));
-  const headers = groupCols.map(c => c === "familia" ? "Familia" : "Tipo")
+  const headers = groupCols.map(c => c === "familia" ? "Familia" : "Clase")
     .concat(["N"])
     .concat(metricCols.map(m => m.label))
     .concat(ddPresente ? ["Cobertura DD %"] : [])
@@ -1283,10 +1286,10 @@ function anovaToAOA(anova) {
   const headers = ["Métrica", "Factor", "Eta2 %", "Kruskal p", "Significativo"];
   const rows = [];
   for (const [label, r] of Object.entries(anova)) {
-    for (const factor of ["familia", "tipo"]) {
+    for (const factor of ["familia", "clase"]) {
       const d = r[factor];
       rows.push([
-        label, factor === "familia" ? "Familia" : "Tipo",
+        label, factor === "familia" ? "Familia" : "Clase",
         d.eta2_pct !== null ? d.eta2_pct : "",
         d.kruskal_p !== null ? d.kruskal_p : "",
         d.kruskal_p === null ? "" : (d.significativo ? "Sí" : "No"),
@@ -1299,18 +1302,18 @@ function anovaToAOA(anova) {
 // -----------------------------------------------------------------------
 // Hoja "Estrategias": las filas tal como se subieron (todas sus columnas
 // originales), con una columna nueva al principio con el veredicto final.
-// El veredicto final es el de la combinación Familia × Tipo a la que
+// El veredicto final es el de la combinación Familia × Clase a la que
 // pertenece cada estrategia (el agrupamiento más específico del análisis).
 // -----------------------------------------------------------------------
-function estrategiasToAOA(rowsAnalizadas, familiaXTipoRows) {
+function estrategiasToAOA(rowsAnalizadas, familiaXClaseRows) {
   const veredictoPorCombo = new Map();
-  familiaXTipoRows.forEach(r => veredictoPorCombo.set(r.familia + " | " + r.tipo, r.veredicto.label));
+  familiaXClaseRows.forEach(r => veredictoPorCombo.set(r.familia + " | " + r.clase, r.veredicto.label));
 
   const headersOriginales = rowsAnalizadas.length ? Object.keys(rowsAnalizadas[0]._raw) : [];
-  const headers = ["Veredicto Final (por familia × tipo)"].concat(headersOriginales);
+  const headers = ["Veredicto Final (por familia × clase)"].concat(headersOriginales);
 
   const rows = rowsAnalizadas.map(r => {
-    const veredicto = veredictoPorCombo.get(r.familia + " | " + r.tipo) || "Sin veredicto (combinación con N<3)";
+    const veredicto = veredictoPorCombo.get(r.familia + " | " + r.clase) || "Sin veredicto (combinación con N<3)";
     const rawValues = headersOriginales.map(h => r._raw[h]);
     return [veredicto].concat(rawValues);
   });
@@ -1322,16 +1325,16 @@ function descargarResultado() {
   if (!ultimoAnalisis) return;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(
-    wb, XLSX.utils.aoa_to_sheet(estrategiasToAOA(ultimasFilasAnalizadas, ultimoAnalisis.familia_x_tipo)), "Estrategias"
+    wb, XLSX.utils.aoa_to_sheet(estrategiasToAOA(ultimasFilasAnalizadas, ultimoAnalisis.familia_x_clase)), "Estrategias"
+  );
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.familia_x_clase, ["familia", "clase"], ultimoAnalisis.metricsPresentes)), "Familia x Clase"
   );
   XLSX.utils.book_append_sheet(
     wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.por_familia, ["familia"], ultimoAnalisis.metricsPresentes)), "Por Familia"
   );
   XLSX.utils.book_append_sheet(
-    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.por_tipo, ["tipo"], ultimoAnalisis.metricsPresentes)), "Por Tipo"
-  );
-  XLSX.utils.book_append_sheet(
-    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.familia_x_tipo, ["familia", "tipo"], ultimoAnalisis.metricsPresentes)), "Familia x Tipo"
+    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.por_clase, ["clase"], ultimoAnalisis.metricsPresentes)), "Por Clase"
   );
   XLSX.utils.book_append_sheet(
     wb, XLSX.utils.aoa_to_sheet(anovaToAOA(ultimoAnalisis.anova)), "ANOVA"
