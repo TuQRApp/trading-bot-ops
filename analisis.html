@@ -48,6 +48,13 @@
     margin: 0 0 14px;
     color: var(--text);
   }
+  .panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .panel-header-row h2 { margin: 0; }
   .upload-row {
     display: flex;
     align-items: center;
@@ -82,10 +89,6 @@
   .status-ok { color: var(--ok); font-weight: 600; }
   .status-missing { color: var(--bad); font-weight: 600; }
   .status-optional { color: var(--text-dim); }
-  .preview-wrap {
-    overflow-x: auto;
-    max-width: 100%;
-  }
   .error-box {
     background: rgba(226, 92, 92, 0.12);
     border: 1px solid var(--bad);
@@ -212,12 +215,32 @@
     flex-wrap: wrap;
     margin-bottom: 16px;
   }
+  .filter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
   .filter-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
     font-size: 13px;
+  }
+  .filter-incluir-col {
+    width: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .filter-incluir {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
   }
   .filter-label {
     width: 64px;
@@ -262,15 +285,13 @@
   </table>
 </div>
 
-<div id="previewPanel" class="panel hidden">
-  <h2>3. Vista previa (primeras 5 filas crudas)</h2>
-  <div class="preview-wrap">
-    <table id="previewTable"></table>
-  </div>
-</div>
-
 <div id="filterPanel" class="panel hidden">
-  <h2>4. Filtros (opcional)</h2>
+  <h2>3. Filtros (opcional)</h2>
+  <div class="filter-header">
+    <span class="filter-incluir-col">Usar</span>
+    <span class="filter-label">Métrica</span>
+    <span>Umbral</span>
+  </div>
   <div id="filterRows"></div>
   <div class="actions-row" style="margin-top:10px; margin-bottom:0;">
     <button type="button" id="btnAplicarFiltros">Aplicar filtros</button>
@@ -280,13 +301,12 @@
 </div>
 
 <div id="groupPanel" class="panel panel-wide hidden">
-  <h2>5. Resultados por grupo</h2>
-  <div class="summary-row" id="summaryRow"></div>
-  <div class="metricas-info" id="metricasInfo"></div>
-
-  <div class="actions-row">
+  <div class="panel-header-row">
+    <h2>4. Resultados por grupo</h2>
     <button type="button" id="btnDescargarResultado">Descargar Excel de resultados</button>
   </div>
+  <div class="summary-row" id="summaryRow"></div>
+  <div class="metricas-info" id="metricasInfo"></div>
 
   <div class="legend-row">
     <span class="legend-item"><span class="badge-veredicto badge-verde">Recomendada</span></span>
@@ -315,7 +335,7 @@
 </div>
 
 <div id="anovaPanel" class="panel panel-wide hidden">
-  <h2>6. ANOVA de un factor + Kruskal-Wallis (Familia vs. Clase)</h2>
+  <h2>5. ANOVA de un factor + Kruskal-Wallis (Familia vs. Clase)</h2>
   <ul class="anova-resumen" id="anovaResumen"></ul>
   <div class="group-table-wrap">
     <table id="tablaAnova"></table>
@@ -323,7 +343,7 @@
 </div>
 
 <div id="validacionPanel" class="panel panel-wide hidden">
-  <h2>7. Validación obligatoria contra números de referencia (dataset Trading2.xlsx)</h2>
+  <h2>6. Validación obligatoria contra números de referencia (dataset Trading2.xlsx)</h2>
   <div class="group-table-wrap">
     <table id="tablaValidacion"></table>
   </div>
@@ -352,8 +372,11 @@ const CANDIDATOS = {
 // Solo familia y símbolo son obligatorios: son necesarios para agrupar y
 // clasificar. Las 5 métricas de análisis (pf, dd, mar, sharpe, wr) son
 // opcionales — si el archivo no trae alguna, se excluye del CV ponderado,
-// shrinkage, Score y ANOVA, pero no bloquea el análisis.
+// shrinkage, Score y ANOVA, pero no bloquea el análisis. "clase" nunca se
+// muestra en el panel de columnas detectadas (panel 2): siempre tiene un
+// valor porque se auto-clasifica por símbolo si el archivo no la trae.
 const REQUERIDOS = ["familia", "simbolo"];
+const OCULTOS_EN_DETECCION = ["clase"];
 
 // label = header corto de tabla, invert = true si "menor es mejor" (DD Max),
 // incluirEnCV = si entra en el cálculo de CV Ponderado (DD Max queda afuera,
@@ -754,10 +777,11 @@ function anovaSummary(rows, metricsPresentes) {
 }
 
 // -----------------------------------------------------------------------
-// run_full_analysis()
+// run_full_analysis() — recibe la lista final de métricas a considerar
+// (ya cruzada entre "existe en el archivo" y "el usuario la dejó marcada"
+// en el panel de filtros).
 // -----------------------------------------------------------------------
-function runAnalysis(rows, resolved) {
-  const metricsPresentes = METRICAS.filter(m => resolved[m.key] !== null).map(m => m.key);
+function runAnalysis(rows, metricsPresentes) {
   return {
     n_estrategias: rows.length,
     n_familias: new Set(rows.map(r => r.familia)).size,
@@ -809,7 +833,7 @@ function resolveColumns(headers) {
 }
 
 // -----------------------------------------------------------------------
-// Filtros por umbral sobre las 5 métricas (opcional)
+// Filtros por umbral + inclusión en el análisis, sobre las 5 métricas
 // -----------------------------------------------------------------------
 function cumpleFiltros(row, filtros) {
   return filtros.every(f => {
@@ -840,6 +864,15 @@ function leerFiltros() {
   return filtros;
 }
 
+// Métricas que el usuario dejó marcadas con el checkbox "Usar" (independiente
+// de si tienen un filtro de umbral cargado o no).
+function leerMetricasIncluidas(metricasEnArchivo) {
+  return metricasEnArchivo.filter(key => {
+    const checkbox = document.querySelector("#filterRows .filter-row[data-metric='" + key + "'] .filter-incluir");
+    return checkbox ? checkbox.checked : true;
+  });
+}
+
 function renderFiltroPanel(metricsPresentes) {
   const filterRowsEl = document.getElementById("filterRows");
   if (metricsPresentes.length === 0) {
@@ -849,6 +882,7 @@ function renderFiltroPanel(metricsPresentes) {
   let html = "";
   METRICAS.filter(m => metricsPresentes.includes(m.key)).forEach(m => {
     html += "<div class='filter-row' data-metric='" + m.key + "'>" +
+      "<span class='filter-incluir-col'><input type='checkbox' class='filter-incluir' checked title='Considerar esta variable en el análisis'></span>" +
       "<span class='filter-label'>" + m.label + "</span>" +
       "<select class='filter-op'>" +
         "<option value=''>Sin filtro</option>" +
@@ -871,9 +905,7 @@ const fileInput = document.getElementById("fileInput");
 const fileInfo = document.getElementById("fileInfo");
 const errorBox = document.getElementById("errorBox");
 const resultsPanel = document.getElementById("resultsPanel");
-const previewPanel = document.getElementById("previewPanel");
 const columnMapBody = document.getElementById("columnMapBody");
-const previewTable = document.getElementById("previewTable");
 const filterPanel = document.getElementById("filterPanel");
 const groupPanel = document.getElementById("groupPanel");
 const summaryRow = document.getElementById("summaryRow");
@@ -894,7 +926,6 @@ fileInput.addEventListener("change", (e) => {
 
   errorBox.classList.add("hidden");
   resultsPanel.classList.add("hidden");
-  previewPanel.classList.add("hidden");
   filterPanel.classList.add("hidden");
   groupPanel.classList.add("hidden");
   anovaPanel.classList.add("hidden");
@@ -931,10 +962,8 @@ fileInput.addEventListener("change", (e) => {
       }
 
       renderColumnMap(resolved, missing);
-      renderPreview(headers, rows.slice(0, 5));
 
       resultsPanel.classList.remove("hidden");
-      previewPanel.classList.remove("hidden");
 
       if (missing.length === 0) {
         preparedRowsGlobal = prepareData(rows, resolved);
@@ -978,7 +1007,10 @@ function ejecutarAnalisis() {
   }
   errorBox.classList.add("hidden");
 
-  const analisis = runAnalysis(rowsFiltradas, resolvedGlobal);
+  const metricasEnArchivo = METRICAS.filter(m => resolvedGlobal[m.key] !== null).map(m => m.key);
+  const metricasIncluidas = leerMetricasIncluidas(metricasEnArchivo);
+
+  const analisis = runAnalysis(rowsFiltradas, metricasIncluidas);
   ultimoAnalisis = analisis;
   ultimasFilasAnalizadas = rowsFiltradas;
 
@@ -988,7 +1020,7 @@ function ejecutarAnalisis() {
   renderAnova(analisis.anova);
   anovaPanel.classList.remove("hidden");
 
-  renderValidacion(analisis.anova, filtrosActivos);
+  renderValidacion(analisis.anova, filtrosActivos || metricasIncluidas.length !== metricasEnArchivo.length);
   validacionPanel.classList.remove("hidden");
 }
 
@@ -996,12 +1028,15 @@ document.getElementById("btnAplicarFiltros").addEventListener("click", ejecutarA
 document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
   document.querySelectorAll("#filterRows .filter-op").forEach(el => { el.value = ""; });
   document.querySelectorAll("#filterRows .filter-val").forEach(el => { el.value = ""; });
+  document.querySelectorAll("#filterRows .filter-incluir").forEach(el => { el.checked = true; });
   ejecutarAnalisis();
 });
 
 function renderColumnMap(resolved, missing) {
   columnMapBody.innerHTML = "";
   for (const campo of Object.keys(CANDIDATOS)) {
+    if (OCULTOS_EN_DETECCION.includes(campo)) continue;
+
     const tr = document.createElement("tr");
     const esRequerido = REQUERIDOS.includes(campo);
     const encontrada = resolved[campo];
@@ -1029,19 +1064,6 @@ function renderColumnMap(resolved, missing) {
 
     columnMapBody.appendChild(tr);
   }
-}
-
-function renderPreview(headers, sampleRows) {
-  let html = "<thead><tr>";
-  headers.forEach(h => { html += "<th>" + h + "</th>"; });
-  html += "</tr></thead><tbody>";
-  sampleRows.forEach(row => {
-    html += "<tr>";
-    headers.forEach(h => { html += "<td>" + (row[h] !== undefined ? row[h] : "") + "</td>"; });
-    html += "</tr>";
-  });
-  html += "</tbody>";
-  previewTable.innerHTML = html;
 }
 
 // -----------------------------------------------------------------------
@@ -1175,18 +1197,19 @@ function renderAnova(anova) {
 // -----------------------------------------------------------------------
 // Render de la validación obligatoria: comparación explícita mío vs.
 // referencia, con margen de error de 0.5 puntos porcentuales en eta².
-// Solo es válida sobre el dataset completo de referencia SIN filtros — si
-// hay filtros activos, o el archivo no trae PF Neto/DD Max, se muestra un
-// aviso neutral en vez de comparar contra números que no corresponden.
+// Solo es válida sobre el dataset completo de referencia SIN filtros y con
+// las 5 métricas incluidas — si hay filtros activos, alguna métrica quedó
+// desmarcada, o el archivo no trae PF Neto/DD Max, se muestra un aviso
+// neutral en vez de comparar contra números que no corresponden.
 // -----------------------------------------------------------------------
-function renderValidacion(anova, filtrosActivos) {
+function renderValidacion(anova, comparacionNoAplica) {
   const tableEl = document.getElementById("tablaValidacion");
   const resumenEl = document.getElementById("validacionResumen");
   const MARGEN = 0.5;
 
-  if (filtrosActivos) {
+  if (comparacionNoAplica) {
     tableEl.innerHTML = "";
-    resumenEl.innerHTML = "<span class='val-na'>Validación no aplica: hay filtros activos. La comparación contra la referencia solo es válida sobre el dataset completo (Trading2.xlsx, 490 estrategias, sin filtros).</span>";
+    resumenEl.innerHTML = "<span class='val-na'>Validación no aplica: hay filtros activos o alguna métrica quedó desmarcada. La comparación contra la referencia solo es válida sobre el dataset completo (Trading2.xlsx, 490 estrategias, sin filtros, con las 5 métricas incluidas).</span>";
     return;
   }
 
