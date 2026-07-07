@@ -106,7 +106,7 @@
   .summary-row {
     display: flex;
     gap: 28px;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
   }
   .summary-item {
     font-size: 13px;
@@ -118,6 +118,11 @@
   }
   .summary-item .label {
     color: var(--text-dim);
+  }
+  .metricas-info {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
   }
   .group-table-wrap {
     overflow-x: auto;
@@ -185,6 +190,48 @@
     border-bottom: 1px solid var(--border);
   }
   .anova-resumen li:last-child { border-bottom: none; }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+  .actions-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .filter-label {
+    width: 64px;
+    color: var(--text-dim);
+  }
+  .filter-op, .filter-val {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  .filter-val { width: 110px; }
 </style>
 </head>
 <body>
@@ -197,6 +244,9 @@
   <div class="upload-row">
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt,.tsv">
     <span class="file-info" id="fileInfo"></span>
+  </div>
+  <div class="actions-row" style="margin-top:14px; margin-bottom:0;">
+    <button type="button" class="btn-secondary" id="btnTemplate">Descargar template de columnas</button>
   </div>
 </div>
 
@@ -219,9 +269,24 @@
   </div>
 </div>
 
+<div id="filterPanel" class="panel hidden">
+  <h2>4. Filtros (opcional)</h2>
+  <div id="filterRows"></div>
+  <div class="actions-row" style="margin-top:10px; margin-bottom:0;">
+    <button type="button" id="btnAplicarFiltros">Aplicar filtros</button>
+    <button type="button" class="btn-secondary" id="btnLimpiarFiltros">Limpiar filtros</button>
+    <span class="file-info" id="filtroInfo"></span>
+  </div>
+</div>
+
 <div id="groupPanel" class="panel panel-wide hidden">
-  <h2>4. Resultados por grupo</h2>
+  <h2>5. Resultados por grupo</h2>
   <div class="summary-row" id="summaryRow"></div>
+  <div class="metricas-info" id="metricasInfo"></div>
+
+  <div class="actions-row">
+    <button type="button" id="btnDescargarResultado">Descargar Excel de resultados</button>
+  </div>
 
   <div class="legend-row">
     <span class="legend-item"><span class="badge-veredicto badge-verde">Recomendada</span></span>
@@ -250,7 +315,7 @@
 </div>
 
 <div id="anovaPanel" class="panel panel-wide hidden">
-  <h2>5. ANOVA de un factor + Kruskal-Wallis (Familia vs. Tipo)</h2>
+  <h2>6. ANOVA de un factor + Kruskal-Wallis (Familia vs. Tipo)</h2>
   <ul class="anova-resumen" id="anovaResumen"></ul>
   <div class="group-table-wrap">
     <table id="tablaAnova"></table>
@@ -258,7 +323,7 @@
 </div>
 
 <div id="validacionPanel" class="panel panel-wide hidden">
-  <h2>6. Validación obligatoria contra números de referencia (dataset Trading2.xlsx)</h2>
+  <h2>7. Validación obligatoria contra números de referencia (dataset Trading2.xlsx)</h2>
   <div class="group-table-wrap">
     <table id="tablaValidacion"></table>
   </div>
@@ -267,7 +332,8 @@
 
 <script>
 // -----------------------------------------------------------------------
-// Candidatos de nombre de columna, por campo lógico (idéntico a analysis.py)
+// Candidatos de nombre de columna, por campo lógico (idéntico a analysis.py,
+// + wr agregado)
 // -----------------------------------------------------------------------
 const CANDIDATOS = {
   familia: ["familia", "family", "estrategia_familia"],
@@ -277,10 +343,26 @@ const CANDIDATOS = {
   dd:      ["dd max", "ddmax", "dd_max", "drawdown", "max drawdown"],
   mar:     ["mar"],
   sharpe:  ["sharpe"],
+  wr:      ["wr", "win rate", "winrate", "wr%", "wr bt", "wrbt", "wr_bt"],
   status:  ["status", "estado"],
 };
 
-const REQUERIDOS = ["familia", "simbolo", "pf", "dd", "mar", "sharpe"];
+// Solo familia y símbolo son obligatorios: son necesarios para agrupar y
+// clasificar. Las 5 métricas de análisis (pf, dd, mar, sharpe, wr) son
+// opcionales — si el archivo no trae alguna, se excluye del CV ponderado,
+// shrinkage, Score y ANOVA, pero no bloquea el análisis.
+const REQUERIDOS = ["familia", "simbolo"];
+
+// label = header corto de tabla, invert = true si "menor es mejor" (DD Max),
+// incluirEnCV = si entra en el cálculo de CV Ponderado (DD Max queda afuera,
+// igual que en analysis.py — es riesgo, no consistencia).
+const METRICAS = [
+  { key: "pf",     label: "PF",     anovaLabel: "PF Neto", invert: false, incluirEnCV: true },
+  { key: "dd",     label: "DD Max", anovaLabel: "DD Max",  invert: true,  incluirEnCV: false },
+  { key: "mar",    label: "MAR",    anovaLabel: "MAR",     invert: false, incluirEnCV: true },
+  { key: "sharpe", label: "Sharpe", anovaLabel: "Sharpe",  invert: false, incluirEnCV: true },
+  { key: "wr",     label: "WR",     anovaLabel: "WR",      invert: false, incluirEnCV: true },
+];
 
 // -----------------------------------------------------------------------
 // Clasificación de símbolo -> tipo (idéntico a analysis.py)
@@ -319,7 +401,8 @@ function parseNumeric(v) {
 
 // -----------------------------------------------------------------------
 // prepare(): arma el dataset limpio a partir de las filas crudas + columnas
-// resueltas
+// resueltas. Las columnas de métricas no encontradas quedan como NaN en
+// todas las filas (metricsPresentes se encarga de excluirlas más adelante).
 // -----------------------------------------------------------------------
 function prepareData(rows, resolved) {
   return rows.map(row => {
@@ -340,7 +423,9 @@ function prepareData(rows, resolved) {
       dd: parseNumeric(row[resolved.dd]),
       mar: parseNumeric(row[resolved.mar]),
       sharpe: parseNumeric(row[resolved.sharpe]),
+      wr: parseNumeric(row[resolved.wr]),
       status: resolved.status ? String(row[resolved.status]) : "",
+      _raw: row,
     };
   });
 }
@@ -450,15 +535,18 @@ function empiricalBayesShrink(allRows, groupKeyFn, metricFn) {
 }
 
 // -----------------------------------------------------------------------
-// Veredicto por grupo — idéntico a analysis.py
+// Veredicto por grupo — idéntico a analysis.py, adaptado para que la
+// cobertura de DD solo pese si DD está presente en el archivo.
 // -----------------------------------------------------------------------
 const MIN_N = 3;
 const CONFIABLE_MIN_N = 5;
 const CONFIABLE_MIN_COBERTURA_DD = 70;
 
-function veredicto(row) {
+function veredicto(row, ddPresente) {
   if (row.n < MIN_N) return { label: "Muestra insuficiente", color: "gris" };
-  const confiable = row.n >= CONFIABLE_MIN_N && (row.dd_cobertura || 0) >= CONFIABLE_MIN_COBERTURA_DD;
+  if (row.score === null || Number.isNaN(row.score)) return { label: "Sin métricas para evaluar", color: "gris" };
+  const coberturaOk = ddPresente ? (row.dd_cobertura || 0) >= CONFIABLE_MIN_COBERTURA_DD : true;
+  const confiable = row.n >= CONFIABLE_MIN_N && coberturaOk;
   const scoreOk = row.score > 0;
   if (scoreOk && confiable) return { label: "Recomendada", color: "verde" };
   if (scoreOk && !confiable) return { label: "Prometedora, verificar con más datos", color: "ambar" };
@@ -468,9 +556,11 @@ function veredicto(row) {
 
 // -----------------------------------------------------------------------
 // build_group_table() — agrupamiento + shrinkage + CV ponderado + cobertura
-// + Score/Veredicto, puerto fiel de analysis.py
+// + Score/Veredicto, puerto fiel de analysis.py, generalizado a la lista
+// de métricas presentes en el archivo (metricsPresentes).
 // -----------------------------------------------------------------------
-function buildGroupTable(rows, groupCols) {
+function buildGroupTable(rows, groupCols, metricsPresentes) {
+  const ddPresente = metricsPresentes.includes("dd");
   const keyOf = (row) => groupCols.map(c => row[c]).join(" | ");
   const withKey = rows.map(r => Object.assign({}, r, { _key: keyOf(r) }));
 
@@ -483,52 +573,69 @@ function buildGroupTable(rows, groupCols) {
   let tablaRows = [];
   for (const [key, g] of groupsMap.entries()) {
     const n = g.length;
-    const pf = nanMean(g.map(r => r.pf));
-    const dd = nanMean(g.map(r => r.dd));
-    const mar = nanMean(g.map(r => r.mar));
-    const sharpe = nanMean(g.map(r => r.sharpe));
-    const ddValidos = g.filter(r => !Number.isNaN(r.dd)).length;
-    const ddCobertura = n ? Math.round(ddValidos / n * 100) : 0;
+    const row = { key, n };
+    metricsPresentes.forEach(m => { row[m] = nanMean(g.map(r => r[m])); });
+
+    if (ddPresente) {
+      const ddValidos = g.filter(r => !Number.isNaN(r.dd)).length;
+      row.dd_cobertura = n ? Math.round(ddValidos / n * 100) : 0;
+    } else {
+      row.dd_cobertura = null;
+    }
 
     const cvs = [];
-    for (const [colName, m] of [["pf", pf], ["mar", mar], ["sharpe", sharpe]]) {
-      const sd = nanStd(g.map(r => r[colName]), 1);
-      if (m && !Number.isNaN(m) && m !== 0 && !Number.isNaN(sd)) {
-        cvs.push(sd / Math.abs(m));
+    METRICAS.filter(m => m.incluirEnCV && metricsPresentes.includes(m.key)).forEach(m => {
+      const mean = row[m.key];
+      const sd = nanStd(g.map(r => r[m.key]), 1);
+      if (mean && !Number.isNaN(mean) && mean !== 0 && !Number.isNaN(sd)) {
+        cvs.push(sd / Math.abs(mean));
       }
-    }
-    const cvPond = cvs.length ? cvs.reduce((a, b) => a + b, 0) / cvs.length : null;
+    });
+    row.cv_pond = cvs.length ? cvs.reduce((a, b) => a + b, 0) / cvs.length : null;
 
-    tablaRows.push({ key, n, pf, dd, mar, sharpe, dd_cobertura: ddCobertura, cv_pond: cvPond });
+    tablaRows.push(row);
   }
 
   tablaRows = tablaRows.filter(r => r.n >= MIN_N);
   if (tablaRows.length === 0) return [];
 
-  for (const metric of ["pf", "dd", "mar", "sharpe"]) {
+  metricsPresentes.forEach(metric => {
     const { result, mu } = empiricalBayesShrink(withKey, r => r._key, r => r[metric]);
-    for (const row of tablaRows) {
+    tablaRows.forEach(row => {
       const entry = result[row.key];
       row[metric + "_shrunk"] = entry ? entry.shrunk : mu;
       row[metric + "_w"] = entry ? entry.w : 0.0;
-    }
-  }
-
-  for (const row of tablaRows) {
-    row.peso_propio = (row.pf_w + row.dd_w + row.mar_w + row.sharpe_w) / 4;
-  }
-
-  const zPf = zscore(tablaRows.map(r => r.pf_shrunk));
-  const zMar = zscore(tablaRows.map(r => r.mar_shrunk));
-  const zSharpe = zscore(tablaRows.map(r => r.sharpe_shrunk));
-  const zDd = zscore(tablaRows.map(r => r.dd_shrunk), true);
-
-  tablaRows.forEach((row, i) => {
-    row.score = (zPf[i] + zMar[i] + zSharpe[i] + zDd[i]) / 4;
+    });
   });
 
-  tablaRows.forEach(row => { row.veredicto = veredicto(row); });
-  tablaRows.sort((a, b) => b.score - a.score);
+  tablaRows.forEach(row => {
+    if (metricsPresentes.length > 0) {
+      const ws = metricsPresentes.map(m => row[m + "_w"]);
+      row.peso_propio = ws.reduce((a, b) => a + b, 0) / ws.length;
+    } else {
+      row.peso_propio = null;
+    }
+  });
+
+  if (metricsPresentes.length > 0) {
+    const zArrays = metricsPresentes.map(metric => {
+      const info = METRICAS.find(m => m.key === metric);
+      return zscore(tablaRows.map(r => r[metric + "_shrunk"]), info.invert);
+    });
+    tablaRows.forEach((row, i) => {
+      const sum = zArrays.reduce((acc, z) => acc + z[i], 0);
+      row.score = sum / zArrays.length;
+    });
+  } else {
+    tablaRows.forEach(row => { row.score = null; });
+  }
+
+  tablaRows.forEach(row => { row.veredicto = veredicto(row, ddPresente); });
+  tablaRows.sort((a, b) => {
+    const sa = a.score === null ? -Infinity : a.score;
+    const sb = b.score === null ? -Infinity : b.score;
+    return sb - sa;
+  });
 
   tablaRows.forEach(row => {
     if (groupCols.length > 1) {
@@ -623,13 +730,12 @@ function anovaKruskal(rows, groupKeyFn, metricFn) {
   return { eta2: round4(eta2), p: round4(p) };
 }
 
-function anovaSummary(rows) {
-  const metrics = [["pf", "PF Neto"], ["dd", "DD Max"], ["mar", "MAR"], ["sharpe", "Sharpe"]];
+function anovaSummary(rows, metricsPresentes) {
   const resultado = {};
-  metrics.forEach(([metric, label]) => {
-    const famRes = anovaKruskal(rows, r => r.familia, r => r[metric]);
-    const tipoRes = anovaKruskal(rows, r => r.tipo, r => r[metric]);
-    resultado[label] = {
+  METRICAS.filter(m => metricsPresentes.includes(m.key)).forEach(m => {
+    const famRes = anovaKruskal(rows, r => r.familia, r => r[m.key]);
+    const tipoRes = anovaKruskal(rows, r => r.tipo, r => r[m.key]);
+    resultado[m.anovaLabel] = {
       familia: {
         eta2_pct: famRes.eta2 !== null ? Math.round(famRes.eta2 * 1000) / 10 : null,
         kruskal_p: famRes.p,
@@ -648,21 +754,25 @@ function anovaSummary(rows) {
 // -----------------------------------------------------------------------
 // run_full_analysis()
 // -----------------------------------------------------------------------
-function runAnalysis(rows) {
+function runAnalysis(rows, resolved) {
+  const metricsPresentes = METRICAS.filter(m => resolved[m.key] !== null).map(m => m.key);
   return {
     n_estrategias: rows.length,
     n_familias: new Set(rows.map(r => r.familia)).size,
     n_tipos: new Set(rows.map(r => r.tipo)).size,
-    por_familia: buildGroupTable(rows, ["familia"]),
-    por_tipo: buildGroupTable(rows, ["tipo"]),
-    familia_x_tipo: buildGroupTable(rows, ["familia", "tipo"]),
-    anova: anovaSummary(rows),
+    metricsPresentes,
+    por_familia: buildGroupTable(rows, ["familia"], metricsPresentes),
+    por_tipo: buildGroupTable(rows, ["tipo"], metricsPresentes),
+    familia_x_tipo: buildGroupTable(rows, ["familia", "tipo"], metricsPresentes),
+    anova: anovaSummary(rows, metricsPresentes),
   };
 }
 
 // -----------------------------------------------------------------------
-// Números de referencia validados en Python/scipy sobre Trading2.xlsx
-// (margen de error aceptado: 0.5 puntos porcentuales en eta²)
+// Números de referencia validados en Python/scipy sobre Trading2.xlsx, SIN
+// filtros y con las métricas originales (margen de error aceptado: 0.5
+// puntos porcentuales en eta²). Solo tiene sentido comparar contra esto
+// cuando no hay filtros activos.
 // -----------------------------------------------------------------------
 const REFERENCIA_ANOVA = {
   "PF Neto": { familia: { eta2_pct: 24.1, kruskal_p: 0.0000 }, tipo: { eta2_pct: 1.3, kruskal_p: 0.7298 } },
@@ -696,6 +806,62 @@ function resolveColumns(headers) {
 }
 
 // -----------------------------------------------------------------------
+// Filtros por umbral sobre las 5 métricas (opcional)
+// -----------------------------------------------------------------------
+function cumpleFiltros(row, filtros) {
+  return filtros.every(f => {
+    const v = row[f.metric];
+    if (Number.isNaN(v)) return false;
+    switch (f.op) {
+      case ">": return v > f.val;
+      case ">=": return v >= f.val;
+      case "<": return v < f.val;
+      case "<=": return v <= f.val;
+      case "=": return v === f.val;
+      default: return true;
+    }
+  });
+}
+
+function leerFiltros() {
+  const filtros = [];
+  document.querySelectorAll("#filterRows .filter-row").forEach(rowEl => {
+    const metric = rowEl.getAttribute("data-metric");
+    const op = rowEl.querySelector(".filter-op").value;
+    const valStr = rowEl.querySelector(".filter-val").value;
+    if (op && valStr !== "") {
+      const val = parseFloat(valStr);
+      if (!Number.isNaN(val)) filtros.push({ metric, op, val });
+    }
+  });
+  return filtros;
+}
+
+function renderFiltroPanel(metricsPresentes) {
+  const filterRowsEl = document.getElementById("filterRows");
+  if (metricsPresentes.length === 0) {
+    filterRowsEl.innerHTML = "<em>No hay métricas numéricas disponibles para filtrar.</em>";
+    return;
+  }
+  let html = "";
+  METRICAS.filter(m => metricsPresentes.includes(m.key)).forEach(m => {
+    html += "<div class='filter-row' data-metric='" + m.key + "'>" +
+      "<span class='filter-label'>" + m.label + "</span>" +
+      "<select class='filter-op'>" +
+        "<option value=''>Sin filtro</option>" +
+        "<option value='>'>&gt;</option>" +
+        "<option value='>='>&gt;=</option>" +
+        "<option value='<'>&lt;</option>" +
+        "<option value='<='>&lt;=</option>" +
+        "<option value='='>=</option>" +
+      "</select>" +
+      "<input type='number' step='any' class='filter-val' placeholder='valor'>" +
+    "</div>";
+  });
+  filterRowsEl.innerHTML = html;
+}
+
+// -----------------------------------------------------------------------
 // Carga de archivo
 // -----------------------------------------------------------------------
 const fileInput = document.getElementById("fileInput");
@@ -705,12 +871,19 @@ const resultsPanel = document.getElementById("resultsPanel");
 const previewPanel = document.getElementById("previewPanel");
 const columnMapBody = document.getElementById("columnMapBody");
 const previewTable = document.getElementById("previewTable");
+const filterPanel = document.getElementById("filterPanel");
 const groupPanel = document.getElementById("groupPanel");
 const summaryRow = document.getElementById("summaryRow");
+const metricasInfo = document.getElementById("metricasInfo");
 const distRow = document.getElementById("distRow");
 const anovaPanel = document.getElementById("anovaPanel");
 const anovaResumen = document.getElementById("anovaResumen");
 const validacionPanel = document.getElementById("validacionPanel");
+
+let preparedRowsGlobal = null;
+let resolvedGlobal = null;
+let ultimoAnalisis = null;
+let ultimasFilasAnalizadas = null;
 
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
@@ -719,6 +892,7 @@ fileInput.addEventListener("change", (e) => {
   errorBox.classList.add("hidden");
   resultsPanel.classList.add("hidden");
   previewPanel.classList.add("hidden");
+  filterPanel.classList.add("hidden");
   groupPanel.classList.add("hidden");
   anovaPanel.classList.add("hidden");
   validacionPanel.classList.add("hidden");
@@ -742,9 +916,14 @@ fileInput.addEventListener("change", (e) => {
 
       fileInfo.textContent = file.name + " — " + rows.length + " filas, " + headers.length + " columnas (hoja: " + firstSheetName + ")";
 
+      const metricasEncontradas = METRICAS.filter(m => resolved[m.key] !== null).length;
+
       if (missing.length > 0) {
         errorBox.textContent = "No encuentro columnas para: " + missing.join(", ") +
           ". Columnas disponibles: " + headers.join(", ");
+        errorBox.classList.remove("hidden");
+      } else if (metricasEncontradas === 0) {
+        errorBox.textContent = "No se encontró ninguna métrica (PF, DD, MAR, Sharpe, WR) — el análisis va a agrupar y clasificar, pero no va a poder calcular Score, Veredicto ni ANOVA.";
         errorBox.classList.remove("hidden");
       }
 
@@ -755,16 +934,14 @@ fileInput.addEventListener("change", (e) => {
       previewPanel.classList.remove("hidden");
 
       if (missing.length === 0) {
-        const prepared = prepareData(rows, resolved);
-        const analisis = runAnalysis(prepared);
-        renderAnalysis(analisis);
-        groupPanel.classList.remove("hidden");
+        preparedRowsGlobal = prepareData(rows, resolved);
+        resolvedGlobal = resolved;
 
-        renderAnova(analisis.anova);
-        anovaPanel.classList.remove("hidden");
+        const metricsPresentes = METRICAS.filter(m => resolved[m.key] !== null).map(m => m.key);
+        renderFiltroPanel(metricsPresentes);
+        filterPanel.classList.remove("hidden");
 
-        renderValidacion(analisis.anova);
-        validacionPanel.classList.remove("hidden");
+        ejecutarAnalisis();
       }
     } catch (err) {
       fileInfo.textContent = "";
@@ -773,6 +950,50 @@ fileInput.addEventListener("change", (e) => {
     }
   };
   reader.readAsArrayBuffer(file);
+});
+
+function ejecutarAnalisis() {
+  if (!preparedRowsGlobal) return;
+
+  const filtros = leerFiltros();
+  const filtrosActivos = filtros.length > 0;
+  const rowsFiltradas = filtrosActivos
+    ? preparedRowsGlobal.filter(r => cumpleFiltros(r, filtros))
+    : preparedRowsGlobal;
+
+  document.getElementById("filtroInfo").textContent = filtrosActivos
+    ? (rowsFiltradas.length + " de " + preparedRowsGlobal.length + " estrategias cumplen los filtros.")
+    : "";
+
+  if (rowsFiltradas.length === 0) {
+    groupPanel.classList.add("hidden");
+    anovaPanel.classList.add("hidden");
+    validacionPanel.classList.add("hidden");
+    errorBox.textContent = "Ningún registro cumple los filtros aplicados.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+  errorBox.classList.add("hidden");
+
+  const analisis = runAnalysis(rowsFiltradas, resolvedGlobal);
+  ultimoAnalisis = analisis;
+  ultimasFilasAnalizadas = rowsFiltradas;
+
+  renderAnalysis(analisis);
+  groupPanel.classList.remove("hidden");
+
+  renderAnova(analisis.anova);
+  anovaPanel.classList.remove("hidden");
+
+  renderValidacion(analisis.anova, filtrosActivos);
+  validacionPanel.classList.remove("hidden");
+}
+
+document.getElementById("btnAplicarFiltros").addEventListener("click", ejecutarAnalisis);
+document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
+  document.querySelectorAll("#filterRows .filter-op").forEach(el => { el.value = ""; });
+  document.querySelectorAll("#filterRows .filter-val").forEach(el => { el.value = ""; });
+  ejecutarAnalisis();
 });
 
 function renderColumnMap(resolved, missing) {
@@ -821,7 +1042,7 @@ function renderPreview(headers, sampleRows) {
 }
 
 // -----------------------------------------------------------------------
-// Render de resultados por grupo (Etapa 3)
+// Render de resultados por grupo
 // -----------------------------------------------------------------------
 function fmt(v, dec) {
   if (v === null || v === undefined || Number.isNaN(v)) return "—";
@@ -834,10 +1055,15 @@ function renderAnalysis(analisis) {
     "<div class='summary-item'><span class='num'>" + analisis.n_familias + "</span><span class='label'>Familias</span></div>" +
     "<div class='summary-item'><span class='num'>" + analisis.n_tipos + "</span><span class='label'>Tipos de símbolo</span></div>";
 
+  const metricLabels = METRICAS.filter(m => analisis.metricsPresentes.includes(m.key)).map(m => m.label);
+  metricasInfo.textContent = metricLabels.length
+    ? "Métricas analizadas: " + metricLabels.join(", ")
+    : "No hay métricas numéricas disponibles — solo agrupamiento y clasificación.";
+
   renderDistribucionVeredictos(analisis.por_familia);
-  renderGroupTable(document.getElementById("tablaFamilia"), analisis.por_familia, ["familia"]);
-  renderGroupTable(document.getElementById("tablaTipo"), analisis.por_tipo, ["tipo"]);
-  renderGroupTable(document.getElementById("tablaFamiliaTipo"), analisis.familia_x_tipo, ["familia", "tipo"]);
+  renderGroupTable(document.getElementById("tablaFamilia"), analisis.por_familia, ["familia"], analisis.metricsPresentes);
+  renderGroupTable(document.getElementById("tablaTipo"), analisis.por_tipo, ["tipo"], analisis.metricsPresentes);
+  renderGroupTable(document.getElementById("tablaFamiliaTipo"), analisis.familia_x_tipo, ["familia", "tipo"], analisis.metricsPresentes);
 }
 
 function renderDistribucionVeredictos(porFamiliaRows) {
@@ -850,9 +1076,15 @@ function renderDistribucionVeredictos(porFamiliaRows) {
   distRow.innerHTML = html || "<span class='dist-chip'>Sin grupos con N ≥ " + MIN_N + " por familia</span>";
 }
 
-function renderGroupTable(tableEl, tablaRows, groupCols) {
+function renderGroupTable(tableEl, tablaRows, groupCols, metricsPresentes) {
+  const ddPresente = metricsPresentes.includes("dd");
+  const metricCols = METRICAS.filter(m => metricsPresentes.includes(m.key));
+
   const headerLabels = groupCols.map(c => c === "familia" ? "Familia" : "Tipo")
-    .concat(["N", "PF", "DD Max", "MAR", "Sharpe", "Cobertura DD", "CV Ponderado", "Peso Propio", "Score", "Veredicto"]);
+    .concat(["N"])
+    .concat(metricCols.map(m => m.label))
+    .concat(ddPresente ? ["Cobertura DD"] : [])
+    .concat(["CV Ponderado", "Peso Propio", "Score", "Veredicto"]);
 
   let html = "<thead><tr>";
   headerLabels.forEach(h => { html += "<th>" + h + "</th>"; });
@@ -866,11 +1098,8 @@ function renderGroupTable(tableEl, tablaRows, groupCols) {
     html += "<tr>";
     groupCols.forEach(c => { html += "<td>" + row[c] + "</td>"; });
     html += "<td>" + row.n + "</td>";
-    html += "<td>" + fmt(row.pf, 2) + "</td>";
-    html += "<td>" + fmt(row.dd, 2) + "</td>";
-    html += "<td>" + fmt(row.mar, 2) + "</td>";
-    html += "<td>" + fmt(row.sharpe, 2) + "</td>";
-    html += "<td>" + row.dd_cobertura + "%</td>";
+    metricCols.forEach(m => { html += "<td>" + fmt(row[m.key], 2) + "</td>"; });
+    if (ddPresente) html += "<td>" + (row.dd_cobertura !== null ? row.dd_cobertura + "%" : "—") + "</td>";
     html += "<td>" + fmt(row.cv_pond, 3) + "</td>";
     html += "<td>" + fmt(row.peso_propio, 3) + "</td>";
     html += "<td>" + fmt(row.score, 3) + "</td>";
@@ -883,10 +1112,13 @@ function renderGroupTable(tableEl, tablaRows, groupCols) {
 }
 
 // -----------------------------------------------------------------------
-// Render de ANOVA / Kruskal-Wallis (Etapa 4)
+// Render de ANOVA / Kruskal-Wallis
 // -----------------------------------------------------------------------
 function generarResumenAnova(anova) {
   const bullets = [];
+  if (Object.keys(anova).length === 0) {
+    return ["No hay métricas numéricas disponibles para calcular ANOVA/Kruskal-Wallis."];
+  }
   for (const [label, r] of Object.entries(anova)) {
     const fam = r.familia, tipo = r.tipo;
     if (fam.eta2_pct === null && tipo.eta2_pct === null) {
@@ -930,6 +1162,9 @@ function renderAnova(anova) {
       html += "</tr>";
     }
   }
+  if (Object.keys(anova).length === 0) {
+    html += "<tr><td colspan='5'><em>Sin métricas para calcular</em></td></tr>";
+  }
   html += "</tbody>";
   tableEl.innerHTML = html;
 }
@@ -937,11 +1172,27 @@ function renderAnova(anova) {
 // -----------------------------------------------------------------------
 // Render de la validación obligatoria: comparación explícita mío vs.
 // referencia, con margen de error de 0.5 puntos porcentuales en eta².
+// Solo es válida sobre el dataset completo de referencia SIN filtros — si
+// hay filtros activos, o el archivo no trae PF Neto/DD Max, se muestra un
+// aviso neutral en vez de comparar contra números que no corresponden.
 // -----------------------------------------------------------------------
-function renderValidacion(anova) {
+function renderValidacion(anova, filtrosActivos) {
   const tableEl = document.getElementById("tablaValidacion");
   const resumenEl = document.getElementById("validacionResumen");
   const MARGEN = 0.5;
+
+  if (filtrosActivos) {
+    tableEl.innerHTML = "";
+    resumenEl.innerHTML = "<span class='val-na'>Validación no aplica: hay filtros activos. La comparación contra la referencia solo es válida sobre el dataset completo (Trading2.xlsx, 490 estrategias, sin filtros).</span>";
+    return;
+  }
+
+  const metricasDisponibles = Object.keys(REFERENCIA_ANOVA).filter(label => anova[label]);
+  if (metricasDisponibles.length === 0) {
+    tableEl.innerHTML = "";
+    resumenEl.innerHTML = "<span class='val-na'>Validación no aplica: el archivo no trae PF Neto ni DD Max, las métricas usadas como referencia.</span>";
+    return;
+  }
 
   let html = "<thead><tr><th>Métrica</th><th>Factor</th>" +
     "<th>Eta² calculado</th><th>Eta² referencia</th><th>Diferencia (pp)</th>" +
@@ -950,7 +1201,8 @@ function renderValidacion(anova) {
   let todosOk = true;
   let filasComparadas = 0;
 
-  for (const [label, ref] of Object.entries(REFERENCIA_ANOVA)) {
+  for (const label of metricasDisponibles) {
+    const ref = REFERENCIA_ANOVA[label];
     const r = anova[label];
     for (const factor of ["familia", "tipo"]) {
       const calc = r[factor];
@@ -979,6 +1231,114 @@ function renderValidacion(anova) {
     ? "<span class='val-match'>✓ Las " + filasComparadas + " comparaciones calzan dentro del margen de " + MARGEN + " puntos porcentuales.</span>"
     : "<span class='val-mismatch'>✗ Hay diferencias fuera del margen de " + MARGEN + " puntos porcentuales — revisar implementación antes de seguir.</span>";
 }
+
+// -----------------------------------------------------------------------
+// Descargar template de columnas
+// -----------------------------------------------------------------------
+function descargarTemplate() {
+  const headers = ["Familia", "Símbolo", "Tipo de Símbolo", "PF Neto", "DD Max", "MAR", "Sharpe", "WR", "Status"];
+  const ejemplo = ["macd", "EURUSD", "", 1.85, 12.4, 1.9, 1.1, 62.5, "Live"];
+  const nota = [
+    "texto", "texto", "opcional (se clasifica automático por símbolo si se deja vacío)",
+    "opcional", "opcional", "opcional", "opcional", "opcional, en %", "opcional",
+  ];
+  const aoa = [headers, ejemplo, nota];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Template");
+  XLSX.writeFile(wb, "template_estrategias.xlsx");
+}
+document.getElementById("btnTemplate").addEventListener("click", descargarTemplate);
+
+// -----------------------------------------------------------------------
+// Descargar Excel de resultados
+// -----------------------------------------------------------------------
+function tablaRowsToAOA(tablaRows, groupCols, metricsPresentes) {
+  const ddPresente = metricsPresentes.includes("dd");
+  const metricCols = METRICAS.filter(m => metricsPresentes.includes(m.key));
+  const headers = groupCols.map(c => c === "familia" ? "Familia" : "Tipo")
+    .concat(["N"])
+    .concat(metricCols.map(m => m.label))
+    .concat(ddPresente ? ["Cobertura DD %"] : [])
+    .concat(["CV Ponderado", "Peso Propio", "Score", "Veredicto"]);
+
+  const rows = tablaRows.map(row => {
+    const arr = groupCols.map(c => row[c]).concat([row.n]);
+    metricCols.forEach(m => {
+      const v = row[m.key];
+      arr.push(v !== undefined && !Number.isNaN(v) ? Number(v.toFixed(3)) : "");
+    });
+    if (ddPresente) arr.push(row.dd_cobertura !== null ? row.dd_cobertura : "");
+    arr.push(row.cv_pond !== null ? Number(row.cv_pond.toFixed(3)) : "");
+    arr.push(row.peso_propio !== null ? Number(row.peso_propio.toFixed(3)) : "");
+    arr.push(row.score !== null ? Number(row.score.toFixed(3)) : "");
+    arr.push(row.veredicto.label);
+    return arr;
+  });
+
+  return [headers, ...rows];
+}
+
+function anovaToAOA(anova) {
+  const headers = ["Métrica", "Factor", "Eta2 %", "Kruskal p", "Significativo"];
+  const rows = [];
+  for (const [label, r] of Object.entries(anova)) {
+    for (const factor of ["familia", "tipo"]) {
+      const d = r[factor];
+      rows.push([
+        label, factor === "familia" ? "Familia" : "Tipo",
+        d.eta2_pct !== null ? d.eta2_pct : "",
+        d.kruskal_p !== null ? d.kruskal_p : "",
+        d.kruskal_p === null ? "" : (d.significativo ? "Sí" : "No"),
+      ]);
+    }
+  }
+  return [headers, ...rows];
+}
+
+// -----------------------------------------------------------------------
+// Hoja "Estrategias": las filas tal como se subieron (todas sus columnas
+// originales), con una columna nueva al principio con el veredicto final.
+// El veredicto final es el de la combinación Familia × Tipo a la que
+// pertenece cada estrategia (el agrupamiento más específico del análisis).
+// -----------------------------------------------------------------------
+function estrategiasToAOA(rowsAnalizadas, familiaXTipoRows) {
+  const veredictoPorCombo = new Map();
+  familiaXTipoRows.forEach(r => veredictoPorCombo.set(r.familia + " | " + r.tipo, r.veredicto.label));
+
+  const headersOriginales = rowsAnalizadas.length ? Object.keys(rowsAnalizadas[0]._raw) : [];
+  const headers = ["Veredicto Final (por familia × tipo)"].concat(headersOriginales);
+
+  const rows = rowsAnalizadas.map(r => {
+    const veredicto = veredictoPorCombo.get(r.familia + " | " + r.tipo) || "Sin veredicto (combinación con N<3)";
+    const rawValues = headersOriginales.map(h => r._raw[h]);
+    return [veredicto].concat(rawValues);
+  });
+
+  return [headers, ...rows];
+}
+
+function descargarResultado() {
+  if (!ultimoAnalisis) return;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(estrategiasToAOA(ultimasFilasAnalizadas, ultimoAnalisis.familia_x_tipo)), "Estrategias"
+  );
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.por_familia, ["familia"], ultimoAnalisis.metricsPresentes)), "Por Familia"
+  );
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.por_tipo, ["tipo"], ultimoAnalisis.metricsPresentes)), "Por Tipo"
+  );
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(tablaRowsToAOA(ultimoAnalisis.familia_x_tipo, ["familia", "tipo"], ultimoAnalisis.metricsPresentes)), "Familia x Tipo"
+  );
+  XLSX.utils.book_append_sheet(
+    wb, XLSX.utils.aoa_to_sheet(anovaToAOA(ultimoAnalisis.anova)), "ANOVA"
+  );
+  XLSX.writeFile(wb, "resultado_analisis.xlsx");
+}
+document.getElementById("btnDescargarResultado").addEventListener("click", descargarResultado);
 </script>
 
 </body>
