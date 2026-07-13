@@ -331,121 +331,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Condiciones mixtas para el bot hoy: VIX en zona normal favorece breakouts en XAUUSD con COT institucional alcista, pero el Fear & Greed cripto en Extreme Fear (23) y el DXY elevado (120.69) presionan a BTCUSD y XAGUSD respectivamente.",
+        "resumen": "Ambiente de baja volatilidad favorable para el bot, pero el dato de CPI del martes y la doble testificacion de Warsh crean un riesgo de expansion brusca que exige gestion activa de las ordenes limitadas en XAUUSD y BTCUSD.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Datos empleo Canada liberados hoy 08:30 ET",
-            "desc": "El informe de Employment Change y Unemployment Rate de Canada se publico hoy a las 08:30 ET. Aunque afecta directamente al CAD, puede generar volatilidad cruzada en XAUUSD y XAGUSD por correlacion con el USD. Si el bot ya opero durante o justo antes de la publicacion, revisa las ordenes limite abiertas en esos pares y considera pausar nuevas entradas durante los proximos 15-20 minutos hasta que el spread y la liquidez se normalicen en MT5.",
-            "horizonte": "now"
+            "title": "CPI USD manana: pausar bot antes de las 08:30 ET",
+            "desc": "El martes 14-Jul a las 08:30 ET se publican CPI m/m (forecast -0.1% vs prev 0.5%) y Core CPI y/y (2.8% vs 2.9%). La dispersion frente a consenso puede generar spreads y slippage extremos en XAUUSD y XAGUSD. Pausa el bot al menos 30 minutos antes (08:00 ET) y reanuda solo cuando el spread vuelva a niveles normales, generalmente 15-20 minutos despues de la publicacion. El circuit breaker no sustituye esta accion manual porque las ordenes limitadas ya colocadas pueden ejecutarse en la vela del impacto.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "DXY en 120.69: presion estructural sobre metales",
-            "desc": "El Dollar Index cotiza en niveles historicamente elevados (120.69 al 02-Jul). Un USD tan fuerte actua como viento en contra estructural para XAUUSD y XAGUSD, reduciendo el rendimiento esperado de los breakouts alcistas del canal Fibonacci. Ajusta tu sesgo: prioriza setups de breakout bajista sobre los niveles de Fibonacci en estos dos instrumentos, o reduce el tamano de lote en 25-30% hasta que el DXY muestre debilidad sostenida.",
+            "title": "Warsh testifica dos dias seguidos: riesgo verbal en XAUUSD",
+            "desc": "El presidente de la Fed Warsh testifica el martes 14-Jul a las 10:00 ET y el miercoles 15-Jul a las 10:00 ET. Sus declaraciones pueden mover el oro 10-20 USD en cuestion de segundos. Mantiene el bot pausado o reduce el tamano de lote al minimo permitido durante los 15 minutos previos a cada sesion. La posicion COT neta larga en XAU es muy alta (183 165 contratos), lo que amplifica la reaccion bajista si Warsh adopta un tono hawkish inesperado.",
             "horizonte": "48h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Extreme Fear cripto: BTCUSD en modo defensivo",
-            "desc": "El Fear & Greed cripto marca 23 (Extreme Fear), subiendo desde 22 ayer, lo que indica capitulacion pero sin senales de giro confirmadas. En este contexto los breakouts alcistas en BTCUSD sobre el canal M3 tienen alta tasa de fallo por falta de momentum comprador. Activa el nivel mas conservador de tu circuit breaker para BTCUSD: reduce exposicion maxima por racha y baja el DD diario permitido hasta que el indice supere 35-40. No elimines el instrumento, pero opera con tamano minimo.",
-            "horizonte": "24h"
+            "title": "BTCUSD: miedo extremo, operar con lote reducido",
+            "desc": "El indice Crypto Fear and Greed marca 28 (Miedo), subiendo solo 2 puntos desde el dia anterior. En regimenes de miedo sostenido los breakouts de canal tienden a ser falsos o a revertir rapidamente, lo que castiga la estructura TP1-TP2-TP3 del bot. No hay datos de funding rate ni open interest disponibles para confirmar sesgo. Recomendacion: reduce el lote de BTCUSD al 50% del tamano habitual hasta que el indice supere 40 (Neutral) o aparezca una vela M3 de volumen claramente expansivo.",
+            "horizonte": "now"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "COT XAU: institucionales muy largos en oro",
-            "desc": "El reporte CFTC al 30-Jun muestra posicionamiento neto institucional en XAU de +182,210 contratos (long 220K vs short 38K), sesgo fuertemente alcista. Esto valida los breakouts al alza del canal Fibonacci en XAUUSD como alineados con el flujo institucional. Aprovecha los setups de ruptura por encima del canal en M3: los tres ordenes limite (TP1/TP2/TP3) tienen mayor probabilidad de completarse en la direccion larga. Mantener tamano de lote estandar o ligeramente superior si el circuit breaker lo permite.",
+            "title": "COT oro muy alcista: breakouts largos con mayor probabilidad",
+            "desc": "El posicionamiento especulativo neto en XAU llega a 183 165 contratos largos (224 379 largos vs 41 214 cortos), senal de conviction institucional alcista. Con VIX en 15.03 y en descenso, el entorno de baja volatilidad de renta variable suele correlacionar con flujos hacia activos refugio reales. Los breakouts alcistas del canal Fibonacci en XAUUSD tienen respaldo estructural esta semana. Deja los tres ordenes limitados activos en la direccion larga y no modifiques los TP; el riesgo principal es el dato de CPI (cubierto en M5-01).",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "VIX en 15.78: volatilidad ideal para el canal M3",
-            "desc": "El VIX bajo a 15.78 desde 15.84, manteniendose en regimen normal. Para una estrategia de breakout Fibonacci en M3 este nivel es optimo: suficiente volatilidad intradiaria para activar los breakouts y alcanzar TP1/TP2, sin picos extremos que generen whipsaws o salten el stop antes de tiempo. No se requiere ajuste. Deja correr la logica de breakeven automatico tras TP1 con confianza en este entorno.",
-            "horizonte": "24h"
+            "title": "VIX en 15: regimen normal favorece breakouts limpios",
+            "desc": "VIX bajo de 15.84 a 15.03, confirmando regimen de volatilidad normal-baja. Este contexto reduce las falsas roturas de canal en instrumentos correlacionados con renta variable como BTCUSD y XAGUSD, y mejora la calidad de la senales de breakout en M3. Aprovecha las proximas sesiones pre-CPI (hoy tarde y noche) para dejar correr el bot con parametros estandar en XAUUSD y XAGUSD, ya que el spread suele ser estable fuera del horario de alto impacto.",
+            "horizonte": "now"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos plana: contexto macro estable",
-            "desc": "El spread T10Y-T2Y es de 0.38 puntos en regimen flat (4.56% vs 4.21%). Una curva plana refleja incertidumbre sobre crecimiento sin senales de recesion inminente ni euforia. Para el bot esto significa ausencia de catalizadores macro de largo plazo que fuercen tendencias sostenidas en XAUUSD o XAGUSD. Espera rangos intradiarios mas definidos y aprecia que los tres niveles de TP del canal Fibonacci son apropiados para este entorno. Las minutas del FOMC del 08-Jul ya fueron publicadas esta semana; monitorea si generaron alguna revision de expectativas de tasas que pueda mover el DXY en los proximos dias.",
+            "title": "DXY elevado en 120.69 y curva plana: contexto para metales",
+            "desc": "El DXY se encuentra en 120.69 (dato del 02-Jul), nivel históricamente alto que presiona los precios nominales de XAUUSD y XAGUSD. La curva de rendimientos es plana (spread 10Y-2Y de 0.35 puntos), lo que indica ausencia de senales recesivas fuertes pero tambien poco incentivo para rotacion agresiva hacia activos de riesgo. El bot opera en M3 por lo que el impacto del DXY es de fondo, no intradiario, pero explica por que los rebotes en soportes Fibonacci del canal pueden ser mas lentos. Monitorea si el CPI del martes debilita el dolar: una caida del DXY seria catalizador para breakouts alcistas en metales.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -454,16 +494,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -480,11 +520,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -494,23 +534,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       },
       "versions": [
@@ -928,121 +968,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno mixto para Canal Fibo test 4-may: VIX en régimen normal favorece la estrategia de reversión a la media, pero el cripto en Miedo Extremo y el DXY en niveles históricamente altos (120.69) exigen gestión activa del riesgo intradía.",
+        "resumen": "Sesión del 13-jul marcada por VIX bajo y favorable para reversión a la media, pero con riesgo alto inminente por CPI y testimonio de la Fed mañana; el bot puede operar con normalidad hoy pero debe pausarse antes de las 08:30 ET del martes.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Datos laborales CAD publicados hoy a las 8:30 ET",
-            "desc": "Employment Change y Unemployment Rate de Canadá se publicaron a las 12:30 UTC de hoy. Si el bot opera pares con CAD (directo o correlacionado), verificar que el circuit breaker diario haya absorbido el spike de volatilidad post-publicación antes de permitir nuevas entradas. El pronóstico de Employment Change cayó drásticamente de 87.8K a 11.2K, lo que implica alta incertidumbre y spreads elevados en los minutos siguientes. Revisar logs de ejecución y confirmar que el filtro de spread bloqueó entradas durante la ventana 12:25-12:45 UTC.",
-            "horizonte": "now"
+            "title": "Pausa obligatoria: CPI y Fed Warsh mañana",
+            "desc": "El martes 14-jul a las 08:30 ET se publican CPI m/m, CPI y/y, Core CPI m/m y Core CPI y/y USD. El forecast anticipa CPI m/m en -0.1% vs previo 0.5%, un salto muy inusual que puede generar spreads extremos y movimientos direccionales bruscos incompatibles con la estrategia de reversión a la media. Además, el Presidente de la Fed Warsh testifica a las 10:00 ET. Acción: programa el circuit breaker manual o pausa el bot desde las 08:15 ET del martes 14-jul hasta que los spreads se normalicen (aprox. 09:30-10:00 ET). Esto aplica especialmente a US30, NAS100 y pares USD.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Cripto en Miedo Extremo: riesgo de gaps en BTC/ETH",
-            "desc": "El índice de Fear & Greed cripto marcó 23 (Miedo Extremo), subiendo ligeramente desde 22. En este régimen, los activos cripto del portafolio (los 14 instrumentos incluyen cripto) muestran comportamiento de capitulación con wick extensions que superan los niveles de Fibonacci proyectados por el canal AlgoAlpha, aumentando el riesgo de falsos retornos a la media. Acción: reducir el tamaño de posición en instrumentos cripto a un 50-60% del lote estándar hasta que el índice supere 35. Mantener el circuit breaker en máxima sensibilidad para sesión de hoy.",
-            "horizonte": "24h"
+            "title": "DXY en 120.69: USD muy fuerte, riesgo en pares",
+            "desc": "El DXY cotiza en 120.69, nivel históricamente elevado. Un dólar tan fuerte genera tendencias persistentes en pares como EURUSD, GBPUSD y USDJPY que pueden romper los canales de Fibonacci y resistir la reversión a la media. El posicionamiento COT confirma sesgo bajista en EUR (neto -36,629), GBP (neto -20,847) y JPY (neto -125,772 contratos, extremadamente corto). Con tendencia institucional tan unilateral, las señales de reversión al alza en USD pueden ser trampas. Acción: reduce el tamaño de posición a la mitad en cualquier par donde el bot quiera comprar EUR, GBP o JPY contra USD, y activa el filtro de correlación por clase de activo para estos tres instrumentos durante la semana.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "DXY en 120.69: USD históricamente fuerte, atención en índices",
-            "desc": "El DXY alcanzó 120.69, nivel inusualmente alto que presiona activos denominados en USD como US30 y NAS100. Un dólar tan fuerte puede generar divergencias entre el precio en USD y la dinámica real del índice subyacente, distorsionando la señal de reversión del canal Fibonacci. El drawdown máximo del backtest fue precisamente en US30 (5.3%). Acción: monitorizar US30 con especial atención hoy. Si el precio rompe el canal superior sin señal Smart Money confirmada, omitir la entrada y esperar reconfirmación en la siguiente vela M3.",
+            "title": "Crypto Fear & Greed en 28: cripto en modo miedo",
+            "desc": "El índice de Fear & Greed cripto marca 28 (Miedo), subiendo desde 26. En régimen de miedo predominan ventas de pánico y movimientos bruscos unidireccionales en BTC, ETH y altcoins que pueden invalidar señales de reversión a la media en M3. El dato de funding rate de Binance no está disponible hoy, lo que impide confirmar si hay capitulación real de shorts. Acción: para los símbolos cripto del bot, eleva el umbral de confirmación de señal Smart Money y considera reducir el tamaño de lote en 30-40% hasta que el índice supere 40 (neutral). Monitorea el funding rate manualmente en Binance antes de cada sesión.",
             "horizonte": "48h"
           },
           {
             "id": "M5-04",
-            "tipo": "oportunidad",
-            "title": "VIX en 15.78 favorece reversión a la media",
-            "desc": "El VIX se ubica en 15.78 con régimen clasificado como Normal y tendencia ligeramente bajista (desde 15.84). Este nivel es óptimo para estrategias de mean reversion en M3: la volatilidad es suficiente para generar oscilaciones explotables dentro del canal Fibonacci, pero no tan alta como para producir ruptures de tendencia sostenidas. El bot puede operar con confianza en los 14 instrumentos de índices y metales. Mantener parámetros estándar del backtest para SPX, NAS100 y GER40 durante la sesión europea y americana.",
-            "horizonte": "24h"
+            "tipo": "alerta",
+            "title": "PPI y BOC Rate Decision: volatilidad el miércoles",
+            "desc": "El miércoles 15-jul a las 08:30 ET se publican PPI m/m (forecast 0.0% vs previo 1.1%, otro dato con caída brusca) y Core PPI m/m. A las 09:45 ET el Banco de Canadá publica su decisión de tasa (mantenimiento esperado en 2.25%) y reporte de política monetaria. El segundo testimonio de Warsh sigue a las 10:00 ET. Acción: aplica la misma pausa del martes también el miércoles desde las 08:15 ET hasta las 10:30 ET aproximadamente. Revisa si el bot opera algún par CAD y si es así activa el filtro de spread desde las 09:30 ET.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "COT XAU alcista: oro con sesgo institucional largo",
-            "desc": "El posicionamiento CFTC no comercial en oro muestra net long de 182,210 contratos (longs 220,217 vs shorts 38,007), sesgo institucional marcadamente alcista. Si el bot opera XAUUSD, el flujo institucional respalda las entradas largas en retornos a la media cuando el precio toca el canal inferior de Fibonacci. Priorizar señales de compra sobre ventas en oro durante esta semana. La corrección a la media desde niveles bajos del canal tiene soporte estructural de posicionamiento especulativo.",
-            "horizonte": "semana"
+            "title": "VIX en 15.03: régimen ideal para reversión",
+            "desc": "El VIX cayó de 15.84 a 15.03, firmemente en régimen normal. Este nivel es históricamente óptimo para estrategias de reversión a la media en índices: la volatilidad es suficiente para generar oscilaciones dentro del canal Fibonacci pero sin rupturas sostenidas. Los resultados del backtest (WR 65.6%, PF 4.43) se alcanzaron en condiciones similares. Acción: durante la sesión de hoy domingo-lunes (fuera de ventanas de riesgo) el bot puede operar con parámetros estándar en US30 y NAS100. Aprovecha la baja volatilidad para dejar el bot sin restricciones adicionales en estos instrumentos hasta las 08:00 ET del martes.",
+            "horizonte": "now"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
             "title": "Curva de rendimientos plana: contexto macro estable",
-            "desc": "El spread T10Y-T2Y se ubica en 0.38 con régimen plano, T10Y en 4.56% y T2Y en 4.21%. Una curva plana indica ausencia de señales de recesión inminente ni euforia de crecimiento, lo que favorece condiciones de baja tendencia estructural y mayor oscilación en rangos, ideal para el canal Fibonacci M3. El COT muestra sesgo bajista en EUR (net -50,281) y JPY (net -165,445), consistente con el DXY elevado. Informativo: no se requiere ajuste inmediato, pero tener en cuenta que los pares EUR y JPY tienen viento institucional en contra para entradas largas.",
+            "desc": "El spread T10Y-T2Y es de +0.35 puntos (curva plana, no invertida). La T10Y en 4.54% y T2Y en 4.16% indican que el mercado no está descontando recesión inminente, lo que apoya condiciones de reversión a la media en índices de renta variable. El oro (XAU) mantiene posicionamiento COT muy alcista (neto +183,165 contratos), lo que sugiere continuidad de la tendencia en metales; el bot debe considerar que las reversiones bajistas en XAU pueden ser de menor duración y requieren stops más ajustados. Sin datos de ECB disponibles hoy, el diferencial Fed-ECB no se puede calcular con precisión; monitorea cualquier publicación del ECB esta semana para ajustar exposición en EURUSD.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -1051,16 +1131,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -1077,11 +1157,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -1091,23 +1171,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       }
     },
@@ -1537,121 +1617,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno de baja volatilidad (VIX 15.78) aparentemente favorable para reversión a la media, pero el DXY en 120.69 ejerce presión sobre metales preciosos y los índices europeos enfrentan incertidumbre con posicionamiento especulativo adverso en EUR.",
+        "resumen": "Entorno de volatilidad moderada con VIX en zona normal, pero la publicación de CPI y Core CPI de EE.UU. mañana junto al testimonio del presidente de la Fed Warsh exigen pausar el bot en instrumentos sensibles al USD; el posicionamiento COT alcista en XAU y el resultado levemente positivo de XAGUSD en backtest son los únicos puntos favorables en un contexto de estrategia con resultados mayoritariamente negativos.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 120.69: presión severa sobre XAUUSD y XAGUSD",
-            "desc": "El índice del dólar cotiza en niveles extremadamente elevados (120.69 al 2 de julio). Un USD tan fuerte suprime los precios nominales de XAUUSD y XAGUSD y genera sesgos direccionales bajistas sostenidos que invalidan los supuestos de reversión a la media del bot. Verifica que el filtro H4 EMA(200) esté rechazando entradas largas en ambos metales. Si el bot opera en modo automático, considera reducir el tamaño de lote un 30-50% en XAUUSD hasta que el DXY retroceda por debajo de 119.",
-            "horizonte": "now"
+            "title": "CPI EE.UU. mañana: pausar bot en metales",
+            "desc": "El 14 de julio a las 08:30 ET se publican CPI m/m (estimado -0.1% vs previo 0.5%) y Core CPI y/y (estimado 2.8% vs previo 2.9%). Una sorpresa inflacionaria genera spikes de volatilidad extrema en XAUUSD y XAGUSD que invalidan las señales de reversión a la media en M5. Acción: pausar el bot en XAUUSD y XAGUSD desde las 08:00 ET del 14 de julio hasta al menos 60 minutos después de la publicación (09:30 ET). Reanuda solo si el spread y la volatilidad ATR M5 vuelven a rangos históricos normales.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "NETH25, SE30 e IT40: sin dato Fear and Greed de renta variable",
-            "desc": "El índice CNN Equities Fear and Greed no está disponible hoy. El bot opera tres índices europeos (NETH25, SE30, IT40) y sin este filtro de sentimiento no puedes confirmar si el mercado está en modo capitulación o euforia, dos extremos críticos para una estrategia de reversión a la media. Compensa esta ausencia revisando manualmente el ATR diario de cada índice antes de la sesión europea (08:00 UTC). Si el ATR supera 1.5 veces su media de 20 días, reduce exposición en ese instrumento.",
-            "horizonte": "now"
+            "title": "Testimonio Warsh: riesgo en indices europeos",
+            "desc": "El presidente de la Fed Warsh testifica el 14 de julio a las 10:00 ET y de nuevo el 15 de julio a las 10:00 ET. Comentarios sobre política monetaria pueden generar movimientos direccionales bruscos en NETH25, SE30 e IT40 que rompen los supuestos de reversión a la media de la estrategia. Acción: mantener el bot pausado en los tres indices europeos durante ambas ventanas de testimonio (09:45-11:30 ET en cada jornada) o reducir el tamaño de lote al mínimo permitido si no es posible pausar manualmente.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Datos de empleo canadiense publicados hoy a las 12:30 UTC",
-            "desc": "El Employment Change (CAD) y la tasa de desempleo se publicaron hoy a las 12:30 UTC. El pronóstico de empleo cae drásticamente de 87.8K previo a 11.2K esperado. Aunque el bot no opera pares CAD directamente, un dato muy débil puede generar movimientos risk-off que afecten índices europeos (IT40, NETH25, SE30) y metales preciosos en M5. Si el dato salió peor de lo esperado, pausa el bot 30 minutos adicionales desde la publicación para evitar velas de alto spread y slippage elevado que los backtests no contemplan.",
+            "title": "DXY en 120.69: USD fuerte presiona metales",
+            "desc": "El índice DXY cotiza en 120.69, nivel históricamente elevado, con curva de rendimientos plana (spread 10Y-2Y en 0.38 puntos) y yields del T10Y en 4.54%. Un dólar fuerte ejerce presión bajista estructural sobre XAUUSD y XAGUSD, lo que puede generar tendencias bajistas en H4 que el filtro EMA(200) en H4 captará correctamente, pero aumenta la frecuencia de setups fallidos en M5 al operar en contra del flujo institucional. Acción: verificar que el filtro H4 EMA(200) esté activo y sea respetado estrictamente; no operar long en metales si el precio está por debajo de la EMA(200) H4.",
             "horizonte": "now"
           },
           {
             "id": "M5-04",
             "tipo": "alerta",
-            "title": "COT oro muy alcista: riesgo de reversión brusca en XAUUSD",
-            "desc": "El posicionamiento especulativo neto en XAU es +182,210 contratos (longs 220,217 vs shorts 38,007), nivel extremadamente congestionado al alza según datos CFTC al 30 de junio. Cuando el posicionamiento especulativo es tan unilateral, el riesgo de un squeeze bajista es alto. Para el bot de reversión, esto significa que las señales largas en XAUUSD tienen mayor probabilidad de fallar ante cualquier catalizador de liquidación de manos débiles. Prioriza señales cortas sobre largas en XAUUSD esta semana y ajusta el stop-loss de entradas largas a un máximo del 50% del rango habitual.",
-            "horizonte": "semana"
+            "title": "Resultados negativos backtest: capital en riesgo",
+            "desc": "4 de 5 instrumentos del backtest muestran retorno total negativo con win rates entre 25-48% y drawdowns superiores al objetivo del 10%, y los resultados fueron calculados sin spread, comisión ni slippage. En condiciones reales de ICMarkets MT5 la performance esperada es significativamente peor. Acción: si el bot está en ejecución live, limitar el capital expuesto al mínimo operativo posible, establecer un kill-switch manual de drawdown diario del 3% y revisar si XAGUSD (único instrumento con resultado levemente positivo en backtest) justifica operar en solitario mientras se optimiza la estrategia.",
+            "horizonte": "now"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "XAGUSD: único instrumento con backtest positivo y VIX favorable",
-            "desc": "XAGUSD es el único de los 5 instrumentos con retorno positivo y drawdown dentro del objetivo en el backtest. El VIX en 15.78 (régimen normal, ligeramente bajando desde 15.84) favorece compresión de volatilidad, condición ideal para estrategias de reversión a la media en M5. Además, el COT de XAU es alcista, lo que beneficia indirectamente a la plata. Considera asignar a XAGUSD entre el 40-50% del capital total del bot esta semana, reduciendo peso relativo en los cuatro instrumentos con backtest negativo.",
+            "title": "COT alcista en XAU: sesgo long estructural",
+            "desc": "El posicionamiento especulativo CFTC en XAU muestra neto de +183.165 contratos con bias claramente alcista (longs 224.379 vs shorts 41.214 al 7 de julio). Esto da soporte institucional a setups long en XAUUSD y XAGUSD cuando el precio regresa a la banda inferior de Bollinger con RSI sobrevendido y el precio está por encima de la EMA(200) en H4. Aprovechar estos setups con mayor convicción una vez que pasen los eventos de CPI y Warsh. La ventana favorable se abre el 14 de julio después de las 09:30 ET si los datos no generan shock alcista en el dólar.",
             "horizonte": "48h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos plana: contexto macro sin sesgo claro",
-            "desc": "El spread T10Y-T2Y es de 0.38 puntos (régimen plano), con T10Y en 4.56% y T2Y en 4.21%. Una curva plana indica que el mercado no anticipa ni recesión inminente ni aceleración inflacionaria fuerte, lo que reduce la probabilidad de movimientos macro violentos esta semana. Esto es contexto neutral para el bot: ni favorece ni penaliza la estrategia, pero confirma que no hay señal de inversión de curva (recesión) que justifique suspender operaciones en índices europeos por riesgo sistémico.",
+            "title": "VIX en 15.03: volatilidad dentro de rango normal",
+            "desc": "El VIX bajó de 15.84 a 15.03, confirmando un régimen de volatilidad normal. En condiciones normales de VIX la estrategia RSI+BB en M5 debería generar setups de reversión con mayor frecuencia y bandas de Bollinger más estables. Sin embargo, esto no compensa las deficiencias estructurales del backtest. Contexto adicional: el índice de miedo cripto en 28 (Fear) no es relevante para esta estrategia al no operar criptomonedas. El entorno de VIX puede deteriorarse rápidamente si los datos de CPI del 14 de julio sorprenden al alza.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -1660,16 +1780,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -1686,11 +1806,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -1700,23 +1820,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       }
     },
@@ -2007,121 +2127,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Volatilidad contenida con VIX en zona normal favorece la estrategia Liquidity Candle, pero el DXY en máximos históricos, posicionamiento bajista en EUR y JPY, y el miedo extremo en cripto exigen gestión cuidadosa por instrumento.",
+        "resumen": "Jornada de alto riesgo con CPI y testimonio Fed mañana; VIX normalizado favorece la estrategia en condiciones controladas, pero la volatilidad puntual por eventos macro exige pausas selectivas.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Datos CAD publicados hoy: revisar pares CAD",
-            "desc": "Employment Change y Unemployment Rate de Canadá se publicaron hoy a las 08:30 ET (13:30 UTC). Si el bot opera CAD/USD, USD/CAD u otros pares con CAD, verifica si hubo expansión de rango anómala en las velas M15 post-evento. Las órdenes límite en extensiones Fibonacci colocadas sobre velas de liquidez generadas por el dato pueden tener desplazamiento adverso o gaps de ejecución. Revisa el historial de órdenes abiertas en esa ventana y cierra manualmente cualquier posición que supere el expiry de 90 minutos sin fill confirmado.",
-            "horizonte": "now"
+            "title": "Pausar bot: CPI USA y Fed Warsh mañana",
+            "desc": "El 14 de julio a las 08:30 ET se publica el CPI m/m (-0.1% estimado vs +0.5% previo) y Core CPI, seguido del testimonio del presidente de la Fed Warsh a las 10:00 ET. Estos eventos generan expansiones abruptas de spread y velas de rango extremo que distorsionan las entradas Fibonacci. Pausa orto desde 08:15 ET hasta 11:00 ET del 14 de julio para evitar fills en extensiones incorrectas y slippage elevado.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "DXY en 120.69: USD extremadamente fuerte",
-            "desc": "El DXY cotiza en niveles históricamente elevados (120.69). Esto comprime el rango diario en pares como EUR/USD y GBP/USD porque el ATR diario puede estar siendo impulsado de forma unilateral. El filtro de vela >= 25% ATR diario puede generar más señales falsas en pares USD donde el movimiento ya está extendido. Considera reducir el tamaño de lote a la mitad en señales sobre EUR/USD y GBP/USD hasta que el DXY muestre reversión o consolidación. No pausar el bot, pero sí controlar la exposición.",
-            "horizonte": "24h"
+            "title": "PPI y segunda sesion Fed Warsh el 15 de julio",
+            "desc": "El 15 de julio a las 08:30 ET se publican PPI m/m (0.0% est.) y Core PPI (0.3% est.), con un segundo testimonio de Warsh a las 10:00 ET. El riesgo de reaccion en cadena tras el CPI del dia anterior amplifica la incertidumbre. Mantener bot pausado entre 08:15 ET y 11:00 ET del 15 de julio. Ademas, el anuncio del BOC a las 09:45 ET afecta pares CAD; si orto opera USDCAD, extender la pausa hasta las 10:30 ET.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Cripto en miedo extremo: operar XBT/BTC con cautela",
-            "desc": "El índice Fear & Greed de cripto marca 23 (Extreme Fear), subiendo ligeramente desde 22. Si el bot opera BTC o pares cripto en MT5, el mercado está en modo de capitulación o acumulación incierta. Las velas de liquidez en cripto bajo miedo extremo tienden a generar breakouts falsos frecuentes porque la liquidez real es baja y los stops son cazados más agresivamente. Activa filtro manual: solo operar señales Fibonacci en cripto si la vela de liquidez supera el 40% del ATR diario en lugar del 25% mínimo habitual, o pausa cripto hasta que el índice supere 30.",
-            "horizonte": "24h"
+            "title": "DXY en maximos historicos: sesgo short en pares USD",
+            "desc": "El DXY cotiza en 120.69, nivel extremadamente elevado. Para pares donde el USD es moneda base (USDJPY, USDCAD), la estrategia de liquidity candle puede generar senales largas USD en zona de agotamiento tendencial. El COT muestra JPY neto -125,772 contratos (sesgo bajista extremo en JPY), lo que sugiere que USDJPY sigue con momentum alcista institucional, pero el riesgo de reversal brusco es alto. Reducir tamano de posicion en pares USD-base al 50% hasta que DXY muestre consolidacion por debajo de 120.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "VIX en 15.78: régimen ideal para la estrategia",
-            "desc": "El VIX bajó a 15.78 desde 15.84, manteniéndose en régimen normal. Este rango es óptimo para Liquidity Candle v3: la volatilidad es suficiente para generar velas con rango >= 25% ATR diario con regularidad, pero no tan alta como para producir slippage excesivo en las órdenes límite en extensiones 1.18/-0.18. El bot puede operar con parámetros estándar en pares de índices y forex principales. Aprovecha esta ventana de volatilidad controlada para acumular métricas de WR y PF limpias en el backtester live.",
-            "horizonte": "48h"
+            "title": "VIX en 15: regimen ideal para liquidity candles",
+            "desc": "El VIX bajo de 15.84 a 15.03, confirmando regimen de volatilidad normal. Para la estrategia Liquidity Candle v3, esto implica que el ATR diario es estable y las velas de rango >= 25% ATR son senales mas limpias con menor ruido de fondo. Las extensiones Fibonacci 1.18 y -0.18 tienen mayor probabilidad de respetarse. Operar con configuracion estandar en sesiones londinense y americana (fuera de ventanas de eventos macro), priorizando pares de alta liquidez como EURUSD y GBPUSD.",
+            "horizonte": "now"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "COT: JPY y EUR bajistas, señales short favorecidas",
-            "desc": "El posicionamiento especulativo del CFTC muestra neto bajista en EUR (-50.281 contratos) y JPY (-165.445 contratos, extremadamente bearish). Cuando el bot detecte velas de liquidez bajistas en EUR/USD o USD/JPY alineadas con estas posiciones institucionales, las extensiones Fibonacci en dirección bajista tienen mayor probabilidad de continuación. Prioriza señales short en USD/JPY y long en USD sobre EUR. El oro (XAU) tiene neto bullish de 182.210 contratos: señales long en XAU/USD alineadas con Fibonacci tienen respaldo institucional sólido esta semana.",
-            "horizonte": "semana"
+            "title": "XAU: COT bullish y sesgo institucional largo",
+            "desc": "El informe COT del 7 de julio muestra XAU con neto +183,165 contratos especulativos largos (224,379 longs vs 41,214 shorts), sesgo institucional fuertemente alcista. Si orto opera XAUUSD, las senales de liquidity candle con extension Fibonacci en pullbacks son favorables en direccion larga. Aprovechar las sesiones asiatica y londinense para capturas de liquidez en zona de oferta previa antes de CPI. Evitar senales short en XAU mientras el COT no muestre reduccion de longs.",
+            "horizonte": "now"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Curva de rendimientos plana: contexto macro estable",
-            "desc": "El spread T10Y-T2Y es de 0.38 puntos en régimen plano, con T10Y en 4.56% y T2Y en 4.21%. Una curva plana indica que el mercado no anticipa cambios bruscos de política monetaria a corto plazo, lo que reduce la probabilidad de movimientos macroeconómicos disruptivos en pares forex USD durante la semana. El backtest de capital fijo puede registrar métricas más limpias en este entorno. Los FOMC Meeting Minutes ya fueron publicados el martes 8 de julio: si no hubo sorpresa hawkish, el impacto residual en USD debería estar digerido. Verifica que no haya velas de distorsión del martes en tu dataset M15.",
-            "horizonte": "semana"
+            "title": "Cripto en Fear: cautela en instrumentos BTC",
+            "desc": "El Fear & Greed de cripto se ubica en 28 (Fear), ligeramente subiendo desde 26. No hay datos de funding rate ni open interest de BTC disponibles hoy, lo que limita el analisis de posicionamiento. En contexto de miedo moderado, las liquidity candles en cripto tienden a tener mayor extension de barridos de liquidez pero con reversals mas rapidos. Si orto opera BTCUSD, mantener el expiry de 90 minutos sin modificaciones y vigilar que el VIX no suba abruptamente por sorpresa en CPI mañana, lo que podria correlacionar negativamente con BTC.",
+            "horizonte": "24h"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -2130,16 +2290,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -2156,11 +2316,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -2170,23 +2330,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       }
     },
@@ -2549,121 +2709,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "XAUUSD mantiene condiciones favorables con posicionamiento institucional alcista y VIX en régimen normal, pero el DXY en máximos históricos (120.69) y la curva plana exigen vigilancia activa sobre señales de reversión.",
+        "resumen": "XAUUSD mantiene edge real con COT institucional alcista y VIX en régimen normal, pero el doble evento CPI + testimonio Fed mañana exige suspensión temporal del bot y gestión activa del riesgo.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "DXY en 120.69: presión bajista latente en XAU",
-            "desc": "El índice del dólar cotiza en niveles históricamente elevados (120.69). Un dólar fuerte es un viento en contra estructural para XAUUSD. Si el D1 ADX comienza a debilitarse y el precio rompe el canal Donchian H4 a la baja, desactivar nuevas entradas largas de inmediato y revisar stops activos. No operar en contra de la tendencia del DXY sin confirmación multi-timeframe.",
-            "horizonte": "now"
+            "title": "CPI USD mañana: pausar bot antes del dato",
+            "desc": "El martes 14-Jul a las 08:30 ET se publican CPI m/m (forecast -0.1% vs prev 0.5%) y Core CPI y/y (2.8% vs 2.9%). La caída esperada en el CPI mensual es la mayor divergencia con el dato anterior en meses y puede generar spike violento en XAUUSD que invalida las señales ATR del M15. Acción: pausar el bot a las 08:00 ET del martes y reactivarlo 30 minutos después del dato solo si el spread XAUUSD vuelve a niveles normales. No abrir posiciones nuevas esta noche si ya hay señal pendiente en H4.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Datos empleo CAD publicados hoy: volatilidad cruzada",
-            "desc": "Employment Change y Unemployment Rate de Canadá se publicaron hoy a las 08:30 ET (previsión 11.2K vs previo 87.8K). Un dato muy débil puede generar movimientos bruscos en USD que arrastren a XAUUSD. Verificar que el bot no haya abierto posiciones en la ventana de 15 minutos alrededor del dato. Si hay posiciones abiertas actualmente, ajustar el stop al ATR mínimo documentado para evitar slippage por volatilidad de evento.",
-            "horizonte": "now"
+            "title": "Testimonio Warsh: segunda ventana de riesgo el martes",
+            "desc": "El presidente de la Fed, Warsh, testifica a las 10:00 ET el martes 14-Jul, apenas 90 minutos después del CPI. Si el CPI sorprende a la baja, Warsh puede intensificar retórica dovish y provocar un segundo movimiento brusco en XAUUSD y DXY. Acción: mantener el bot pausado desde 08:00 hasta al menos 11:30 ET del martes. Si el bot ya tiene una posición abierta en XAUUSD, reducir el tamaño a la mitad antes del evento y ajustar el stop al ATR(1) más cercano.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "Curva de rendimientos plana: contexto macro incierto",
-            "desc": "El spread T10Y-T2Y es de apenas 0.38 puntos (curva plana). Este régimen históricamente precede a episodios de reducción de apetito por riesgo que pueden generar correlaciones inusuales entre el dólar y el oro. Las Actas del FOMC del 8 de julio ya están publicadas; revisar si contienen señales hawkish que justifiquen pausa en el bot esta semana. Un repunte en T2Y por encima de T10Y activaría alerta de inversión.",
-            "horizonte": "48h"
+            "title": "DXY en 120.69: nivel extremo presiona XAUUSD",
+            "desc": "El DXY cotiza en 120.69, nivel históricamente elevado que genera correlación inversa intensa con XAUUSD. La curva de rendimientos está plana (spread T10-T2 = 0.35 pp) y los tipos siguen altos (T10 4.54%). Esto puede comprimir el alza del oro incluso cuando el COT es alcista. Acción: verificar que el filtro ADX D1 del bot esté activo y que la señal de tendencia alcista en XAUUSD confirme por encima del nivel Donchian H4 antes de ejecutar entradas largas. No forzar entradas si el precio rompe soportes clave por fortaleza del dólar.",
+            "horizonte": "semana"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "COT XAU: institucionales con posición neta máxima alcista",
-            "desc": "El posicionamiento especulativo neto en oro es de +182,210 contratos (long 220,217 vs short 38,007) al 30 de junio, sesgo fuertemente alcista. Esto valida el edge real detectado en OOS (PF=1.86). Mientras el D1 ADX confirme tendencia activa, priorizar señales de entrada larga en expansiones de ATR en M15. No reducir tamaño de posición sin deterioro técnico previo. Este es el contexto más favorable para el bot según el backtest.",
+            "title": "COT XAU: posicionamiento institucional muy alcista",
+            "desc": "El reporte CFTC al 07-Jul muestra net long institucional en XAU de 183,165 contratos (longs 224,379 vs shorts 41,214), el sesgo más alcista del panel. Esto respalda el edge OOS documentado del bot (PF 1.86) en XAUUSD. Acción: una vez superados los eventos de mañana, priorizar las señales largas del bot en XAUUSD sobre cualquier señal corta. Considerar no tomar señales cortas en XAUUSD esta semana mientras el COT mantenga este sesgo.",
             "horizonte": "semana"
           },
           {
             "id": "M5-05",
-            "tipo": "neutral",
-            "title": "VIX en 15.78: régimen normal, estrategia operativa",
-            "desc": "El VIX bajó levemente de 15.84 a 15.78, manteniéndose en régimen normal. Este entorno favorece estrategias de seguimiento de tendencia como la de este bot (D1 ADX + H4 Donchian + M15 ATR). No se requiere reducción de tamaño por volatilidad sistémica. Si el VIX supera 20, activar revisión manual del tamaño de posición y suspender nuevas entradas hasta nueva evaluación.",
-            "horizonte": "24h"
+            "tipo": "oportunidad",
+            "title": "VIX en 15.03: régimen normal favorece momentum",
+            "desc": "El VIX bajó de 15.84 a 15.03 y permanece en régimen normal, condición histórica en que las estrategias de seguimiento de tendencia ATR/Donchian generan mejor ratio ganancia-riesgo. No hay compresión de volatilidad extrema que anule las expansiones ATR del M15. Acción: mantener los parámetros actuales del bot sin modificar multiplicadores ATR. Si el VIX cae por debajo de 13, revisar si las expansiones ATR son suficientes para activar señales; si sube por encima de 20 post-CPI, reducir el tamaño de posición a la mitad.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "Bot solo opera XAU: cripto y otros irrelevantes hoy",
-            "desc": "El Fear and Greed de cripto está en 23 (Extreme Fear), pero el bot solo tiene edge validado en XAUUSD. Los otros 5 instrumentos del backtest mostraron destrucción de capital en OOS. No activar operaciones en BTC, EUR, GBP, JPY ni ningún otro instrumento bajo ninguna condición de mercado actual. Mantener el bot restringido exclusivamente a XAUUSD según los resultados Monte Carlo (prob>0 = 99.9%).",
+            "title": "Los 5 instrumentos no-XAU: mantener desactivados",
+            "desc": "El backtest confirma destrucción de capital en OOS para los 5 instrumentos distintos de XAUUSD. El COT muestra sesgo bajista en EUR (net -36,629), GBP (net -20,847) y JPY (net -125,772), consistente con DXY fuerte. El bot no tiene edge verificado en esos pares. Acción: no reactivar los 5 instrumentos adicionales esta semana. Si se desea explorar EUR o JPY en el futuro, exigir re-backtest completo con datos recientes antes de cualquier activación en cuenta real.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -2672,16 +2872,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -2698,11 +2898,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -2712,23 +2912,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       }
     },
@@ -3061,121 +3261,161 @@
       "rereview_requested": false,
       "rereview_notes": "",
       "m5": {
-        "resumen": "Entorno de volatilidad moderada favorable para la estrategia, pero el DXY en máximos históricos y el posicionamiento bajista extremo en JPY presionan los pares forex, mientras el cripto opera bajo miedo extremo.",
+        "resumen": "Semana de alto riesgo macro con CPI y testimonio Fed manana; VIX en zona normal favorece la estrategia pero la concentracion de eventos USD exige pausas quirurgicas en instrumentos correlacionados.",
         "cards": [
           {
             "id": "M5-01",
             "tipo": "alerta",
-            "title": "Datos laborales CAD publicados hoy 08:30 ET",
-            "desc": "Employment Change y Unemployment Rate de Canadá se publicaron hoy a las 08:30 ET (forecast 11.2K vs previo 87.8K, caída severa esperada). Si el bot opera pares con CAD o instrumentos sensibles al riesgo, verifica que no haya posiciones abiertas alrededor de esa ventana. El dato ya fue publicado: revisa si generó volatilidad residual en spreads y si el motor de timeout real absorbio la expansion correctamente antes de permitir nuevas entradas.",
-            "horizonte": "now"
+            "title": "CPI USD manana: pausar indices y metales",
+            "desc": "El martes 14-Jul a las 08:30 ET se publican CPI m/m (forecast -0.1% vs previo +0.5%) y Core CPI y/y (2.8% vs 2.9%). La caida proyectada en CPI mensual es un shock significativo que puede generar gaps y spreads extremos. Pausar el bot en US30, NAS100, SPX, GER40, XAU y pares USD al menos 15 minutos antes (08:15 ET) y reanudar solo cuando el spread vuelva a niveles normales y el ADX H1 se estabilice. No tomar senales M5 en esa ventana.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-02",
             "tipo": "alerta",
-            "title": "Cripto en Miedo Extremo: sesgo SHORT con precaucion",
-            "desc": "El indice Crypto Fear and Greed marca 23 (Miedo Extremo, subiendo desde 22). Para los instrumentos cripto del bot (BTC, ETH u otros), las divergencias OBV+MACD alcistas en M5 tienen mayor tasa de fallo en capitulaciones prolongadas. Reduce el tamano de posicion en senales LONG cripto al 50% del tamano normal hasta que el indice supere 35. Las senales SHORT con divergencia bajista son mas confiables en este contexto.",
-            "horizonte": "now"
+            "title": "Warsh testifica dos dias seguidos: riesgo USD",
+            "desc": "El presidente de la Fed Warsh testifica ante el Congreso el martes 14-Jul a las 10:00 ET y el miercoles 15-Jul a las 10:00 ET. Sus comentarios pueden revertir o amplificar el movimiento post-CPI. Mantener el bot con lotaje reducido al 50% en todos los instrumentos con exposicion USD durante ambas sesiones de testimonio. Revisar manualmente el sesgo H1 en NAS100, US30 y XAU tras cada sesion antes de restaurar el tamano normal de posicion.",
+            "horizonte": "48h"
           },
           {
             "id": "M5-03",
             "tipo": "alerta",
-            "title": "DXY en 120.69: impacto en indices y metales",
-            "desc": "El DXY cotiza en 120.69, nivel historicamente elevado. Un dolar fuerte presiona negativamente a NAS100, US30 y metales preciosos (XAU) en terminos de correlacion inversa. Las senales LONG en indices USD y XAU deben filtrarse con mayor exigencia en ADX M15 (usa umbral ADX mayor a 25 en lugar del default). Evita entradas largas en XAU si el DXY no muestra debilidad intradiaria confirmada en H1.",
+            "title": "DXY en 120.69: riesgo de sobreextension USD",
+            "desc": "El DXY cotiza en 120.69, nivel historicamente elevado. El posicionamiento COT muestra shorts especulativos netos en EUR (-36,629) y JPY (-125,772), lo que indica que el USD largo esta muy concurrido. Un CPI debajo del forecast manana puede desencadenar un short-squeeze del USD violento. Si el bot opera pares como EURUSD o USDJPY, revisar que el sesgo H1 no este contrariando una posible reversion brusca. Considerar desactivar senales en direccion USD-largo hasta que se digiera el dato.",
             "horizonte": "24h"
           },
           {
             "id": "M5-04",
             "tipo": "oportunidad",
-            "title": "COT JPY bajista extremo: SHORT JPY viable",
-            "desc": "El posicionamiento especulativo neto en JPY es de -165.445 contratos (shorts: 272.508 vs longs: 107.063), el mas bajista de todos los activos monitoreados. Esto confirma sesgo institucional fuerte SHORT en JPY. Si el bot opera USDJPY o cruces de JPY, las divergencias bajistas en OBV+MACD M5 con ADX M15 activo tienen respaldo estructural institucional. Prioriza senales SHORT en JPY sobre senales contrarias mientras no haya intervencion BOJ confirmada.",
-            "horizonte": "48h"
+            "title": "XAU: COT bullish + CPI como catalizador",
+            "desc": "El COT de XAU muestra posicionamiento neto especulativo fuertemente alcista (+183,165 contratos largos netos). Si el CPI del martes confirma desaceleracion, el oro puede reaccionar con un impulso alcista respaldado por flujo institucional. Configurar alertas para divergencia OBV+MACD alcista en M5 de XAU entre las 08:45-09:30 ET del martes post-dato. Si el ADX M15 supera 25 y el sesgo H1 es alcista, priorizar entradas largas en XAU con tamano de posicion normal.",
+            "horizonte": "24h"
           },
           {
             "id": "M5-05",
             "tipo": "oportunidad",
-            "title": "COT XAU bullish: divergencias alcistas en oro favorecidas",
-            "desc": "El posicionamiento neto en XAU es +182.210 contratos (longs: 220.217, shorts: 38.007), fuertemente alcista. A pesar de la presion del DXY elevado, el flujo institucional respalda posiciones largas en oro en correcciones. Las divergencias alcistas OBV+MACD en M5 sobre XAU con confirmacion H1 bullish tienen confluencia institucional. Considera aumentar el tamano de posicion en senales LONG en XAU al 120% si el ADX M15 supera 20 y H1 mantiene sesgo alcista.",
-            "horizonte": "48h"
+            "title": "VIX 15.03: entorno optimo para la estrategia",
+            "desc": "El VIX bajo de 15.03 (cayendo desde 15.84) senala un regimen de volatilidad normal-baja, historicamente favorable para estrategias de divergencia tecnica como OBV+MACD porque las senales falsas por ruido disminuyen y los movimientos direccionales son mas limpios. Fuera de las ventanas de evento macro, el bot puede operar con parametros estandar en indices (US30, NAS100, GER40) y metales. Aprovechar la sesion europea y el solapamiento Londres-NY del lunes para maximizar senales de calidad.",
+            "horizonte": "now"
           },
           {
             "id": "M5-06",
             "tipo": "neutral",
-            "title": "VIX en 15.78: regimen normal, estrategia operativa",
-            "desc": "El VIX se ubica en 15.78 (bajando desde 15.84), dentro del regimen normal. Este nivel es favorable para la estrategia OBV+MACD con filtro ADX: la volatilidad es suficiente para generar divergencias accionables en M5 sin los falsos positivos caracteristicos de VIX mayor a 25. No se requiere ajuste en parametros de volatilidad. La curva de rendimientos con spread de 0.38 puntos en regimen flat no senala riesgo sistemico inmediato para indices.",
+            "title": "Cripto en zona de miedo: cautela en BTC",
+            "desc": "El Fear and Greed cripto marca 28 (Miedo), ligeramente peor que el previo de 26. Sin datos de funding rate ni open interest de Binance disponibles hoy, no es posible confirmar si hay capitulacion de shorts o acumulacion institucional. En este contexto, las senales de divergencia alcista OBV+MACD en M5 de BTC deben tratarse con confirmation adicional: exigir ADX M15 mayor a 20 y sesgo H1 no bajista antes de ejecutar. Evitar senales bajistas nuevas en cripto sin confirmacion de ruptura de soporte claro.",
             "horizonte": "semana"
           }
         ],
-        "last_updated": "2026-07-10T13:16:30Z",
+        "last_updated": "2026-07-13T13:31:57Z",
         "macro_snapshot": {
           "vix": {
-            "value": 15.78,
+            "value": 15.03,
             "prev": 15.84,
-            "change": -0.06,
+            "change": -0.81,
             "regime": "normal"
           },
           "fear_greed_crypto": {
-            "value": 23,
-            "label": "Extreme Fear",
-            "prev": 22
+            "value": 28,
+            "label": "Fear",
+            "prev": 26
           },
           "fear_greed_equities": null,
           "high_impact_events": [
             {
-              "event": "ISM Services PMI",
+              "event": "Core CPI m/m",
               "currency": "USD",
-              "date": "2026-07-06T10:00:00-04:00",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "54.2",
-              "previous": "54.5"
+              "forecast": "0.2%",
+              "previous": "0.2%"
             },
             {
-              "event": "Official Cash Rate",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
+              "event": "Core CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
               "time": "",
-              "forecast": "2.50%",
+              "forecast": "2.8%",
+              "previous": "2.9%"
+            },
+            {
+              "event": "CPI m/m",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "-0.1%",
+              "previous": "0.5%"
+            },
+            {
+              "event": "CPI y/y",
+              "currency": "USD",
+              "date": "2026-07-14T08:30:00-04:00",
+              "time": "",
+              "forecast": "3.8%",
+              "previous": "4.2%"
+            },
+            {
+              "event": "Fed Chairman Warsh Testifies",
+              "currency": "USD",
+              "date": "2026-07-14T10:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOE Gov Bailey Speaks",
+              "currency": "GBP",
+              "date": "2026-07-14T16:00:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Core PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.3%",
+              "previous": "0.4%"
+            },
+            {
+              "event": "PPI m/m",
+              "currency": "USD",
+              "date": "2026-07-15T08:30:00-04:00",
+              "time": "",
+              "forecast": "0.0%",
+              "previous": "1.1%"
+            },
+            {
+              "event": "BOC Monetary Policy Report",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "BOC Rate Statement",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "",
+              "previous": ""
+            },
+            {
+              "event": "Overnight Rate",
+              "currency": "CAD",
+              "date": "2026-07-15T09:45:00-04:00",
+              "time": "",
+              "forecast": "2.25%",
               "previous": "2.25%"
             },
             {
-              "event": "RBNZ Rate Statement",
-              "currency": "NZD",
-              "date": "2026-07-07T22:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "RBNZ Press Conference",
-              "currency": "NZD",
-              "date": "2026-07-07T23:00:00-04:00",
-              "time": "",
-              "forecast": "",
-              "previous": ""
-            },
-            {
-              "event": "FOMC Meeting Minutes",
+              "event": "Fed Chairman Warsh Testifies",
               "currency": "USD",
-              "date": "2026-07-08T14:00:00-04:00",
+              "date": "2026-07-15T10:00:00-04:00",
               "time": "",
               "forecast": "",
               "previous": ""
-            },
-            {
-              "event": "Employment Change",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "11.2K",
-              "previous": "87.8K"
-            },
-            {
-              "event": "Unemployment Rate",
-              "currency": "CAD",
-              "date": "2026-07-10T08:30:00-04:00",
-              "time": "",
-              "forecast": "6.6%",
-              "previous": "6.6%"
             }
           ],
           "fred": {
@@ -3184,16 +3424,16 @@
               "date": "2026-07-02"
             },
             "t10y": {
-              "value": 4.56,
-              "date": "2026-07-08"
+              "value": 4.54,
+              "date": "2026-07-09"
             },
             "t2y": {
-              "value": 4.21,
-              "date": "2026-07-08"
+              "value": 4.16,
+              "date": "2026-07-09"
             },
             "yield_spread": {
-              "value": 0.38,
-              "date": "2026-07-09"
+              "value": 0.35,
+              "date": "2026-07-10"
             },
             "curve_regime": "flat"
           },
@@ -3210,11 +3450,11 @@
           "ecb": null,
           "cot": {
             "EUR": {
-              "net": -50281,
-              "long": 204230,
-              "short": 254511,
+              "net": -36629,
+              "long": 210488,
+              "short": 247117,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "GBP": {
               "net": -20847,
@@ -3224,23 +3464,23 @@
               "date": "2022-02-01"
             },
             "JPY": {
-              "net": -165445,
-              "long": 107063,
-              "short": 272508,
+              "net": -125772,
+              "long": 112330,
+              "short": 238102,
               "bias": "bearish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             },
             "XAU": {
-              "net": 182210,
-              "long": 220217,
-              "short": 38007,
+              "net": 183165,
+              "long": 224379,
+              "short": 41214,
               "bias": "bullish",
-              "date": "2026-06-30"
+              "date": "2026-07-07"
             }
           },
           "binance": null,
           "grok_sentiment": null,
-          "fetched_at": "2026-07-10T13:16:30Z"
+          "fetched_at": "2026-07-13T13:31:57Z"
         }
       }
     }
